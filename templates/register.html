@@ -1,0 +1,427 @@
+{% extends "base.html" %}
+{% block title %}{{ brand_name }} • Registration{% endblock %}
+
+{% block head %}
+<style>
+  /* Page‑specific styles (dark) */
+  .grid{display:grid; gap:12px;}
+  .cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  @media (max-width:900px){ .cols-2,.cols-3{grid-template-columns:1fr} }
+
+  label{font-weight:700; display:block; margin-bottom:6px;}
+  input[type="text"],input[type="email"],input[type="tel"],input[type="number"],textarea,select{
+    width:100%; padding:10px 12px; border:1px solid #2a3348; border-radius:10px; background:#0f1320; color:#e6ecff;
+  }
+  textarea{min-height:96px; resize:vertical;}
+  .actions{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+  button{appearance:none; border:1px solid var(--accent); background:var(--accent); color:#051327; padding:10px 16px; border-radius:10px; font-weight:800; cursor:pointer;}
+  button.secondary{background:transparent; color:#e6ecff; border-color:#2a3348;}
+  .alert{padding:12px 14px; border-radius:10px; margin:8px 0 16px; border:1px solid}
+  .alert.success{background:#0f1c14; color:#9fe3b3; border-color:#163b24;}
+  .alert.error{background:#2a1414; color:#f1a5a5; border-color:#4a2020;}
+  .muted{color: var(--muted);}
+  .radio-row{display:flex; gap:16px; flex-wrap:wrap;}
+  .radio-row label{font-weight:600; display:inline-flex; align-items:center; gap:6px; margin:0;}
+  .hide{display:none;}
+  .layout{display:grid; grid-template-columns: 1.6fr .9fr; gap:20px;}
+  @media (max-width:980px){ .layout{grid-template-columns:1fr} }
+  .summary{position:sticky; top:16px; align-self:start}
+  .sum-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;}
+  .sum-title{font-weight:800; font-size:1.05rem;}
+  .promo-pill{display:inline-flex; align-items:center; gap:8px; border:1px solid #2a3348; border-radius:999px; padding:6px 10px; font-weight:800; background:#0f1320;}
+  .sum-row{display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px dashed #2a3348;}
+  .sum-row:last-child{border-bottom:none}
+  .sum-row .label{color:#b8c1d9}
+  .sum-row .value{font-weight:700}
+  .total{font-size:1.25rem;}
+  .strike{opacity:.6; text-decoration:line-through;}
+  .ok{color:#9fe3b3}
+  .sum-note{margin-top:8px; font-size:.9rem; color:var(--muted);}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="layout">
+  <!-- LEFT: form card -->
+  <div class="card">
+    <div class="muted" style="margin-bottom:12px;">Secure form • Used for course onboarding and billing.</div>
+
+    {% with msgs = get_flashed_messages(with_categories=true) %}
+      {% if msgs %}
+        {% for category, msg in msgs %}
+          <div class="alert {{ category }}">{{ msg|safe }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    {% if not signed_in %}
+      <form method="post" action="{{ url_for('register.signin') }}" class="grid cols-2" autocomplete="on" novalidate>
+        <div>
+          <label for="user_email">Email (optional)</label>
+          <input id="user_email" name="user_email" type="email" placeholder="you@example.com" autocomplete="email" />
+        </div>
+        <div>
+          <label for="access_code">Course Access Code</label>
+          <input id="access_code" name="access_code" type="text" placeholder="Enter code" required />
+        </div>
+        <div class="actions">
+          <button type="submit">Sign in</button>
+        </div>
+      </form>
+
+    {% else %}
+      {% if submitted %}
+        <div class="alert success">✅ Thank you! Your registration has been received.</div>
+        <p class="muted">You can close this tab, or submit another registration below.</p>
+      {% endif %}
+
+      {% if errors and errors|length %}
+        <div class="alert error" role="alert">
+          <strong>Please fix the following:</strong>
+          <ul>
+            {% for err in errors %}<li>{{ err }}</li>{% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+
+      <form method="post" action="{{ url_for('register.submit') }}" class="grid" novalidate>
+        <!-- Course -->
+        <h3>Course Selection</h3><hr/>
+        <div class="grid cols-2">
+          <div>
+            <label for="course_session_code">Choose your course</label>
+            <select id="course_session_code" name="course_session_code" required>
+              <option value="">-- Select --</option>
+              {% for c in courses %}
+                <option value="{{ c.code }}" {% if form_data and form_data.course_session_code == c.code %}selected{% endif %}>{{ c.title }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label for="promo_code">Promo code (optional)</label>
+            <input id="promo_code" name="promo_code" type="text" placeholder="Enter promo code" value="{{ (form_data.promo_code if form_data else '') or '' }}">
+            <small class="muted">We’ll validate and apply the correct price.</small>
+          </div>
+        </div>
+
+        <!-- Basic info -->
+        <h3>Basic Information</h3><hr/>
+        <div class="grid cols-3">
+          <div>
+            <label for="first_name">First Name *</label>
+            <input id="first_name" name="first_name" type="text" required autocomplete="given-name" value="{{ (form_data.first_name if form_data else '') or '' }}">
+          </div>
+          <div>
+            <label for="middle_name">Middle Name</label>
+            <input id="middle_name" name="middle_name" type="text" autocomplete="additional-name" value="{{ (form_data.middle_name if form_data else '') or '' }}">
+          </div>
+          <div>
+            <label for="last_name">Last Name *</label>
+            <input id="last_name" name="last_name" type="text" required autocomplete="family-name" value="{{ (form_data.last_name if form_data else '') or '' }}">
+          </div>
+        </div>
+
+        <div class="grid cols-3">
+          <div>
+            <label for="age">Age</label>
+            <input id="age" name="age" type="number" min="10" max="120" inputmode="numeric" value="{{ (form_data.age if form_data else '') or '' }}">
+          </div>
+
+          <div>
+            <label>Gender</label>
+            <div class="radio-row" id="genderRow">
+              {% set gval = (form_data.gender if form_data and form_data.gender is not none else '') %}
+              <label><input type="radio" name="gender" value="female" {% if gval=='female' %}checked{% endif %}> Female</label>
+              <label><input type="radio" name="gender" value="male" {% if gval=='male' %}checked{% endif %}> Male</label>
+              <label><input type="radio" name="gender" value="other" {% if gval=='other' %}checked{% endif %}> Other</label>
+              <label><input type="radio" name="gender" value="prefer_not_to_say" {% if gval=='prefer_not_to_say' %}checked{% endif %}> Prefer not to say</label>
+            </div>
+            <div id="genderOtherWrap" class="{% if gval!='other' %}hide{% endif %}" style="margin-top:8px;">
+              <label for="gender_other_note">Please specify (optional)</label>
+              <input id="gender_other_note" name="gender_other_note" type="text" value="{{ (form_data.gender_other_note if form_data else '') or '' }}">
+            </div>
+          </div>
+
+          <div>
+            <label for="phone">Phone</label>
+            <input id="phone" name="phone" type="tel" autocomplete="tel" value="{{ (form_data.phone if form_data else '') or '' }}">
+          </div>
+        </div>
+
+        <div class="grid cols-2">
+          <div>
+            <label for="reg_email">Email</label>
+            <input id="reg_email" name="user_email" type="email" autocomplete="email" required value="{{ (form_data.user_email if form_data else (user_email or '')) or '' }}">
+
+          </div>
+          <div>
+            <label for="job_title">Your Job / Role</label>
+            <select id="job_title" name="job_title" required>
+              {% for r in job_roles %}
+                <option value="{{ r }}" {% if form_data and form_data.job_title==r %}selected{% endif %}>{{ r }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="grid cols-2">
+          <div>
+            <label for="company">Company / Organization</label>
+            <input id="company" name="company" type="text" autocomplete="organization" value="{{ (form_data.company if form_data else '') or '' }}">
+          </div>
+          <div></div>
+        </div>
+
+        <!-- Address -->
+        <h3>Address</h3><hr/>
+        <div class="grid cols-2">
+          <div>
+            <label for="address_line1">Address Line 1</label>
+            <input id="address_line1" name="address_line1" type="text" autocomplete="address-line1" value="{{ (form_data.address_line1 if form_data else '') or '' }}">
+          </div>
+          <div>
+            <label for="address_line2">Address Line 2</label>
+            <input id="address_line2" name="address_line2" type="text" autocomplete="address-line2" value="{{ (form_data.address_line2 if form_data else '') or '' }}">
+          </div>
+        </div>
+        <div class="grid cols-3">
+          <div>
+            <label for="city">City</label>
+            <input id="city" name="city" type="text" autocomplete="address-level2" value="{{ (form_data.city if form_data else '') or '' }}">
+          </div>
+          <div>
+            <label for="state">State / Province</label>
+            <input id="state" name="state" type="text" autocomplete="address-level1" value="{{ (form_data.state if form_data else '') or '' }}">
+          </div>
+          <div>
+            <label for="postal_code">Postal Code</label>
+            <input id="postal_code" name="postal_code" type="text" autocomplete="postal-code" value="{{ (form_data.postal_code if form_data else '') or '' }}">
+          </div>
+        </div>
+        <div>
+          <label for="country">Country</label>
+          <input id="country" name="country" type="text" autocomplete="country-name" value="{{ (form_data.country if form_data else '') or '' }}">
+        </div>
+
+        <!-- AI background -->
+        <h3>AI Interest & Background</h3><hr/>
+        <div>
+          <label for="ai_current_involvement">Describe your current involvement in AI (max 500 chars)</label>
+          <textarea id="ai_current_involvement" name="ai_current_involvement" maxlength="500">{{ (form_data.ai_current_involvement if form_data else '') or '' }}</textarea>
+        </div>
+        <div>
+          <label for="ai_goals_wish_to_achieve">What do you wish to achieve with AI? (max 500 chars)</label>
+          <textarea id="ai_goals_wish_to_achieve" name="ai_goals_wish_to_achieve" maxlength="500">{{ (form_data.ai_goals_wish_to_achieve if form_data else '') or '' }}</textarea>
+        </div>
+        <div>
+          <label for="ai_datasets_available">What datasets do you have? (format, size, sensitivity) (max 500 chars)</label>
+          <textarea id="ai_datasets_available" name="ai_datasets_available" maxlength="500">{{ (form_data.ai_datasets_available if form_data else '') or '' }}</textarea>
+        </div>
+
+        <!-- Referral -->
+        <h3>How did you find us & why choose us?</h3><hr/>
+        <div class="grid cols-2">
+          <div>
+            <label for="referral_source">How did you find us?</label>
+            <select id="referral_source" name="referral_source">
+              <option value=""></option>
+              {% for r in referrals %}
+                <option value="{{ r }}" {% if form_data and form_data.referral_source==r %}selected{% endif %}>{{ r }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label for="reason_choose_us">Why did you choose us? (max 500 chars)</label>
+            <textarea id="reason_choose_us" name="reason_choose_us" maxlength="500">{{ (form_data.reason_choose_us if form_data else '') or '' }}</textarea>
+          </div>
+        </div>
+
+        <!-- Billing -->
+        <h3>Invoice / Billing</h3><hr/>
+        <label><input type="checkbox" id="billing_same" name="billing_same_as_personal" checked> Use same as personal details (recommended)</label>
+        <div id="billingFields" class="hide">
+          <div class="grid cols-2">
+            <div>
+              <label for="invoice_name">Billing Contact Name</label>
+              <input id="invoice_name" name="invoice_name" type="text">
+            </div>
+            <div>
+              <label for="invoice_company">Company</label>
+              <input id="invoice_company" name="invoice_company" type="text">
+            </div>
+          </div>
+          <div class="grid cols-2">
+            <div>
+              <label for="invoice_email">Billing Email</label>
+              <input id="invoice_email" name="invoice_email" type="email">
+            </div>
+            <div>
+              <label for="invoice_phone">Billing Phone</label>
+              <input id="invoice_phone" name="invoice_phone" type="tel">
+            </div>
+          </div>
+          <div class="grid cols-2">
+            <div>
+              <label for="invoice_vat_id">VAT / Tax ID</label>
+              <input id="invoice_vat_id" name="invoice_vat_id" type="text">
+            </div>
+            <div></div>
+          </div>
+          <div class="grid cols-2">
+            <div>
+              <label for="invoice_addr_line1">Billing Address Line 1</label>
+              <input id="invoice_addr_line1" name="invoice_addr_line1" type="text">
+            </div>
+            <div>
+              <label for="invoice_addr_line2">Billing Address Line 2</label>
+              <input id="invoice_addr_line2" name="invoice_addr_line2" type="text">
+            </div>
+          </div>
+          <div class="grid cols-3">
+            <div>
+              <label for="invoice_city">City</label>
+              <input id="invoice_city" name="invoice_city" type="text">
+            </div>
+            <div>
+              <label for="invoice_state">State / Province</label>
+              <input id="invoice_state" name="invoice_state" type="text">
+            </div>
+            <div>
+              <label for="invoice_postal_code">Postal Code</label>
+              <input id="invoice_postal_code" name="invoice_postal_code" type="text">
+            </div>
+          </div>
+          <div>
+            <label for="invoice_country">Country</label>
+            <input id="invoice_country" name="invoice_country" type="text">
+          </div>
+        </div>
+
+        <!-- Consents & notes -->
+        <h3>Consents & Notes</h3><hr/>
+        <div class="grid">
+          <label><input type="checkbox" name="consent_contact_ok" checked> I agree to be contacted for course operations.</label>
+          <label><input type="checkbox" name="consent_marketing_ok"> I agree to receive updates and offers.</label>
+          <label><input type="checkbox" name="data_processing_ok" required checked> I consent to the processing of my data for registration and billing.</label>
+        </div>
+        <div>
+          <label for="notes">Any additional notes? (max 500 chars)</label>
+          <textarea id="notes" name="notes" maxlength="500"></textarea>
+        </div>
+
+        <div class="actions">
+          <button type="submit">Submit registration</button>
+          <a class="btn ghost" href="{{ url_for('register.logout') }}">Sign out</a>
+        </div>
+        <p class="muted">Fields marked * are required.</p>
+      </form>
+    {% endif %}
+  </div>
+
+  <!-- RIGHT: sticky summary -->
+  <aside class="summary">
+    <div class="card">
+      <div class="sum-head">
+        <div class="sum-title">Order Summary</div>
+        <div id="promoPill" class="promo-pill" aria-live="polite">No promo</div>
+      </div>
+      <div class="sum-row">
+        <div class="label">Base price</div>
+        <div class="value" id="sumBase">€{{ base_price_eur }}</div>
+      </div>
+      <div class="sum-row hide" id="sumDiscountRow">
+        <div class="label ok">Promo discount</div>
+        <div class="value ok" id="sumDiscount">− €0</div>
+      </div>
+      <div class="sum-row total">
+        <div class="label">Total</div>
+        <div class="value" id="sumTotal">€{{ base_price_eur }}</div>
+      </div>
+      <div class="sum-note" id="sumNote">Enter a promo code to check if a discount applies.</div>
+    </div>
+  </aside>
+</div>
+
+{% endblock %}
+
+{% block body_end %}
+<script>
+  const BASE = {{ base_price_eur }};
+  const PREVIEW_URL = '{{ url_for("register.price_preview") }}';
+  const promoInput = document.getElementById('promo_code');
+  const promoPill  = document.getElementById('promoPill');
+  const sumBase    = document.getElementById('sumBase');
+  const sumDiscountRow = document.getElementById('sumDiscountRow');
+  const sumDiscount = document.getElementById('sumDiscount');
+  const sumTotal   = document.getElementById('sumTotal');
+  const sumNote    = document.getElementById('sumNote');
+
+  function euro(n){ return "€" + Number(n).toString(); }
+
+  async function refreshSummary(){
+    const code = (promoInput?.value || '').trim();
+    if (!code){
+      promoPill.textContent = "No promo";
+      sumBase.textContent = euro(BASE);
+      sumDiscountRow.classList.add('hide');
+      sumTotal.textContent = euro(BASE);
+      sumNote.textContent = "Enter a promo code to check if a discount applies.";
+      return;
+    }
+    try{
+      const res = await fetch(PREVIEW_URL, {
+        method:'POST',
+        headers:{'Content-Type':'application/x-www-form-urlencoded'},
+        body:new URLSearchParams({code})
+      });
+      const j = await res.json();
+      const price = (j && typeof j.price_eur === 'number') ? j.price_eur : BASE;
+      if (j && j.promo_applied){
+        const discount = Math.max(0, BASE - price);
+        sumBase.innerHTML = `<span class="strike">${euro(BASE)}</span>`;
+        sumDiscountRow.classList.remove('hide');
+        sumDiscount.textContent = "− " + euro(discount);
+        sumTotal.textContent = euro(price);
+        promoPill.textContent = j.is_free ? "Promo applied: FREE" : "Promo applied";
+        sumNote.textContent = j.is_free
+          ? "Valid promo detected. Your total will be €0 upon submission."
+          : "Valid promo detected. The discounted total will be applied.";
+      } else {
+        promoPill.textContent = "Invalid promo";
+        sumBase.textContent = euro(BASE);
+        sumDiscountRow.classList.add('hide');
+        sumTotal.textContent = euro(BASE);
+        sumNote.textContent = "Promo not recognized. Base price applies.";
+      }
+    } catch(e){
+      promoPill.textContent = "Promo check unavailable";
+      sumBase.textContent = euro(BASE);
+      sumDiscountRow.classList.add('hide');
+      sumTotal.textContent = euro(BASE);
+      sumNote.textContent = "We couldn’t verify the promo right now.";
+    }
+  }
+
+  promoInput?.addEventListener('input', refreshSummary);
+  window.addEventListener('DOMContentLoaded', refreshSummary);
+
+  // Gender "other" toggle
+  const genderRow = document.getElementById('genderRow');
+  const genderOtherWrap = document.getElementById('genderOtherWrap');
+  function onGenderChange(){
+    const val = (document.querySelector('input[name="gender"]:checked') || {}).value;
+    genderOtherWrap?.classList.toggle('hide', val !== 'other');
+  }
+  genderRow?.addEventListener('change', onGenderChange);
+  window.addEventListener('DOMContentLoaded', onGenderChange);
+
+  // Billing toggle
+  const billingSame = document.getElementById('billing_same');
+  const billingFields = document.getElementById('billingFields');
+  function syncBilling(){ billingFields?.classList.toggle('hide', billingSame?.checked); }
+  billingSame?.addEventListener('change', syncBilling);
+  window.addEventListener('DOMContentLoaded', syncBilling);
+</script>
+{% endblock %}

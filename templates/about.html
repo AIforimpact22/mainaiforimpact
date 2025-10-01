@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}About — {{ BRAND_NAME }}{% endblock %}
+
+{% block hero %}
+<section class="cover-hero" aria-label="About">
+  <div class="bg" style="background-image:url('{{ COURSE_COVER_URL }}');"></div>
+  <div class="overlay"></div>
+  <div class="inner">
+    <h1>About {{ BRAND_NAME }}</h1>
+    <p class="subhead">Tailored 1-on-1 sessions backed by a learning portal, grounded in PhD research.</p>
+  </div>
+</section>
+{% endblock %}
+
+{% block content %}
+
+<section id="tutor" class="section-card" style="margin-top:26px;">
+  <div class="banner">
+    <small>Provenance</small>
+    <h1>{{ tutor_name }}</h1>
+    <p class="muted">{{ tutor_tagline }}</p>
+  </div>
+  <div class="body">
+    <div class="card">
+      <p style="margin:0;">{{ origin_blurb }}</p>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
+        <a class="btn ghost" href="{{ linkedin_url }}" target="_blank" rel="noopener">LinkedIn</a>
+        <a class="btn ghost" href="{{ scholar_url }}" target="_blank" rel="noopener">
+          Google Scholar ({{ research_count }} publications)
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="what-it-is" class="section-card" style="margin-top:26px;">
+  <div class="banner">
+    <small>The Course</small>
+    <h1>What this is</h1>
+    <p class="muted">A focused engagement designed to ship outcomes, not just content.</p>
+  </div>
+  <div class="body" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;">
+    <div class="card">
+      <strong>Format & Promise</strong>
+      <ul style="margin:10px 0 0 18px;line-height:1.6;">
+        {% for v in value_props %}<li>{{ v }}</li>{% endfor %}
+      </ul>
+      <p class="muted" style="margin-top:10px;">
+        Price: <strong>€{{ price_eur }}</strong>. Seats are limited to keep the work personal and effective.
+      </p>
+    </div>
+    <div class="card">
+      <strong>Why it exists</strong>
+      <p class="muted" style="margin-top:10px;">
+        I created this for people who want to be resilient and make progress with AI—without getting lost in trends.
+        The portal documents the workflow so wins are teachable, repeatable, and deployable.
+      </p>
+      <div style="margin-top:10px;">
+        <a class="btn" href="{{ bp('/register') }}">Apply now</a>
+        <a class="btn ghost" href="{{ bp('/') }}" style="margin-left:8px;">Explore curriculum</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="philosophy" class="section-card" style="margin-top:26px;">
+  <div class="banner">
+    <small>Approach</small>
+    <h1>Teaching philosophy</h1>
+    <p class="muted">Clarity over noise. Shipping over speculation. Reflection after results.</p>
+  </div>
+  <div class="body">
+    <div class="card">
+      <p style="margin:0;">
+        {{ philosophy }}
+      </p>
+    </div>
+  </div>
+</section>
+
+<section id="experience" class="section-card" style="margin-top:26px;">
+  <div class="banner">
+    <small>Experience</small>
+    <h1>Cross-domain understanding</h1>
+    <p class="muted">I bridge business, climate, energy, and academia—so we can move quickly from context to workflow.</p>
+  </div>
+  <div class="body">
+    <div class="card">
+      <p style="margin:0;">{{ experience_blurb }}</p>
+    </div>
+  </div>
+</section>
+
+<section id="climate" class="section-card" style="margin-top:26px;">
+  <div class="banner">
+    <small>Cause</small>
+    <h1>Climate action</h1>
+    <p class="muted">Supporting NGOs working on climate impact.</p>
+  </div>
+  <div class="body">
+    <div class="card">
+      <p style="margin:0;">{{ climate_note }}</p>
+    </div>
+  </div>
+</section>
+
+<section id="entity" class="section-card" style="margin-top:26px; margin-bottom:12px;">
+  <div class="banner">
+    <small>Business</small>
+    <h1>Registered entity</h1>
+    <p class="muted">The course is operated under the following company.</p>
+  </div>
+  <div class="body">
+    <div class="card">
+      <strong>{{ business_name }}</strong>
+      <address style="margin-top:6px; font-style:normal; line-height:1.6;">
+        {% for line in business_address %}
+          {{ line }}<br>
+        {% endfor %}
+      </address>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

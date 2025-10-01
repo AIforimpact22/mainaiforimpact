@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}{{ course.title if course else 'Learning Portal' }}{% endblock %}
+
+{% block hero %}
+{% if course %}
+<section class="spotlight-hero">
+  <div class="container">
+    <div class="spotlight-grid">
+      <div class="spotlight-text">
+        <div class="eyebrow">Master Course</div>
+        <h1 class="spotlight-title">{{ course.title }}</h1>
+        <p class="lead">{{ course.level }} · {{ course.category }}</p>
+
+        {% if page_allowed('player') %}
+        <div class="hero-cta">
+          <a class="btn" href="{{ bp('/learn/' ~ course.id) }}">Start learning</a>
+          {% if first_uid %}
+            <a class="btn ghost" id="continue-btn" href="{{ bp('/learn/' ~ course.id ~ '/' ~ first_uid) }}">Continue</a>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="stat-row">
+          <div class="stat">
+            <div class="num">{{ modules_count }}</div>
+            <div class="label">Modules</div>
+          </div>
+          <div class="stat">
+            <div class="num">{{ lessons_count }}</div>
+            <div class="label">Sections</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="spotlight-media">
+        <img src="{{ BRAND_LOGO_URL }}" alt="Course cover">
+      </div>
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+  {% if err %}<div class="alert error">Error: {{ err }}</div>{% endif %}
+
+  {% if course %}
+  <section id="curriculum" class="section-card">
+    <div class="banner">
+      <small>Program</small>
+      <h1>Curriculum overview</h1>
+      <p class="muted">What you will cover in this course.</p>
+    </div>
+
+    <div class="body">
+      {% if weeks and weeks|length %}
+        <ol class="timeline">
+          {% for w in weeks %}
+            <li class="timeline-item">
+              <div class="dot"></div>
+              <div class="content">
+                <div class="week-title">{{ w.title }}</div>
+                <div class="muted small">{{ w.lessons_count }} sections</div>
+              </div>
+            </li>
+          {% endfor %}
+        </ol>
+      {% else %}
+        <p class="muted">The curriculum will appear here.</p>
+      {% endif %}
+    </div>
+  </section>
+  {% endif %}
+{% endblock %}
+
+{% block body_end %}
+{% if course %}
+<script>
+  (function(){
+    try {
+      var key = "progress_course_" + {{ course.id|tojson }};
+      var uid = localStorage.getItem(key);
+      var base = window.BASE_PATH || "";
+      if (uid) {
+        var b1 = document.getElementById('continue-btn');
+        if (b1) b1.href = base + "/learn/{{ course.id }}/" + uid;
+      }
+    } catch(e){}
+  })();
+</script>
+{% endif %}
+{% endblock %}

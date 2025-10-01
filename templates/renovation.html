@@ -1,0 +1,414 @@
+{% extends "base.html" %}
+{% block title %}Data Renovation — Ai For Impact{% endblock %}
+
+{% block hero %}
+<section class="cover-hero text-hero" aria-label="Data Renovation hero">
+  <div class="overlay"></div>
+  <div class="inner">
+    <div class="badge-row">
+      <span class="badge">Data Renovation</span>
+      <span class="badge">LLM‑assisted</span>
+      <span class="badge">Human‑in‑the‑loop</span>
+    </div>
+    <h1>LLM‑based Data Renovation</h1>
+    <p class="subhead">Irregular, unstructured rows transform into clean, validated records — visibly.</p>
+
+    <!-- Animated stage -->
+    <div class="anim-stage" id="animStage" aria-live="polite" aria-label="Animated demonstration of messy data becoming structured">
+      <!-- Lines injected by JS -->
+      <div class="grid-hint" aria-hidden="true">10 columns</div>
+      <button class="btn ghost replay" id="replayBtn" type="button" aria-label="Replay animation">Replay</button>
+    </div>
+
+    <div class="anchor-row">
+      <a href="#what">What we do ↓</a> &nbsp;•&nbsp;
+      <a href="#how">How it works ↓</a> &nbsp;•&nbsp;
+      <a href="#pilot">Start a pilot ↓</a>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block head %}
+<style>
+  /* --- Hero without image: subtle gradient --- */
+  .text-hero .overlay { position:absolute; inset:0;
+    background:
+      radial-gradient(1200px 420px at 20% 10%, rgba(92,169,255,.15), transparent 60%),
+      radial-gradient(900px 420px at 80% 0%, rgba(255,255,255,.05), transparent 55%),
+      linear-gradient(to bottom, rgba(11,13,18,0) 0%, rgba(11,13,18,.75) 55%, rgba(11,13,18,.96) 100%);
+  }
+
+  /* --- Animation stage --- */
+  .anim-stage {
+    --colw: 12ch; /* uniform column width */
+    position: relative;
+    margin-top: 14px;
+    border:1px solid #1a1f2e; border-radius: 12px;
+    background: rgba(6,10,18,.55);
+    padding: 14px 14px 44px 14px;
+    min-height: 220px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    overflow: hidden;
+  }
+  .anim-stage::before {
+    /* faint vertical columns */
+    content:"";
+    position:absolute; inset:0;
+    background:
+      repeating-linear-gradient(
+        to right,
+        rgba(92,169,255,0) 0,
+        rgba(92,169,255,0) calc(var(--colw) - 1px),
+        rgba(92,169,255,.12) calc(var(--colw) - 1px),
+        rgba(92,169,255,.12) var(--colw)
+      );
+    opacity: 0; transition: opacity .7s ease;
+    pointer-events:none;
+  }
+  .anim-stage.grid-on::before { opacity: .9; }
+
+  .line {
+    display: block;
+    white-space: nowrap;
+    line-height: 1.6;
+    opacity: .95;
+    transform: translateX(0) rotate(0deg);
+    filter: none;
+    transition: transform .9s cubic-bezier(.2,.8,.2,1), filter .9s ease;
+    will-change: transform, filter;
+    position: relative;
+    margin-top: 2px;
+  }
+  .line.messy { letter-spacing: .2px; }
+  .line.snap { transform: translateX(0) rotate(0deg) !important; filter: blur(0) !important; }
+
+  .cell { display:inline-block; width: var(--colw); overflow:hidden; text-overflow: ellipsis; vertical-align: baseline; }
+  .sep { color:#6c7b92; opacity:.9; }
+  .k { color: #9dc1ff; font-weight: 600; }   /* keys / headings */
+  .v { color: #e7f2ff; }                     /* values */
+  .t { color: #9aa3b2; }                     /* types / hints */
+
+  .grid-hint {
+    position: absolute; right: 10px; top: 8px;
+    font-size: 12px; color: #9aa3b2; letter-spacing: .12em;
+    text-transform: uppercase; opacity: 0; transition: opacity .5s ease;
+    pointer-events: none;
+  }
+  .anim-stage.grid-on .grid-hint { opacity: .9; }
+
+  .replay { position: absolute; right: 10px; bottom: 10px; padding: 8px 12px; font-size: 13px; }
+
+  /* Reduced motion: show clean state, no loop */
+  @media (prefers-reduced-motion: reduce) {
+    .anim-stage::before { opacity: .9 !important; }
+    .line { transform: none !important; filter: none !important; transition: none !important; }
+    .replay { display: none; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<section id="what" class="section-card" style="margin-top:26px;">
+  <div class="banner">
+    <small>Scope</small>
+    <h1>What we do</h1>
+    <p class="muted">From messy exports and PDFs to clean, consistent, query‑ready datasets.</p>
+  </div>
+  <div class="body">
+    <div class="services-grid">
+      <div class="svc-card">
+        <h3>Core capabilities</h3>
+        <ul class="svc-list">
+          <li>Schema unification & normalization</li>
+          <li>Deduplication & entity resolution</li>
+          <li>Classification & tagging (products, customers, vendors)</li>
+          <li>Text & document extraction → structured tables</li>
+          <li>Reference data mapping & code normalization</li>
+          <li>Validation rules & exception reports</li>
+          <li>Exports: Postgres/BigQuery/CSV/Sheets</li>
+        </ul>
+      </div>
+      <div class="svc-card">
+        <h3>Assurance</h3>
+        <p class="muted">LLM where it helps, deterministic checks where it matters.</p>
+        <div class="cta-row">
+          <span class="tag">PII‑aware pipelines</span>
+          <span class="tag">Audit trails</span>
+          <span class="tag">Human‑in‑the‑loop</span>
+          <span class="tag">On‑prem or VPC</span>
+          <span class="tag">Reproducible runs</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="how" class="section-card" style="margin-top:26px;">
+  <div class="banner">
+    <h1>How it works</h1>
+    <p class="muted">A focused pilot proves value quickly, then we scale.</p>
+  </div>
+  <div class="body">
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-head"><div class="step-num">1</div><div class="step-title">Intake</div></div>
+        <p class="step-text">Define goals and success metrics. Review a sample of your data and constraints.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-head"><div class="step-num">2</div><div class="step-title">48‑hour Pilot</div></div>
+        <p class="step-text">Run on a representative subset. Deliver before/after samples and a short report.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-head"><div class="step-num">3</div><div class="step-title">Rules & Prompts</div></div>
+        <p class="step-text">Codify normalization rules, mapping tables, and LLM prompts with guardrails.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-head"><div class="step-num">4</div><div class="step-title">Batch & QA</div></div>
+        <p class="step-text">Run at scale with validation checks, exception queues, and human review where needed.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-head"><div class="step-num">5</div><div class="step-title">Handover</div></div>
+        <p class="step-text">Deliver cleaned datasets, SQL/DB schema, data dictionary, and optional refresh schedule.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section-card" style="margin-top:26px;">
+  <div class="banner">
+    <small>Example</small>
+    <h1>Before → After</h1>
+    <p class="muted">Illustrative sample of a messy row turned into a validated record.</p>
+  </div>
+  <div class="body services-grid">
+    <div class="card">
+      <strong>Before (CSV row)</strong>
+      <pre>name, Phone , e-mail ,city , Country , sku, cat ,price , curr , date
+"Acme Co.","(555) 123-4567","ops@AcMe.COM","la","usa"," A C M - 001 ","Electronics", "$1,299.00", "usd", "18/09/25"</pre>
+    </div>
+    <div class="card">
+      <strong>After (normalized JSON)</strong>
+      <pre>{
+  "customer_name": "ACME Co.",
+  "phone_e164": "+15551234567",
+  "email": "ops@acme.com",
+  "city": "Los Angeles",
+  "country": "US",
+  "sku": "ACM-001",
+  "category": "electronics",
+  "price": 1299.00,
+  "currency": "USD",
+  "created_at": "2025-09-18"
+}</pre>
+    </div>
+  </div>
+</section>
+
+<section class="section-card" style="margin-top:26px;">
+  <div class="banner">
+    <h1>Engagement options</h1>
+    <p class="muted">Start small, then scale with confidence.</p>
+  </div>
+  <div class="body services-grid">
+    <div class="svc-card">
+      <h3>Pilot</h3>
+      <p class="muted">Fixed‑scope run on a sample dataset; includes findings and a rollout plan.</p>
+      <div class="cta-row"><span class="tag">48‑hour turnaround</span><span class="tag">Report + sample outputs</span></div>
+    </div>
+    <div class="svc-card">
+      <h3>One‑time Renovation</h3>
+      <p class="muted">Full pass on historical data; delivery to your DB or files + documentation.</p>
+      <div class="cta-row"><span class="tag">Data dictionary</span><span class="tag">Validation report</span></div>
+    </div>
+    <div class="svc-card">
+      <h3>Monthly Refresh</h3>
+      <p class="muted">Incremental updates with the same rules and checks as the initial run.</p>
+      <div class="cta-row"><span class="tag">SLAs</span><span class="tag">Exception queue</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="pilot" class="section-card" style="margin-top:26px;">
+  <div class="banner">
+    <h1>Ready to renovate your data?</h1>
+    <p class="muted">Send a short note with your goal, data size, and a sample (if possible).</p>
+  </div>
+  <div class="body">
+    <div class="cta-row">
+      <a class="btn" href="mailto:connect@aiforimpact.net?subject=Data Renovation Pilot&body=Goal%3A%0AData%20sources%20%28CSV%2FExcel%2FDB%2FPDF%29%3A%0AApprox.%20rows%2Fpages%3A%0ADeadline%3A%0AConstraints%20%28PII%2C%20on-prem%2Fcloud%29%3A%0A">Request a pilot</a>
+      <a class="btn ghost" href="{{ bp('/about') }}">Learn about the team</a>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block body_end %}
+<script>
+  (function () {
+    const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const stage = document.getElementById('animStage');
+    const replayBtn = document.getElementById('replayBtn');
+
+    /* ---- Spec: 10 columns (uniform width) ---- */
+    const HEADERS = ["customer_name","phone_e164","email","city","country","sku","category","price","currency","created_at"];
+    const COL_CH = 12; // column width in 'ch' (matches CSS --colw)
+    stage.style.setProperty('--colw', COL_CH + 'ch');
+
+    /* Messy inputs (what we show first) */
+    const MESSY = [
+      'name, Phone , e-mail ,city , Country , sku, cat ,price , curr , date',
+      '"Acme Co.","(555) 123-4567","ops@AcMe.COM","la","usa"," A C M - 001 ","Electronics", "$1,299.00", "usd", "18/09/25"',
+      '"Delta  ltd","555.987.6500","sales@delta","nyc","us","DLT-77","HW", "$499","USD","2025.09.19"',
+      '"Hasar","0771 234 5678","info@hasar.org","Erbil","Iraq","HOS-10","N.G.O","IQD 1,750,000","iqd","20-09-2025"',
+      '"","N/A","","Baghdad","IQ","","Retail","—","usd","2025/09/21"'
+    ];
+
+    /* Clean, normalized objects (what we end with) */
+    const ROWS = [
+      {customer_name:"ACME Co.", phone_e164:"+15551234567", email:"ops@acme.com", city:"Los Angeles", country:"US", sku:"ACM-001", category:"electronics", price:"1299.00", currency:"USD", created_at:"2025-09-18"},
+      {customer_name:"Delta Ltd.", phone_e164:"+15559876500", email:"sales@delta.example", city:"New York", country:"US", sku:"DLT-077", category:"hardware", price:"499.00", currency:"USD", created_at:"2025-09-19"},
+      {customer_name:"Hasar", phone_e164:"+9647712345678", email:"info@hasar.org", city:"Erbil", country:"IQ", sku:"HOS-010", category:"ngo", price:"1750000.00", currency:"IQD", created_at:"2025-09-20"},
+      {customer_name:"(missing)", phone_e164:"(missing)", email:"(missing)", city:"Baghdad", country:"IQ", sku:"(n/a)", category:"retail", price:"0.00", currency:"USD", created_at:"2025-09-21"}
+    ];
+
+    /* Utility: escape HTML */
+    function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+    /* Build the padded text and semantic HTML for header + rows */
+    function buildCleanTemplates() {
+      const sepText = ' | ';
+      const sepHTML = '<span class="sep"> | </span>';
+      const pad = (s) => String(s).padEnd(COL_CH, ' ');
+
+      const headerText = HEADERS.map(h => pad(h)).join(sepText);
+      const headerHTML = HEADERS.map(h => `<span class="cell k" style="width:${COL_CH}ch">${esc(h)}</span>`).join(sepHTML);
+
+      const rowsText = ROWS.map(r => HEADERS.map(h => pad(r[h] ?? '(missing)')).join(sepText));
+      const rowsHTML = ROWS.map(r => HEADERS
+        .map(h => `<span class="cell v" style="width:${COL_CH}ch">${esc(r[h] ?? '(missing)')}</span>`)
+        .join(sepHTML)
+      );
+
+      return { headerText, headerHTML, rowsText, rowsHTML };
+    }
+
+    const CLEAN = buildCleanTemplates();
+
+    /* Scramble animation: text → semantic HTML */
+    const SCRAMBLE_CHARS = '!<>-_\\/[]{}—=+*^?#________';
+    function scrambleTo(el, targetText, targetHTML, duration = 900) {
+      const fromText = el.textContent;
+      const maxLen = Math.max(fromText.length, targetText.length);
+      let frame = 0;
+      const total = Math.max(24, Math.floor(duration / 16));
+      const queue = [];
+      for (let i = 0; i < maxLen; i++) {
+        const from = fromText[i] || '';
+        const to = targetText[i] || '';
+        const start = Math.floor(Math.random() * total * 0.6);
+        const end = start + Math.floor(Math.random() * (total * 0.4)) + 4;
+        queue.push({from, to, start, end, char: ''});
+      }
+      return new Promise(resolve => {
+        function update() {
+          let out = '';
+          let complete = 0;
+          for (let i = 0; i < queue.length; i++) {
+            let q = queue[i];
+            if (frame >= q.end) { complete++; out += q.to; }
+            else if (frame >= q.start) {
+              if (!q.char || Math.random() < 0.28) q.char = SCRAMBLE_CHARS[Math.floor(Math.random()*SCRAMBLE_CHARS.length)];
+              out += q.char;
+            } else { out += q.from; }
+          }
+          el.textContent = out;
+          if (complete === queue.length) { el.innerHTML = targetHTML; resolve(); }
+          else { frame++; requestAnimationFrame(update); }
+        }
+        update();
+      });
+    }
+
+    /* Build messy lines in the stage */
+    function jitter(n, a, b) { return (Math.random() * (b - a) + a) * (Math.random() < .5 ? -1 : 1); }
+    function buildMessyLines() {
+      stage.classList.remove('grid-on');
+      stage.querySelectorAll('.line').forEach(n => n.remove());
+      MESSY.forEach((raw, i) => {
+        const div = document.createElement('div');
+        div.className = 'line messy';
+        div.textContent = raw;
+        // Messy jitter: random offsets + slight rotation + blur
+        div.style.transform = `translateX(${jitter(1, 8, 42)}px) rotate(${jitter(1, .5, 3)}deg)`;
+        div.style.filter = 'blur(1.2px) saturate(0.85)';
+        stage.appendChild(div);
+      });
+    }
+
+    /* Loop control */
+    let loopTimer = null;
+    let RUN_ID = 0;
+    const LOOP_GAP_MS = 2600;      // pause after finishing, before restarting
+    const SCRAMBLE_MS = 950;
+    const BETWEEN_LINES_MS = 120;
+
+    async function runOnce(id) {
+      if (prefersReduced) {
+        // Reduced motion: render clean state once
+        buildMessyLines();
+        stage.classList.add('grid-on');
+        const els = stage.querySelectorAll('.line');
+        const allTexts = [CLEAN.headerText, ...CLEAN.rowsText];
+        const allHTML  = [CLEAN.headerHTML, ...CLEAN.rowsHTML];
+        els.forEach((el, i) => { el.classList.add('snap'); el.innerHTML = allHTML[i]; });
+        return;
+      }
+
+      buildMessyLines();
+
+      // 1) Let messy state sit briefly
+      await new Promise(r => setTimeout(r, 420));
+      if (id !== RUN_ID) return;
+
+      // 2) Snap into place + show grid
+      stage.classList.add('grid-on');
+      stage.querySelectorAll('.line').forEach(el => {
+        el.classList.add('snap');
+        el.style.transform = 'translateX(0px) rotate(0deg)';
+        el.style.filter = 'blur(0)';
+      });
+      await new Promise(r => setTimeout(r, 340));
+      if (id !== RUN_ID) return;
+
+      // 3) Scramble → clean (header then rows)
+      const els = Array.from(stage.querySelectorAll('.line'));
+      const texts = [CLEAN.headerText, ...CLEAN.rowsText];
+      const htmls = [CLEAN.headerHTML, ...CLEAN.rowsHTML];
+      for (let i = 0; i < els.length; i++) {
+        await scrambleTo(els[i], texts[i], htmls[i], SCRAMBLE_MS);
+        if (i < els.length - 1) await new Promise(r => setTimeout(r, BETWEEN_LINES_MS));
+        if (id !== RUN_ID) return;
+      }
+    }
+
+    function startLoop() {
+      clearTimeout(loopTimer);
+      RUN_ID++;
+      const myRun = RUN_ID;
+      (async function loop() {
+        await runOnce(myRun);
+        if (prefersReduced || myRun !== RUN_ID) return;
+        loopTimer = setTimeout(loop, LOOP_GAP_MS);
+      })();
+    }
+
+    replayBtn.addEventListener('click', startLoop);
+
+    // Kick off
+    startLoop();
+  })();
+</script>
+{% endblock %}

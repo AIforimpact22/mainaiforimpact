@@ -3,3 +3,4 @@ SQLAlchemy==2.0.32
 psycopg2-binary==2.9.9
 gunicorn==22.0.0
 openai>=1.51.0
+psycopg

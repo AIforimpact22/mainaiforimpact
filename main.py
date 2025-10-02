@@ -251,7 +251,8 @@ app.register_blueprint(price_bp, url_prefix="/price")
 @app.get("/renovation")
 def renovation():
     return render_template("renovation.html")
-
+from contact import contact_bp
+app.register_blueprint(contact_bp, url_prefix="/contact")
 
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask import request, redirect

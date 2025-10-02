@@ -144,6 +144,10 @@
              href="{{ self.course_href() }}"
              {% if _course_area_active %}data-active="true" aria-current="page"{% endif %}
           >Course</a>
+          <a class="nav-pill"
+             href="{{ bp('/bootcamp/') }}"
+             {% if request and request.path.startswith(bp('/bootcamp')) %}data-active="true" aria-current="page"{% endif %}
+          >Bootcamp</a>
           <a class="nav-pill" href="{{ bp('/renovation') }}">Data Renovation</a>
           <a class="nav-pill" href="{{ bp('/about/') }}">About</a>
           <a class="nav-pill" href="{{ bp('/contact/') }}">Contact</a>

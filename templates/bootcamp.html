@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}Bootcamp · {{ BRAND_NAME or 'Ai For Impact' }}{% endblock %}
+
+{% block head %}
+<style>
+  .pricing-hero .inner { min-height: 300px; }
+  .pricing-wrap { display:grid; grid-template-columns: 1.2fr 0.8fr; gap:18px; }
+  @media (max-width: 900px) { .pricing-wrap { grid-template-columns: 1fr; } }
+
+  .price-card { text-align:center; }
+  .price-amount { font-weight: 900; font-size: clamp(38px, 6vw, 58px); line-height: 1; letter-spacing: .2px; }
+  .price-currency { font-size: .6em; opacity: .9; margin-right: 6px; }
+  .price-note { color: var(--muted); margin-top: 8px; font-size: 14px; }
+
+  .incl-list { display:grid; gap:10px; margin-top: 10px; }
+  .incl-item { display:flex; gap:10px; align-items:flex-start; }
+  .incl-bullet { width:22px; height:22px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
+                 background: rgba(92,169,255,.15); border:1px solid #2a3348; font-weight:800; font-size:12px; }
+  .incl-text { margin-top: 2px; }
+
+  .cta-row { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:16px; }
+  .btn.secondary { background:transparent; border:1px solid #2a3348; color:var(--ink); }
+
+  .section-card h2 { margin:0 0 6px 0; font-size: 20px; }
+
+  .hr { height:1px; background:#1a1f2e; margin: 18px 0; }
+
+  .faq { display:grid; gap:8px; }
+  .faq details { background:var(--card); border:1px solid #1a1f2e; border-radius:10px; padding:12px 14px; }
+  .faq summary { cursor:pointer; font-weight:700; }
+  .faq p { margin:8px 0 0; color:var(--muted); }
+
+  .timeline .week-title { font-weight:800; }
+</style>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Course",
+  "name": "{{ bootcamp.title | e }}",
+  "description": "{{ bootcamp.subtitle | e }}",
+  "provider": {
+    "@type": "Organization",
+    "name": "{{ BRAND_NAME or 'Ai For Impact' }}",
+    "url": "{{ bp('/') }}"
+  },
+  "hasCourseInstance": {
+    "@type": "CourseInstance",
+    "courseMode": "Bootcamp cohort",
+    "courseWorkload": "4 days intensive",
+    "maximumAttendeeCapacity": {{ bootcamp.seat_cap }},
+    "url": "{{ bp('/bootcamp') }}"
+  },
+  "offers": {
+    "@type": "Offer",
+    "price": "{{ bootcamp.price_eur }}",
+    "priceCurrency": "EUR",
+    "availability": "https://schema.org/LimitedAvailability",
+    "url": "{{ bp('/bootcamp') }}"
+  }
+}
+</script>
+{% endblock %}
+
+{% block hero %}
+{% set cover_url = (bootcamp.cover_url if bootcamp and bootcamp.cover_url else COURSE_COVER_URL) %}
+<section class="cover-hero pricing-hero" aria-label="Bootcamp cover">
+  <div class="bg" style="background-image:url('{{ cover_url }}');"></div>
+  <div class="overlay"></div>
+  <div class="inner">
+    <div class="badge-row">
+      <span class="badge">Bootcamp</span>
+      <span class="badge">{{ bootcamp.seat_cap }} seats per cohort</span>
+      <span class="badge">€{{ bootcamp.price_eur }} per learner</span>
+    </div>
+    <h1>{{ bootcamp.title }}</h1>
+    <p class="subhead">{{ bootcamp.subtitle }}</p>
+  </div>
+</section>
+{% endblock %}
+
+{% block content %}
+<section class="section-card" style="margin-top:26px;">
+  <div class="pricing-wrap">
+    <div class="card">
+      <h2>What you’ll experience</h2>
+      <p class="muted">Theory, practice, and shipping real work in a tight-knit cohort.</p>
+      <div class="incl-list">
+        {% for feature in bootcamp.features %}
+        <div class="incl-item">
+          <div class="incl-bullet">{{ loop.index }}</div>
+          <div class="incl-text">{{ feature }}</div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="hr"></div>
+
+      <h2>Curriculum modules</h2>
+      <p class="muted">Cutting-edge AI capabilities are woven through every module.</p>
+      <div class="incl-list">
+        {% for module in bootcamp.modules %}
+        <div class="incl-item">
+          <div class="incl-bullet">{{ loop.index }}</div>
+          <div class="incl-text">{{ module }}</div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="hr"></div>
+
+      <h2>Daily flow</h2>
+      <ol class="timeline" style="margin-top:8px;">
+        {% for day in bootcamp.daily_flow %}
+        <li class="timeline-item">
+          <div class="dot"></div>
+          <div class="content">
+            <div class="week-title">{{ day.title }}</div>
+            <div class="muted small">{{ day.copy }}</div>
+          </div>
+        </li>
+        {% endfor %}
+      </ol>
+    </div>
+
+    <aside class="card price-card" aria-label="Bootcamp price summary">
+      <div class="price-amount">
+        <span class="price-currency" aria-hidden="true">{{ PRICE_SYMBOL }}</span>{{ "%d"|format(bootcamp.price_eur) }}
+      </div>
+      <div class="price-note">Per learner · {{ bootcamp.currency }}</div>
+      <div class="price-note">Cohort capped at {{ bootcamp.seat_cap }} seats.</div>
+
+      <div class="cta-row">
+        <a class="btn" href="{{ bp('/register/?course=' ~ bootcamp.code) }}">Register for the Bootcamp</a>
+        <a class="btn secondary" href="mailto:connect@aiforimpact.net?subject=Bootcamp%20question">Ask a question</a>
+      </div>
+
+      <p class="price-note" style="margin-top:12px;">Group bundles available for teams—contact us for a tailored invoice.</p>
+    </aside>
+  </div>
+</section>
+
+<section class="section-card" style="margin-top:18px;">
+  <div class="banner">
+    <h2>Bootcamp FAQs</h2>
+    <p class="muted">Everything you need to know before you reserve a seat.</p>
+  </div>
+  <div class="body faq">
+    {% for item in bootcamp.faqs %}
+    <details>
+      <summary>{{ item.q }}</summary>
+      <p>{{ item.a }}</p>
+    </details>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

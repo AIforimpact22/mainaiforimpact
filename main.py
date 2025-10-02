@@ -245,6 +245,9 @@ def root_submit():
     return _pui_api_submit()
 
 # --- PRICE page (new) ---
+from bootcamp import bootcamp_bp
+app.register_blueprint(bootcamp_bp, url_prefix="/bootcamp")
+
 from price import price_bp
 app.register_blueprint(price_bp, url_prefix="/price")
 

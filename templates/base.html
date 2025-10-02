@@ -129,7 +129,7 @@
           </a>
         </div>
 
-        {# Helper: compute Course href safely everywhere #}
+        {# Helper: compute whether we're in the Course area #}
         {% set _course_area_active =
             request and (
               request.path.startswith(bp('/course/')) or
@@ -137,16 +137,6 @@
               request.path.startswith(bp('/register'))
             )
         %}
-        {% block course_href -%}
-          {% set _bp_course = bp('/course/') %}
-          {% if course is defined and course and course.id is defined and course.slug is defined and course.id and course.slug -%}
-            {{ bp('/course/' ~ course.id ~ '-' ~ course.slug) }}
-          {%- elif request and request.path and request.path.startswith(_bp_course) -%}
-            {{ request.path }}
-          {%- else -%}
-            {{ bp('/') }}#curriculum
-          {%- endif %}
-        {%- endblock %}
 
         <nav class="nav-actions" aria-label="Pages">
           <a class="nav-pill" href="{{ bp('/') }}">Home</a>
@@ -253,35 +243,18 @@
 
   <script>window.BASE_PATH = "{{ BASE_PATH }}";</script>
 
-  <!-- URL mask: hide leading "/course" in the address bar (display only).
-       - Runs AFTER existing scripts so it won't affect nav highlighting.
-       - Does NOT change hrefs, routing, or backend logic.
-       - On hard reload / navigation, briefly restores the real URL so the server receives the canonical route. -->
-  <script>
-    (function () {
-      try {
-        var base = (window.BASE_PATH || '').replace(/\/+$/, ''); // "" or "/app"
-        var real = location.pathname;                            // e.g., "/course/2-advanced-..."
-        var prefix = base + '/course';
-        if (real === prefix || real.indexOf(prefix + '/') === 0) {
-          // Compute pretty path by removing "/course" right after BASE_PATH.
-          var pretty = (base + real.slice(prefix.length)) || '/';
-          var qh = location.search + location.hash;
-
-          // Defer to ensure earlier scripts ran (active nav, etc.)
-          setTimeout(function () {
-            try { history.replaceState({__masked:true, realPath: real}, document.title, pretty + qh); } catch(e){}
-          }, 0);
-
-          // Before leaving or reloading, restore the canonical path so the request hits the right route.
-          var revert = function(){
-            try { history.replaceState({__masked:false}, document.title, real + qh); } catch(e){}
-          };
-          window.addEventListener('beforeunload', revert);
-          window.addEventListener('pagehide', revert);
-        }
-      } catch(e) { /* no-op */ }
-    })();
-  </script>
+  {# --- Hidden, inert definition of the course_href block to avoid visible output --- #}
+  <template hidden>
+    {% block course_href -%}
+      {% set _bp_course = bp('/course/') %}
+      {% if course is defined and course and course.id is defined and course.slug is defined and course.id and course.slug -%}
+        {{ bp('/course/' ~ course.id ~ '-' ~ course.slug) }}
+      {%- elif request and request.path and request.path.startswith(_bp_course) -%}
+        {{ request.path }}
+      {%- else -%}
+        {{ bp('/') }}#curriculum
+      {%- endif %}
+    {%- endblock %}
+  </template>
 </body>
 </html>

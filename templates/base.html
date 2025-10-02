@@ -1,256 +1,134 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{% block title %}Ai For Impact{% endblock %}</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  {% block head %}{% endblock %}
+
   <style>
     :root{
-      --bg:#0b0d12; --card:#111420; --ink:#fafbff; --muted:#9aa3b2; --accent:#5ca9ff;
-      --logo-size: 80px; --nav-h: 68px;
-      --container-w: 1200px;
+      --bg:#0b0d10; --card:#11141a; --ink:#e8ecf2; --muted:#9aa3af; --accent:#7dd3fc;
+      --container-w:1200px; --nav-h:64px; --pill:#171b22; --pill-active:#0f1720; --pill-brd:#202734;
     }
-    html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Apple Color Emoji, Segoe UI Emoji;}
-    a{color:var(--accent);text-decoration:none}
-    .container{max-width:var(--container-w);margin:0 auto;padding: clamp(16px, 2.2vw, 28px);}
-
-    /* ---------- Header ---------- */
-    header.site-nav{border-bottom:1px solid #1a1f2e}
-    .nav-row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:var(--nav-h);padding:6px 0}
-    .brand-wrap{display:flex;align-items:center;gap:12px;min-width:0}
-    .brand-link{display:flex;align-items:center;gap:12px;color:var(--ink);white-space:nowrap;overflow:hidden}
-    .brand-logo{width:var(--logo-size);height:var(--logo-size);object-fit:contain;border-radius:6px;border:1px solid #2a3348;background:#0f1320;padding:2px;box-shadow:0 1px 4px rgba(0,0,0,.25)}
-    .brand-text{font-weight:800;letter-spacing:.2px;font-size:18px;color:var(--ink);overflow:hidden;text-overflow:ellipsis}
-
-    /* Pill nav */
-    .nav-actions{display:flex;align-items:center;gap:10px;overflow-x:auto;white-space:nowrap;scrollbar-width:none;-ms-overflow-style:none;position:relative;z-index:30}
-    .nav-actions::-webkit-scrollbar{display:none}
-    .nav-pill{display:inline-flex;align-items:center;justify-content:center;padding:12px 16px;border-radius:999px;
-      background:rgba(0,0,0,.50);color:#fff;border:1px solid rgba(255,255,255,.22);font-weight:800;font-size:14px;line-height:1;letter-spacing:.15px;
-      box-shadow:0 1px 2px rgba(0,0,0,.12);transition:background .18s ease,border-color .18s ease,transform .08s ease}
-    .nav-pill:hover{background:rgba(0,0,0,.62);border-color:rgba(255,255,255,.34);transform:translateY(-1px)}
-    .nav-pill:active{transform:translateY(0)}
-    .nav-pill:focus-visible{outline:2px solid #fff;outline-offset:2px}
-    .nav-pill[data-active="true"]{background:rgba(0,0,0,.75);border-color:#fff}
-
-    /* ---------- Basics ---------- */
-    .card{background:var(--card);border:1px solid #1a1f2e;border-radius:14px;padding:24px}
-    .muted{color:var(--muted)}
-    .btn{display:inline-block;padding:10px 16px;background:var(--accent);color:#051327;font-weight:700;border-radius:8px}
-    .btn.ghost{background:transparent;border:1px solid #2a3348;color:var(--ink)}
-
-    /* ---------- Cover hero ---------- */
-    .cover-hero{position:relative;border-radius:16px;overflow:hidden;border:1px solid #1a1f2e;margin-top:18px}
-    .cover-hero .bg{position:absolute;inset:0;background-position:center;background-size:cover;filter:brightness(.82) contrast(1.02)}
-    .cover-hero .overlay{position:absolute;inset:0;background:
-      linear-gradient(to bottom, rgba(11,13,18,.62) 0%, rgba(11,13,18,0) 22%),
-      linear-gradient(to bottom, rgba(11,13,18,0) 45%, rgba(11,13,18,.58) 70%, rgba(11,13,18,.92) 100%);
-      pointer-events:none}
-    .cover-hero .inner{position:relative;display:flex;flex-direction:column;justify-content:flex-end;
-      min-height: clamp(420px, 60vh, 640px);
-      padding: clamp(24px, 6vw, 64px);
-      padding-top: calc(var(--nav-h) + clamp(12px, 4vw, 40px));
-      gap: 14px}
-    .cover-hero h1{margin:0;font-size:clamp(26px,4.6vw,48px);line-height:1.08;font-weight:900;letter-spacing:.2px}
-    .subhead{margin:0;font-size:clamp(15px,2.2vw,18px);color:#eaf1ff;opacity:.94}
-
-    /* Overlay header only when requested */
-    body.with-cover header.site-nav{position:absolute;top:0;left:0;right:0;border-bottom:0;background:linear-gradient(to bottom, rgba(11,13,18,.55), rgba(11,13,18,0));z-index:20}
-    body.with-cover .cover-hero{margin-top:0}
-    body.with-cover header.site-nav .brand-text{color:#fff}
-    body.with-cover header.site-nav .brand-logo{border-color:rgba(255,255,255,.28);background:rgba(8,12,22,.6)}
-
-    /* ---------- Sections ---------- */
-    .section-card .banner{margin-bottom:8px}
-    .section-card .body{margin-top:10px}
-
-    .steps-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
-    @media (max-width: 860px){.steps-grid{grid-template-columns:1fr}}
-    .step-card{background:var(--card);border:1px solid #1a1f2e;border-radius:12px;padding:18px}
-    .step-head{display:flex;align-items:center;gap:12px;margin-bottom:6px}
-    .step-num{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:rgba(92,169,255,.15);border:1px solid #2a3348;font-weight:800}
-    .step-title{font-weight:800}
-    .step-text{color:var(--muted);margin:6px 0 0}
-
-    .timeline{list-style:none;margin:0;padding:0}
-    .timeline-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px dashed #1a1f2e}
-    .timeline-item .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);position:relative;top:8px}
-    .week-title{font-weight:700}
-
-    /* Partners */
-    .partners-grid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;align-items:center}
-    @media (max-width: 860px){.partners-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-    .partner-card{background:var(--card);border:1px solid #1a1f2e;border-radius:12px;padding:18px;display:flex;align-items:center;justify-content:center;min-height:84px}
-    .partner-card a{display:inline-flex;align-items:center;justify-content:center;width:100%;height:100%}
-    .partner-card img{max-width:100%;max-height:48px;object-fit:contain;image-rendering:-webkit-optimize-contrast;filter:saturate(.2) brightness(.95);opacity:.95;transition:filter .2s ease,opacity .2s ease,transform .2s ease}
-    .partner-card a:hover img{filter:none;opacity:1;transform:translateY(-1px)}
-    #partners .banner{text-align:center}
-    #partners .banner h1{font-size:clamp(28px,4.6vw,42px);line-height:1.1}
-
-    /* ---------- Course tabs (appear on Course/Price/Register) ---------- */
-    .tabs-wrap{border-bottom:1px solid #1a1f2e;background:rgba(0,0,0,.25)}
-    .tabs-bar{max-width:var(--container-w);margin:0 auto;padding: clamp(8px, 1.8vw, 14px);
-      display:flex;align-items:center;gap:10px;overflow-x:auto;white-space:nowrap;scrollbar-width:none;-ms-overflow-style:none}
-    .tabs-bar::-webkit-scrollbar{display:none}
-    .tab-pill{display:inline-flex;align-items:center;justify-content:center;padding:10px 14px;border-radius:999px;
-      background:rgba(0,0,0,.40);color:#fff;border:1px solid rgba(255,255,255,.18);font-weight:800;font-size:14px;line-height:1;letter-spacing:.15px}
-    .tab-pill:hover{background:rgba(0,0,0,.58);border-color:rgba(255,255,255,.3)}
-    .tab-pill[aria-current="page"]{background:rgba(0,0,0,.75);border-color:#fff}
-
-    /* Footer */
-    footer.site-footer{border-top:1px solid #1a1f2e;margin-top:32px}
-    footer.site-footer .container{padding-top:22px;padding-bottom:22px}
-    .footer-text{text-align:center;color:var(--muted);font-size:14px}
-    .footer-text strong{color:var(--ink)}
-    .footer-text .no-js-email{white-space:nowrap;font-weight:700;color:var(--ink)}
-    .footer-text .js-email{display:none;white-space:nowrap}
-    .footer-text a{color:var(--ink);border-bottom:1px dashed #2a3348}
-
-    .has-js .footer-text .no-js-email{display:none}
-    .has-js .footer-text .js-email{display:inline}
-
-    /* Small-screen adjustments */
-    @media (max-width: 720px){
-      :root{--logo-size:64px;--nav-h:64px}
-      .nav-pill{padding:11px 14px}
-    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial}
+    a{color:inherit;text-decoration:none}
+    .container{max-width:var(--container-w);margin:0 auto;padding:0 16px}
+    .site-header{position:sticky;top:0;z-index:40;background:linear-gradient(to bottom, rgba(11,13,16,.92), rgba(11,13,16,.78) 70%, transparent);backdrop-filter:saturate(1.1) blur(6px)}
+    .site-nav{height:var(--nav-h);display:flex;align-items:center;gap:16px}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.2px}
+    .brand img{width:28px;height:28px;border-radius:6px;object-fit:cover}
+    .nav{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--pill-brd);border-radius:999px;background:var(--pill);color:var(--muted)}
+    .pill strong{color:var(--ink);font-weight:600}
+    .pill[aria-current="page"], .pill.is-active{background:var(--pill-active);color:var(--ink);border-color:#2a3342}
+    .subnav{border-top:1px solid #151b25;background:#0b0f15}
+    .subnav .container{display:flex;gap:8px;flex-wrap:wrap;padding:8px 16px}
+    main{padding:20px 0 60px}
+    .card{background:var(--card);border:1px solid #1a202c;border-radius:14px;box-shadow:0 1px 0 rgba(0,0,0,.2)}
+    footer{border-top:1px solid #151b25;padding:26px 0 40px;color:var(--muted)}
+    .visually-hidden{position:absolute !important;width:1px;height:1px;overflow:hidden;clip:rect(1px,1px,1px,1px)}
+    /* Cover mode */
+    body.with-cover .site-header{position:absolute;inset:0 auto auto 0;background:transparent}
+    body.with-cover main{padding-top:0}
   </style>
-  {% block head %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
-  <header class="site-nav" role="navigation" aria-label="Primary">
-    <div class="container">
-      <div class="nav-row">
-        <div class="brand-wrap">
-          <a class="brand-link" href="{{ bp('/') }}">
-            <img class="brand-logo" src="{{ BRAND_LOGO_URL }}" alt="{{ BRAND_NAME }} logo" width="80" height="80" decoding="async" loading="eager" fetchpriority="high">
-            <span class="brand-text">{{ BRAND_NAME or 'Ai For Impact' }}</span>
-          </a>
+  {% macro u(path) -%}
+    {%- if bp is defined -%}{{ bp(path) }}{%- else -%}{{ path }}{%- endif -%}
+  {%- endmacro %}
+
+  {# Compute a course href for links (keeps existing routing logic) #}
+  {% set _course_href = course_href
+      if (course_href is defined and course_href)
+      else (u('/course/' ~ course.id ~ '-' ~ course.slug)
+            if (course is defined and course and course.id is defined and course.slug is defined)
+            else u('/#curriculum')) %}
+
+  <header class="site-header">
+    <div class="container site-nav">
+      <a class="brand" href="{{ u('/') }}" aria-label="Ai For Impact — Home">
+        {% if BRAND_LOGO_URL %}<img src="{{ BRAND_LOGO_URL }}" alt="Logo">{% endif %}
+        <span>{{ BRAND_NAME or 'Ai For Impact' }}</span>
+      </a>
+
+      <nav class="nav" aria-label="Primary">
+        <a class="pill" href="{{ u('/') }}"><strong>Home</strong></a>
+        <a class="pill" href="{{ _course_href }}" aria-label="Go to Course">Course</a>
+        <a class="pill" href="{{ u('/data') }}">Data Renovation</a>
+        <a class="pill" href="{{ u('/about') }}">About</a>
+        <a class="pill" href="{{ u('/price') }}">Price</a>
+        <a class="pill" href="{{ u('/register') }}">Register</a>
+        {% if LEARNING_PORTAL_URL %}
+          <a class="pill" href="{{ LEARNING_PORTAL_URL }}" target="_blank" rel="noopener">Learn ↗</a>
+        {% endif %}
+      </nav>
+    </div>
+
+    {# Optional course-area secondary tabs (no route text shown) #}
+    {% set _path = request.path if request is defined else '' %}
+    {% if _path.startswith('/course/') or _path.startswith('/price') or _path.startswith('/register') %}
+      <div class="subnav">
+        <div class="container">
+          <a class="pill" href="{{ _course_href }}">Course</a>
+          <a class="pill" href="{{ u('/price') }}">Price</a>
+          <a class="pill" href="{{ u('/register') }}">Register</a>
+          {% if LEARNING_PORTAL_URL %}
+            <a class="pill" href="{{ LEARNING_PORTAL_URL }}" target="_blank" rel="noopener">Learn ↗</a>
+          {% endif %}
         </div>
-
-        {# Helper: compute Course href safely everywhere #}
-        {% set _course_area_active =
-            request and (
-              request.path.startswith(bp('/course/')) or
-              request.path.startswith(bp('/price')) or
-              request.path.startswith(bp('/register'))
-            )
-        %}
-        {% block course_href -%}
-          {% set _bp_course = bp('/course/') %}
-          {% if course is defined and course and course.id is defined and course.slug is defined and course.id and course.slug -%}
-            {{ bp('/course/' ~ course.id ~ '-' ~ course.slug) }}
-          {%- elif request and request.path and request.path.startswith(_bp_course) -%}
-            {{ request.path }}
-          {%- else -%}
-            {{ bp('/') }}#curriculum
-          {%- endif %}
-        {%- endblock %}
-
-        <nav class="nav-actions" aria-label="Pages">
-          <a class="nav-pill" href="{{ bp('/') }}">Home</a>
-          <a class="nav-pill"
-             href="{{ self.course_href() }}"
-             {% if _course_area_active %}data-active="true" aria-current="page"{% endif %}
-          >Course</a>
-          <a class="nav-pill" href="{{ bp('/renovation') }}">Data Renovation</a>
-          <a class="nav-pill" href="{{ bp('/about/') }}">About</a>
-        </nav>
       </div>
-    </div>
+    {% endif %}
   </header>
-
-  {# Secondary tabs appear on Course / Price / Register #}
-  {% if _course_area_active %}
-  <div class="tabs-wrap" role="navigation" aria-label="Course tabs">
-    <div class="tabs-bar">
-      <a class="tab-pill"
-         href="{{ self.course_href() }}"
-         {% if request.path.startswith(bp('/course/')) %}aria-current="page"{% endif %}
-      >Course</a>
-
-      <a class="tab-pill"
-         href="{{ bp('/price/') }}"
-         {% if request.path.startswith(bp('/price')) %}aria-current="page"{% endif %}
-      >Price</a>
-
-      <a class="tab-pill"
-         href="{{ bp('/register/') }}"
-         {% if request.path.startswith(bp('/register')) %}aria-current="page"{% endif %}
-      >Register</a>
-
-      <a class="tab-pill"
-         href="https://learningportal-dot-aiforimpact.lm.r.appspot.com/"
-         target="_blank" rel="noopener"
-      >Learn ↗</a>
-    </div>
-  </div>
-  {% endif %}
 
   {% block hero %}{% endblock %}
 
-  <main class="container">
-    {% block content %}{% endblock %}
+  <main>
+    <div class="container">
+      {% block content %}{% endblock %}
+    </div>
   </main>
 
-  <footer class="site-footer" role="contentinfo" aria-label="Site footer">
+  <footer>
     <div class="container">
-      <p class="footer-text">
-        <strong>Contact us for more information</strong>
-        &nbsp;—&nbsp;
-        <span class="no-js-email">connect&nbsp;[at]&nbsp;aiforimpact&nbsp;[dot]&nbsp;net</span>
-        <span class="js-email" data-b="Y29ubmVjdEBhaWZvcmltcGFjdC5uZXQ=" aria-hidden="true"></span>
-      </p>
+      <div id="email-slot" data-b="Y29ubmVjdEBhaWZvcmltcGFjdC5uZXQ=">
+        <span class="visually-hidden">Email:</span>
+        <span aria-label="Contact email">[enable JS]</span>
+      </div>
+      <div style="margin-top:10px">© {{ (now().year if now is defined) or 2025 }} Ai For Impact</div>
     </div>
   </footer>
 
-  {% block body_end %}{% endblock %}
-
-  <!-- Progressive email reveal + active pill highlighting -->
   <script>
-    (function () {
-      try {
-        document.documentElement.classList.add('has-js');
-
-        // Reveal email safely
-        var target = document.querySelector('.js-email');
-        if (target) {
-          var addr = atob(target.getAttribute('data-b')); // "connect@aiforimpact.net"
-          var a = document.createElement('a');
-          a.href = 'mailto:' + addr;
-          a.rel = 'nofollow';
-          a.textContent = addr;
-          target.replaceWith(a);
-        }
-
-        // Active nav pill: compare current path to link href (BASE_PATH-aware)
-        var base = "{{ BASE_PATH }}".replace(/\/+$/, '');
-        function cleanPath(p){
-          var out = (p || '').replace(/[#?].*$/, '').replace(/\/+$/, '');
-          if (base && out.indexOf(base) === 0) out = out.slice(base.length) || '/';
-          if (!out) out = '/';
-          return out;
-        }
-        var here = cleanPath(location.pathname);
-
-        var pills = document.querySelectorAll('.nav-actions .nav-pill');
-        pills.forEach(function (el) {
-          try {
-            var href = cleanPath(el.getAttribute('href') || '');
-            if (!href || /^https?:\/\//i.test(href)) return;
-            var active = (href === '/') ? (here === '/') : here.startsWith(href);
-            // Special rule: treat /price and /register as part of Course
-            if (el.textContent.trim() === 'Course' && (here.startsWith(cleanPath("{{ bp('/price') }}")) || here.startsWith(cleanPath("{{ bp('/register') }}")))) {
-              active = true;
-            }
-            if (active) { el.dataset.active = "true"; el.setAttribute('aria-current','page'); }
-          } catch(e){}
-        });
-      } catch (e) { /* no-op */ }
+    (function(){
+      document.documentElement.classList.add('has-js');
+      // reveal email
+      var slot = document.getElementById('email-slot');
+      if(slot && slot.dataset && slot.dataset.b){
+        try{
+          var s = atob(slot.dataset.b);
+          slot.innerHTML = '<a href="mailto:'+s+'">'+s+'</a>';
+        }catch(e){}
+      }
+      // base path for active highlighting (no route text shown)
+      window.BASE_PATH = "{{ (BASE_PATH or '') if BASE_PATH is defined else '' }}";
+      var base = window.BASE_PATH || '';
+      function normalize(p){ return (p||'').replace(base, '') || '/'; }
+      var here = normalize(location.pathname);
+      document.querySelectorAll('.nav .pill, .subnav .pill').forEach(function(a){
+        var href = a.getAttribute('href') || '';
+        try{
+          var u = new URL(href, location.origin);
+          var p = normalize(u.pathname);
+          if(p === here){ a.classList.add('is-active'); a.setAttribute('aria-current','page'); }
+        }catch(e){}
+      });
     })();
   </script>
 
-  <script>window.BASE_PATH = "{{ BASE_PATH }}";</script>
+  {% block body_end %}{% endblock %}
 </body>
 </html>

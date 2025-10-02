@@ -1,13 +1,27 @@
 """Subscription management endpoints."""
 
 import logging
+import os
 import secrets
+import smtplib
+import ssl
 from datetime import datetime, timezone
+from email.message import EmailMessage
 from typing import Any, Dict, Optional
 
-from flask import Blueprint, current_app, jsonify, redirect, request
+from flask import Blueprint, current_app, jsonify, redirect, render_template, request
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
+
+EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "smtp").strip().lower()
+SMTP_HOST = os.getenv("SMTP_HOST", "smtp.zoho.com")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USERNAME = os.getenv("SMTP_USERNAME", "")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
+SMTP_FROM = os.getenv("SMTP_FROM", "Ai For Impact <connect@aiforimpact.net>")
+BRAND_NAME = os.getenv("BRAND_NAME", "Ai For Impact")
+BRAND_LOGO_URL = os.getenv("BRAND_LOGO_URL", "https://i.imgur.com/STm5VaG.png")
+PRIMARY_ACCENT = os.getenv("BRAND_ACCENT", "#5ca9ff")
 
 log = logging.getLogger("aiforimpact-subscriptions")
 
@@ -198,10 +212,14 @@ def create_subscription():
         """
     )
 
+    existing_status: Optional[str] = None
     try:
         with engine.begin() as conn:
             existing = conn.execute(select_sql, {"email": email}).mappings().first()
             if existing:
+                raw_status = existing.get("status") if isinstance(existing, dict) else existing["status"]
+                if raw_status:
+                    existing_status = str(raw_status).strip().lower()
                 params_with_id = dict(params)
                 params_with_id["id"] = existing["id"]
                 result = conn.execute(update_sql, params_with_id)
@@ -218,8 +236,111 @@ def create_subscription():
         return redirect(request.referrer or request.url or "/")
 
     payload = {"ok": True, "id": sub_id, "created": created}
+
+    should_send_welcome = False
+    if not is_unsubscribed:
+        if created:
+            should_send_welcome = True
+        elif existing_status not in {"confirmed"} and normalized_status == "confirmed":
+            should_send_welcome = True
+
+    if should_send_welcome:
+        try:
+            _send_subscription_welcome_email(
+                recipient=email,
+                plan_code=plan_code,
+                locale=locale,
+                request_host=request.url_root,
+            )
+        except Exception:
+            log.exception("Welcome email send failed (non-fatal)")
     if _want_json():
         return jsonify(payload)
 
     target = request.referrer or request.url_root or "/"
     return redirect(target)
+
+
+def _send_subscription_welcome_email(
+    recipient: str,
+    plan_code: Optional[str],
+    locale: Optional[str],
+    request_host: Optional[str],
+) -> bool:
+    """Send a branded welcome email to the new subscriber."""
+
+    if EMAIL_BACKEND != "smtp":
+        log.warning(
+            "EMAIL_BACKEND=%s (expected 'smtp'); skipping welcome email", EMAIL_BACKEND
+        )
+        return False
+    if not (SMTP_USERNAME and SMTP_PASSWORD and recipient):
+        log.warning("SMTP welcome email skipped: incomplete configuration or recipient")
+        return False
+
+    plan_display = _plan_display_name(plan_code)
+    if BRAND_NAME:
+        subject = f"Thanks for subscribing to {BRAND_NAME}"
+    else:
+        subject = "Thanks for subscribing"
+
+    site_url = (request_host or "").strip()
+    if site_url.endswith("/"):
+        site_url = site_url[:-1]
+
+    context = dict(
+        brand_name=BRAND_NAME or "Ai For Impact",
+        brand_logo_url=BRAND_LOGO_URL,
+        accent_color=PRIMARY_ACCENT,
+        plan_display=plan_display,
+        site_url=site_url or "https://aiforimpact.net",
+        recipient_email=recipient,
+        locale=locale,
+    )
+
+    html_body = render_template("email/subscription_welcome.html", **context)
+    text_body = render_template("email/subscription_welcome.txt", **context)
+
+    message = EmailMessage()
+    message["Subject"] = subject
+    message["From"] = SMTP_FROM or SMTP_USERNAME
+    message["To"] = recipient
+    message.set_content(text_body)
+    message.add_alternative(html_body, subtype="html")
+
+    try:
+        if SMTP_PORT == 465:
+            with smtplib.SMTP_SSL(
+                SMTP_HOST, SMTP_PORT, context=ssl.create_default_context()
+            ) as smtp:
+                smtp.login(SMTP_USERNAME, SMTP_PASSWORD)
+                smtp.send_message(message)
+        else:
+            with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as smtp:
+                smtp.starttls(context=ssl.create_default_context())
+                smtp.login(SMTP_USERNAME, SMTP_PASSWORD)
+                smtp.send_message(message)
+        log.info("Sent subscription welcome email to %s", recipient)
+        return True
+    except Exception:
+        log.exception("Failed to send subscription welcome email to %s", recipient)
+        return False
+
+
+def _plan_display_name(plan_code: Optional[str]) -> str:
+    """Return a human-friendly plan name for the welcome email."""
+
+    if not plan_code:
+        return "our updates"
+
+    normalized = str(plan_code).strip().lower()
+    friendly_map = {
+        "newsletter": "our newsletter",
+        "insights": "the Insights updates",
+        "bootcamp": "the Bootcamp interest list",
+    }
+
+    if normalized in friendly_map:
+        return friendly_map[normalized]
+
+    return f"the {plan_code} plan" if plan_code else "our updates"

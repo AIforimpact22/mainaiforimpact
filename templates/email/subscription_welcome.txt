@@ -1,0 +1,11 @@
+Hi there,
+
+Thank you for subscribing to {{ plan_display }} at {{ brand_name }}.
+
+Every week we share practical guidance on applying AI for humanitarian and social impact—frameworks, playbooks, and project notes from the Ai For Impact studio. Keep an eye on your inbox for resources tailored to operators like you.
+
+If there's anything specific you want to explore, just reply to this email. We read every message and are happy to help.
+
+Warmly,
+The {{ brand_name }} team
+{{ site_url }}

@@ -84,9 +84,52 @@ def create_subscription():
 
     now = datetime.now(timezone.utc)
     token = secrets.token_urlsafe(18)
-    status = "subscribed"
+
+    def _normalize_status(raw_status: Optional[str]) -> str:
+        """Return a database-safe subscription status value."""
+
+        allowed_config = current_app.config.get("SUBSCRIPTION_ALLOWED_STATUSES")
+        if allowed_config:
+            # Preserve declaration order while ensuring uniqueness.
+            seen = set()
+            allowed_order = []
+            for status_value in allowed_config:
+                lowered = status_value.lower()
+                if lowered not in seen:
+                    seen.add(lowered)
+                    allowed_order.append(status_value)
+        else:
+            allowed_order = ["pending", "confirmed", "unsubscribed"]
+
+        if not allowed_order:
+            allowed_order = ["confirmed"]
+
+        lookup = {value.lower(): value for value in allowed_order}
+
+        default_config = current_app.config.get("SUBSCRIPTION_DEFAULT_STATUS")
+        if default_config:
+            default_status = lookup.get(default_config.lower(), default_config)
+        else:
+            default_status = lookup.get("confirmed") or allowed_order[0]
+
+        if raw_status:
+            key = str(raw_status).strip().lower()
+            if key in lookup:
+                return lookup[key]
+            if key in {"subscribe", "subscribed"} and "confirmed" in lookup:
+                return lookup["confirmed"]
+
+        return default_status
+
+    status = _normalize_status(payload.get("status") or payload.get("subscription_status"))
+    normalized_status = status.lower()
+    is_confirmed = normalized_status == "confirmed"
+    is_unsubscribed = normalized_status == "unsubscribed"
+    confirmed_at = now if is_confirmed else None
+    unsubscribed_at = now if is_unsubscribed else None
+    reason_unsub = payload.get("reason_unsub") if is_unsubscribed else None
+    double_opt_in_token = None if is_confirmed else token
     source = payload.get("source") or "web_form"
-    reason_unsub = None
 
     ip_address = _best_client_ip()
     user_agent = request.headers.get("User-Agent")
@@ -96,9 +139,9 @@ def create_subscription():
         plan_code=plan_code or None,
         status=status,
         source=source,
-        double_opt_in_token=token,
-        confirmed_at=now,
-        unsubscribed_at=None,
+        double_opt_in_token=double_opt_in_token,
+        confirmed_at=confirmed_at,
+        unsubscribed_at=unsubscribed_at,
         reason_unsub=reason_unsub,
         consent_marketing=consent_marketing,
         locale=locale,

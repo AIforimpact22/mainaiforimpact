@@ -261,14 +261,8 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
 @app.before_request
 def force_www():
-    host = request.headers.get("Host", "").lower()
-    if host == "aiforimpact.net":
-        # preserve path & query
-        return redirect(
-            "https://www.aiforimpact.net" + request.full_path.rstrip("?"),
-            code=301
-        )
-
+    if request.host.lower() == "aiforimpact.net":
+        return redirect(request.url.replace("://aiforimpact.net", "://www.aiforimpact.net", 1), 301)
 
 
 # ---------------------------------------------------------------

@@ -146,6 +146,7 @@
           >Course</a>
           <a class="nav-pill" href="{{ bp('/renovation') }}">Data Renovation</a>
           <a class="nav-pill" href="{{ bp('/about/') }}">About</a>
+          <a class="nav-pill" href="{{ bp('/contact/') }}">Contact</a>
         </nav>
       </div>
     </div>
@@ -181,7 +182,39 @@
   {% block hero %}{% endblock %}
 
   <main class="container">
-    {% block content %}{% endblock %}
+    {% block content %}
+      {# Inline Contact page (no child template needed) #}
+      {% if request and request.path.startswith(bp('/contact')) %}
+        <section class="section-card" style="margin-top:26px;" aria-labelledby="contact-title">
+          <div class="banner">
+            <h1 id="contact-title">Contact</h1>
+          </div>
+          <div class="body">
+            <div class="card">
+              <p style="margin:0 0 4px"><strong>Email</strong></p>
+              <p style="margin:0">
+                <a href="mailto:connect@aiforimpact.net">connect@aiforimpact.net</a>
+              </p>
+            </div>
+
+            <div class="card" style="margin-top:16px">
+              <p style="margin:0 0 8px"><strong>Registered entity</strong></p>
+              <p class="muted" style="margin:0 0 14px">The course is operated under the following company.</p>
+              <p style="margin:0 0 8px"><strong>Climate Resilience Fundraising Platform B.V.</strong></p>
+              <address>
+                Fluwelen Burgwal 58<br>
+                The Hague<br>
+                The Netherlands<br>
+                2511CJ
+              </address>
+              <p style="margin-top:10px">
+                <a href="tel:+36707895714">+36707895714</a>
+              </p>
+            </div>
+          </div>
+        </section>
+      {% endif %}
+    {% endblock %}
   </main>
 
   <footer class="site-footer" role="contentinfo" aria-label="Site footer">

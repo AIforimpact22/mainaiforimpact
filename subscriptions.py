@@ -14,11 +14,31 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
 EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "smtp").strip().lower()
-SMTP_HOST = os.getenv("SMTP_HOST", "smtp.zoho.com")
-SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
-SMTP_USERNAME = os.getenv("SMTP_USERNAME", "")
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
-SMTP_FROM = os.getenv("SMTP_FROM", "Ai For Impact <connect@aiforimpact.net>")
+
+# Reuse the SMTP configuration that powers registration email notifications so the
+# subscription welcome email is delivered with the same credentials. The
+# environment can override these defaults at runtime, which is how production
+# should inject secrets securely.
+try:
+    from registration import (
+        SMTP_HOST as REG_SMTP_HOST,
+        SMTP_PORT as REG_SMTP_PORT,
+        SMTP_USERNAME as REG_SMTP_USERNAME,
+        SMTP_PASSWORD as REG_SMTP_PASSWORD,
+        SMTP_FROM as REG_SMTP_FROM,
+    )
+except Exception:  # pragma: no cover - defensive import guard
+    REG_SMTP_HOST = None
+    REG_SMTP_PORT = None
+    REG_SMTP_USERNAME = None
+    REG_SMTP_PASSWORD = None
+    REG_SMTP_FROM = None
+
+SMTP_HOST = os.getenv("SMTP_HOST") or REG_SMTP_HOST or "smtp.zoho.com"
+SMTP_PORT = int(os.getenv("SMTP_PORT") or REG_SMTP_PORT or 587)
+SMTP_USERNAME = os.getenv("SMTP_USERNAME") or REG_SMTP_USERNAME or ""
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD") or REG_SMTP_PASSWORD or ""
+SMTP_FROM = os.getenv("SMTP_FROM") or REG_SMTP_FROM or "Ai For Impact <connect@aiforimpact.net>"
 BRAND_NAME = os.getenv("BRAND_NAME", "Ai For Impact")
 BRAND_LOGO_URL = os.getenv("BRAND_LOGO_URL", "https://i.imgur.com/STm5VaG.png")
 PRIMARY_ACCENT = os.getenv("BRAND_ACCENT", "#5ca9ff")

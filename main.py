@@ -73,6 +73,7 @@ def _sqlalchemy_url():
     return "sqlite:///local.db"
 
 ENGINE = create_engine(_sqlalchemy_url(), pool_pre_ping=True, future=True)
+app.config["DB_ENGINE"] = ENGINE
 
 # -------------- Template helpers --------------
 @app.context_processor
@@ -250,6 +251,9 @@ app.register_blueprint(bootcamp_bp, url_prefix="/bootcamp")
 
 from price import price_bp
 app.register_blueprint(price_bp, url_prefix="/price")
+
+from subscriptions import subscription_bp
+app.register_blueprint(subscription_bp)
 
 @app.get("/renovation")
 def renovation():

@@ -12,9 +12,11 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List
 
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
-from sqlalchemy import create_engine, MetaData, Table, inspect
+from sqlalchemy import create_engine, MetaData, Table, inspect, select, func
 from sqlalchemy.engine import URL
 from sqlalchemy.sql import text
+
+from course_catalog import BOOTCAMP_COURSE, OPEN_ENROLLMENT_CODES
 
 register_bp = Blueprint("register", __name__, template_folder="templates")
 
@@ -31,6 +33,9 @@ SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "rgbvcjfocqpmjipy")
 SMTP_FROM = os.getenv("SMTP_FROM", "AiForImpact <connect@aiforimpact.net>")
 
 logger = logging.getLogger(__name__)
+
+class SeatCapReached(Exception):
+    """Raised when a course has reached its seat capacity."""
 
 def _compose_reg_email_payload(p: Dict[str, Any]) -> tuple[str, str, str | None]:
     created_at = p.get("created_at")
@@ -125,11 +130,19 @@ PROMO_PRICE_EUR = int(os.getenv("PROMO_PRICE_EUR", "439"))
 PROMO_CODE_FREE = os.getenv("PROMO_CODE_FREE", "IMPACT-100")
 PROMO_PRICE_FREE_EUR = int(os.getenv("PROMO_PRICE_FREE_EUR", "0"))
 
-COURSES = [{
-    "code": "AAI-RTD",
-    "title": "Advanced AI Utilization and Real-Time Deployment",
-    "price_eur": BASE_PRICE_EUR
-}]
+COURSES = [
+    {
+        "code": "AAI-RTD",
+        "title": "Advanced AI Utilization and Real-Time Deployment",
+        "price_eur": BASE_PRICE_EUR,
+        "seat_cap": None,
+        "note": "1-on-1 format · €%d" % BASE_PRICE_EUR,
+        "open_enrollment": False,
+    },
+    BOOTCAMP_COURSE,
+]
+
+OPEN_ENROLLMENT_CODES = set(OPEN_ENROLLMENT_CODES)
 
 JOB_ROLES = [
     "Student","Software Engineer / Developer","Data Analyst / Data Scientist","Product Manager",
@@ -141,6 +154,31 @@ REFERRAL_CHOICES = [
     "Search","YouTube","TikTok/Instagram","X/Twitter","LinkedIn",
     "Friend/Colleague","Event/Conference","Partner","Newsletter","Other"
 ]
+
+# ───────────────────────────────────────────────────────────────
+# Access helpers
+# ───────────────────────────────────────────────────────────────
+def _open_access_codes() -> set[str]:
+    return set(session.get("open_access_codes", []))
+
+
+def _grant_open_access(course_code: str | None) -> bool:
+    if not course_code:
+        return False
+    if course_code in OPEN_ENROLLMENT_CODES:
+        codes = _open_access_codes()
+        if course_code not in codes:
+            codes.add(course_code)
+            session["open_access_codes"] = list(codes)
+        return True
+    return False
+
+
+def _has_open_access(course_code: str | None) -> bool:
+    if not course_code:
+        return False
+    return course_code in OPEN_ENROLLMENT_CODES and course_code in _open_access_codes()
+
 
 # ───────────────────────────────────────────────────────────────
 # DB engine (Core) — DSN-first with HARD-CODED fallback
@@ -267,20 +305,31 @@ def _clip(x, n=500):
     x = _s(x)
     return x[:n] if x and len(x) > n else x
 
-def _compute_price(promo_input):
+def _course_by_code(code: str | None) -> Dict[str, Any] | None:
+    if not code:
+        return None
+    for c in COURSES:
+        if c.get("code") == code:
+            return c
+    return None
+
+def _compute_price(promo_input, base_price=None):
+    base = base_price if base_price is not None else BASE_PRICE_EUR
     if promo_input:
         code = promo_input.strip().lower()
-        if PROMO_CODE and code == PROMO_CODE.lower():
+        if PROMO_CODE and code == PROMO_CODE.lower() and PROMO_PRICE_EUR < base:
             return PROMO_PRICE_EUR, PROMO_CODE, (PROMO_PRICE_EUR == 0)
-        if PROMO_CODE_FREE and code == PROMO_CODE_FREE.lower():
+        if PROMO_CODE_FREE and code == PROMO_CODE_FREE.lower() and PROMO_PRICE_FREE_EUR <= base:
             return PROMO_PRICE_FREE_EUR, PROMO_CODE_FREE, True
-    return BASE_PRICE_EUR, None, False
+    return base, None, False
 
-def _require_signed_in():
-    if not session.get("signed_in"):
-        flash("Please sign in with the course access code.", "error")
-        return False
-    return True
+def _require_signed_in(course_code: str | None = None) -> bool:
+    if session.get("signed_in"):
+        return True
+    if _has_open_access(course_code):
+        return True
+    flash("Please sign in with the course access code.", "error")
+    return False
 
 # ───────────────────────────────────────────────────────────────
 # Views
@@ -288,34 +337,51 @@ def _require_signed_in():
 @register_bp.get("/")
 def page():
     submitted = request.args.get("submitted") == "1"
+    selected_course_code = _s(request.args.get("course"))
+    selected_course = _course_by_code(selected_course_code)
+    _grant_open_access(selected_course_code)
+    allow_direct_access = _has_open_access(selected_course_code)
+    base_price = selected_course["price_eur"] if selected_course else 0
     return render_template(
         "register.html",
         brand_name=BRAND_NAME,
         brand_logo_url=BRAND_LOGO_URL,
         powered_by=POWERED_BY,
         course_name=COURSE_NAME,
-        signed_in=session.get("signed_in", False),
+        signed_in=session.get("signed_in", False) or allow_direct_access,
+        signed_in_via_code=session.get("signed_in", False),
         user_email=session.get("user_email"),
         errors=[],
         submitted=submitted,
         referrals=REFERRAL_CHOICES,
         courses=COURSES,
         job_roles=JOB_ROLES,
-        base_price_eur=BASE_PRICE_EUR,
+        base_price_eur=base_price,
         promo_price_eur=PROMO_PRICE_EUR,
         promo_price_free_eur=PROMO_PRICE_FREE_EUR,
+        selected_course_code=selected_course_code,
+        selected_course_note=selected_course.get("note") if selected_course else None,
+        can_skip_access_code=allow_direct_access,
     )
 
 @register_bp.post("/signin")
 def signin():
     code = (request.form.get("access_code") or "").strip()
     email = _s(request.form.get("user_email"))
+    course_param = _s(request.form.get("course"))
+    if course_param and course_param in OPEN_ENROLLMENT_CODES:
+        _grant_open_access(course_param)
+        session["user_email"] = email or session.get("user_email")
+        flash("You're set—complete your Bootcamp registration below.", "success")
+        return redirect(url_for("register.page", course=course_param))
     if code == COURSE_ACCESS_CODE:
         session["signed_in"] = True
         session["user_email"] = email
         flash("Signed in. Please complete your registration.", "success")
     else:
         flash("Invalid course access code.", "error")
+    if course_param:
+        return redirect(url_for("register.page", course=course_param))
     return redirect(url_for("register.page"))
 
 @register_bp.get("/logout")
@@ -327,15 +393,26 @@ def logout():
 @register_bp.route("/price-preview", methods=["GET", "POST"])
 def price_preview():
     code = request.values.get("code") or (request.json.get("code") if request.is_json else None)
-    price, applied, is_free = _compute_price(code)
-    return jsonify({"price_eur": int(price), "promo_applied": bool(applied), "is_free": bool(is_free)}), 200
+    course_code = _s(request.values.get("course") if not request.is_json else request.json.get("course"))
+    course = _course_by_code(course_code)
+    base_price = course["price_eur"] if course else BASE_PRICE_EUR
+    price, applied, is_free = _compute_price(code, base_price)
+    return jsonify({
+        "price_eur": int(price),
+        "promo_applied": bool(applied),
+        "is_free": bool(is_free),
+        "base_price_eur": int(base_price),
+    }), 200
 
 @register_bp.post("/submit")
 def submit():
-    if not _require_signed_in():
+    course_session_code = _s(request.form.get("course_session_code"))
+    if not _require_signed_in(course_session_code):
+        if course_session_code:
+            return redirect(url_for("register.page", course=course_session_code))
         return redirect(url_for("register.page"))
 
-    errors = []
+    errors: List[str] = []
 
     user_email = _s(request.form.get("user_email")) or session.get("user_email")
     if not user_email:
@@ -359,12 +436,30 @@ def submit():
     gender = normalize_gender(_s(request.form.get("gender")))
     gender_other_note = _clip(request.form.get("gender_other_note")) if gender == "other" else None
 
-    course_session_code = _s(request.form.get("course_session_code"))
-    if course_session_code not in {c["code"] for c in COURSES}:
+    selected_course = _course_by_code(course_session_code)
+    if not selected_course:
         errors.append("Please select a valid course.")
+    else:
+        seat_cap = selected_course.get("seat_cap")
+        if seat_cap:
+            try:
+                with engine.connect() as conn:
+                    count_stmt = select(func.count()).select_from(registrations).where(
+                        registrations.c.course_session_code == course_session_code
+                    )
+                    existing = conn.execute(count_stmt).scalar_one()
+            except Exception:
+                logger.exception("Seat availability check failed for %s", course_session_code)
+                errors.append("We couldn’t verify availability for that course. Please try again or contact us.")
+            else:
+                if existing >= seat_cap:
+                    errors.append("This cohort is full. Please choose a different session or contact us.")
 
     promo_input = _s(request.form.get("promo_code"))
-    final_price_eur, applied_promo, is_free = _compute_price(promo_input)
+    base_price_for_course = selected_course["price_eur"] if selected_course else BASE_PRICE_EUR
+    base_price_for_summary = selected_course["price_eur"] if selected_course else 0
+    final_price_eur, applied_promo, is_free = _compute_price(promo_input, base_price_for_course)
+    final_price_eur = int(final_price_eur)
 
     data_processing_ok = _bool(request.form.get("data_processing_ok"))
     if not data_processing_ok:
@@ -380,16 +475,20 @@ def submit():
             brand_logo_url=BRAND_LOGO_URL,
             powered_by=POWERED_BY,
             course_name=COURSE_NAME,
-            signed_in=True,
+            signed_in=session.get("signed_in", False) or _has_open_access(course_session_code),
+            signed_in_via_code=session.get("signed_in", False),
             user_email=session.get("user_email"),
             errors=errors,
             submitted=False,
             referrals=REFERRAL_CHOICES,
             courses=COURSES,
             job_roles=JOB_ROLES,
-            base_price_eur=BASE_PRICE_EUR,
+            base_price_eur=base_price_for_summary,
             promo_price_eur=PROMO_PRICE_EUR,
             promo_price_free_eur=PROMO_PRICE_FREE_EUR,
+            selected_course_code=course_session_code,
+            selected_course_note=selected_course.get("note") if selected_course else None,
+            can_skip_access_code=_has_open_access(course_session_code),
             form_data=request.form,
         ), 400
 
@@ -461,6 +560,14 @@ def submit():
 
     try:
         with engine.begin() as conn:
+            if selected_course and selected_course.get("seat_cap"):
+                cap = selected_course["seat_cap"]
+                count_stmt = select(func.count()).select_from(registrations).where(
+                    registrations.c.course_session_code == course_session_code
+                )
+                current = conn.execute(count_stmt).scalar_one()
+                if current >= cap:
+                    raise SeatCapReached()
             conn.execute(registrations.insert().values(**data))
         try:
             _send_registration_email(data)
@@ -469,6 +576,9 @@ def submit():
 
         flash("Thank you! Your registration has been recorded.", "success")
         return redirect(url_for("register.page", submitted=1))
+    except SeatCapReached:
+        flash("This cohort is now full. Please choose another session or contact us.", "error")
+        return redirect(url_for("register.page", course=course_session_code))
     except Exception:
         logger.exception("Database insert failed")
         flash("Sorry, something went wrong saving your registration.", "error")

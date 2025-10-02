@@ -101,9 +101,9 @@
     /* Footer */
     footer.site-footer{border-top:1px solid #1a1f2e;margin-top:32px}
     footer.site-footer .container{padding-top:22px;padding-bottom:22px}
-    .footer-layout{display:flex;flex-wrap:wrap;gap:22px;align-items:flex-start;justify-content:space-between}
-    .footer-copy{flex:1 1 260px;min-width:240px}
-    .footer-text{color:var(--muted);font-size:14px;line-height:1.6;margin:0}
+    .footer-layout{display:flex;flex-direction:column;gap:22px;align-items:center;text-align:center}
+    .footer-copy{flex:none;min-width:0;max-width:620px;width:100%}
+    .footer-text{color:var(--muted);font-size:14px;line-height:1.6;margin:0 auto}
     .footer-text strong{color:var(--ink)}
     .footer-text .no-js-email{white-space:nowrap;font-weight:700;color:var(--ink)}
     .footer-text .js-email{display:none;white-space:nowrap}
@@ -112,7 +112,7 @@
     .has-js .footer-text .no-js-email{display:none}
     .has-js .footer-text .js-email{display:inline}
 
-    .subscribe-card{flex:1 1 320px;min-width:280px;background:var(--card);border:1px solid #1a1f2e;border-radius:14px;padding:18px;box-shadow:0 12px 40px rgba(5,10,20,.25)}
+    .subscribe-card{flex:none;width:100%;max-width:480px;min-width:0;background:var(--card);border:1px solid #1a1f2e;border-radius:14px;padding:18px;box-shadow:0 12px 40px rgba(5,10,20,.25)}
     .subscribe-card h2{margin:0 0 10px;font-size:18px}
     .subscribe-card p{margin:0 0 16px;color:var(--muted);font-size:14px}
     .subscribe-form{display:flex;flex-direction:column;gap:12px}

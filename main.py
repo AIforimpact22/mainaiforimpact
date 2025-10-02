@@ -252,6 +252,25 @@ app.register_blueprint(price_bp, url_prefix="/price")
 def renovation():
     return render_template("renovation.html")
 
+
+from werkzeug.middleware.proxy_fix import ProxyFix
+from flask import request, redirect
+
+# Trust Render’s proxy so scheme/host are correct
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+
+@app.before_request
+def force_www():
+    host = request.headers.get("Host", "").lower()
+    if host == "aiforimpact.net":
+        # preserve path & query
+        return redirect(
+            "https://www.aiforimpact.net" + request.full_path.rstrip("?"),
+            code=301
+        )
+
+
+
 # ---------------------------------------------------------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", 8080)), debug=False)

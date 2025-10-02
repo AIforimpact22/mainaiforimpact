@@ -12,6 +12,13 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List
 
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
+
+from course_settings import (
+    BOOTCAMP_CODE,
+    BOOTCAMP_PRICE_EUR,
+    BOOTCAMP_PUBLIC_REGISTRATION,
+    BOOTCAMP_SEAT_CAP,
+)
 from sqlalchemy import create_engine, MetaData, Table, inspect, select, func
 from sqlalchemy.engine import URL
 from sqlalchemy.sql import text
@@ -123,8 +130,6 @@ POWERED_BY = os.getenv("POWERED_BY", "Climate Fundraising Platform B.V.")
 COURSE_ACCESS_CODE = os.getenv("COURSE_ACCESS_CODE", "letmein")
 
 BASE_PRICE_EUR = int(os.getenv("BASE_PRICE_EUR", "900"))
-BOOTCAMP_PRICE_EUR = int(os.getenv("BOOTCAMP_PRICE_EUR", "350"))
-BOOTCAMP_SEAT_CAP = int(os.getenv("BOOTCAMP_SEAT_CAP", "20"))
 PROMO_CODE = os.getenv("PROMO_CODE", "IMPACT-439")
 PROMO_PRICE_EUR = int(os.getenv("PROMO_PRICE_EUR", "439"))
 PROMO_CODE_FREE = os.getenv("PROMO_CODE_FREE", "IMPACT-100")
@@ -137,13 +142,15 @@ COURSES = [
         "price_eur": BASE_PRICE_EUR,
         "seat_cap": None,
         "note": "1-on-1 format · €%d" % BASE_PRICE_EUR,
+        "requires_access_code": True,
     },
     {
-        "code": "BOOT-AI-2024",
-        "title": "AI Implementation Bootcamp (20 seats)",
+        "code": BOOTCAMP_CODE,
+        "title": f"AI Implementation Bootcamp ({BOOTCAMP_SEAT_CAP} seats)",
         "price_eur": BOOTCAMP_PRICE_EUR,
         "seat_cap": BOOTCAMP_SEAT_CAP,
         "note": "4-day cohort · %d seats · €%d per learner" % (BOOTCAMP_SEAT_CAP, BOOTCAMP_PRICE_EUR),
+        "requires_access_code": not BOOTCAMP_PUBLIC_REGISTRATION,
     },
 ]
 
@@ -291,6 +298,12 @@ def _course_by_code(code: str | None) -> Dict[str, Any] | None:
             return c
     return None
 
+def _course_allows_open_registration(code: str | None) -> bool:
+    course = _course_by_code(code)
+    if not course:
+        return False
+    return not course.get("requires_access_code", True)
+
 def _compute_price(promo_input, base_price=None):
     base = base_price if base_price is not None else BASE_PRICE_EUR
     if promo_input:
@@ -301,7 +314,9 @@ def _compute_price(promo_input, base_price=None):
             return PROMO_PRICE_FREE_EUR, PROMO_CODE_FREE, True
     return base, None, False
 
-def _require_signed_in():
+def _require_signed_in(course_code: str | None = None):
+    if _course_allows_open_registration(course_code):
+        return True
     if not session.get("signed_in"):
         flash("Please sign in with the course access code.", "error")
         return False
@@ -316,13 +331,14 @@ def page():
     selected_course_code = _s(request.args.get("course"))
     selected_course = _course_by_code(selected_course_code)
     base_price = selected_course["price_eur"] if selected_course else 0
+    signed_in = session.get("signed_in", False) or _course_allows_open_registration(selected_course_code)
     return render_template(
         "register.html",
         brand_name=BRAND_NAME,
         brand_logo_url=BRAND_LOGO_URL,
         powered_by=POWERED_BY,
         course_name=COURSE_NAME,
-        signed_in=session.get("signed_in", False),
+        signed_in=signed_in,
         user_email=session.get("user_email"),
         errors=[],
         submitted=submitted,
@@ -373,7 +389,10 @@ def price_preview():
 
 @register_bp.post("/submit")
 def submit():
-    if not _require_signed_in():
+    course_session_code = _s(request.form.get("course_session_code"))
+    if not _require_signed_in(course_session_code):
+        if course_session_code:
+            return redirect(url_for("register.page", course=course_session_code))
         return redirect(url_for("register.page"))
 
     errors = []
@@ -400,7 +419,6 @@ def submit():
     gender = normalize_gender(_s(request.form.get("gender")))
     gender_other_note = _clip(request.form.get("gender_other_note")) if gender == "other" else None
 
-    course_session_code = _s(request.form.get("course_session_code"))
     selected_course = _course_by_code(course_session_code)
     if not selected_course:
         errors.append("Please select a valid course.")
@@ -440,7 +458,7 @@ def submit():
             brand_logo_url=BRAND_LOGO_URL,
             powered_by=POWERED_BY,
             course_name=COURSE_NAME,
-            signed_in=True,
+            signed_in=session.get("signed_in", False) or _course_allows_open_registration(course_session_code),
             user_email=session.get("user_email"),
             errors=errors,
             submitted=False,
@@ -538,6 +556,8 @@ def submit():
             logger.exception("Post-commit registration email block failed unexpectedly")
 
         flash("Thank you! Your registration has been recorded.", "success")
+        if course_session_code:
+            return redirect(url_for("register.page", submitted=1, course=course_session_code))
         return redirect(url_for("register.page", submitted=1))
     except SeatCapReached:
         flash("This cohort is now full. Please choose another session or contact us.", "error")

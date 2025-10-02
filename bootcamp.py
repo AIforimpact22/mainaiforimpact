@@ -1,19 +1,25 @@
 """Bootcamp landing page blueprint."""
 from flask import Blueprint, render_template, jsonify
 
+from course_settings import (
+    BOOTCAMP_CODE,
+    BOOTCAMP_PRICE_EUR,
+    BOOTCAMP_SEAT_CAP,
+)
+
 bootcamp_bp = Blueprint("bootcamp", __name__)
 
 BOOTCAMP_INFO = {
     "slug": "ai-implementation-bootcamp",
-    "code": "BOOT-AI-2024",
+    "code": BOOTCAMP_CODE,
     "title": "AI Implementation Bootcamp",
     "subtitle": (
         "Four-day cohort focused on shipping AI-powered products with peers, guided by "
         "experts who work in production every day."
     ),
-    "price_eur": 350,
+    "price_eur": BOOTCAMP_PRICE_EUR,
     "currency": "EUR",
-    "seat_cap": 20,
+    "seat_cap": BOOTCAMP_SEAT_CAP,
     "cover_url": None,
     "features": [
         "4 immersive days that blend morning theory with afternoon build labs.",
@@ -37,7 +43,7 @@ BOOTCAMP_INFO = {
         },
         {
             "title": "Day 4 · Operational LLMs & Capstone",
-            "copy": "Operational LLM patterns (Module 8) and dedicated build time for the Week 9 capstone brief.",
+            "copy": "Operational LLM patterns (Module 8) plus a mentored capstone sprint and showcase before we close the cohort.",
         },
     ],
     "modules": [
@@ -49,7 +55,7 @@ BOOTCAMP_INFO = {
         "Data Visualization & Real-Time – streaming insights and dashboards people actually use.",
         "Machine Learning Prediction – building, evaluating, and deploying predictive models.",
         "Operational LLMs – using large language models for explanation, extraction, and automation.",
-        "Capstone Project – Week 9 implementation that blends every module into a shipped asset.",
+        "Capstone Project – Day 4 build sprint that blends every module into a shipped asset you can present immediately.",
     ],
     "faqs": [
         {
@@ -66,7 +72,10 @@ BOOTCAMP_INFO = {
         },
         {
             "q": "How do I secure a seat?",
-            "a": "Submit the registration form—seats are confirmed on a first-come basis and we cap enrollment at 20 learners per cohort.",
+            "a": (
+                "Submit the registration form—seats are confirmed on a first-come basis and "
+                f"we cap enrollment at {BOOTCAMP_SEAT_CAP} learners per cohort."
+            ),
         },
     ],
 }

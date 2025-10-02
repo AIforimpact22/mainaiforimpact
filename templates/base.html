@@ -251,6 +251,8 @@
         </p>
       </div>
 
+      {% set subscribe_error = request.args.get('subscribe_error') %}
+      {% set subscribe_message = request.args.get('subscribe_message') %}
       <form class="subscribe-card subscribe-form" method="post" action="{{ bp('/subscribe/') }}" data-subscription-form novalidate>
         <h2>Subscribe for updates</h2>
         <p>Be the first to hear about new cohorts, resources, and AI deployment tactics.</p>
@@ -263,7 +265,10 @@
           <input type="checkbox" name="consent_marketing" value="true">
           <span>I agree to receive occasional marketing emails about Ai For Impact offerings.</span>
         </label>
-        <p class="subscribe-feedback" data-subscription-feedback hidden role="status"></p>
+        <p class="subscribe-feedback{% if subscribe_error %} is-error{% endif %}"
+           data-subscription-feedback
+           role="status"
+           {% if not subscribe_message %}hidden{% endif %}>{{ subscribe_message or '' }}</p>
       </form>
     </div>
   </footer>
@@ -275,6 +280,19 @@
       var forms = document.querySelectorAll('[data-subscription-form]');
       if (!forms.length) return;
 
+      var subscriptionNotice = (function(){
+        try {
+          var url = new URL(window.location.href);
+          return {
+            url: url,
+            error: url.searchParams.get('subscribe_error'),
+            message: url.searchParams.get('subscribe_message')
+          };
+        } catch (err) {
+          return null;
+        }
+      })();
+
       forms.forEach(function(form){
         var feedback = form.querySelector('[data-subscription-feedback]');
         var button = form.querySelector('button[type="submit"]');
@@ -285,6 +303,13 @@
           feedback.hidden = !message;
           feedback.classList.remove('is-error', 'is-success');
           if (kind) feedback.classList.add(kind);
+        }
+
+        if (subscriptionNotice && subscriptionNotice.message) {
+          setFeedback(
+            subscriptionNotice.message,
+            subscriptionNotice.error ? 'is-error' : 'is-success'
+          );
         }
 
         form.addEventListener('submit', function(evt){
@@ -309,6 +334,8 @@
 
           var action = form.getAttribute('action') || "{{ bp('/subscribe/') }}";
 
+          var fallbackMsg = 'Something went wrong. Please try again later.';
+
           fetch(action, {
             method: 'POST',
             headers: {
@@ -320,14 +347,18 @@
           }).then(function(resp){
             if (!resp.ok) throw resp;
             return resp.json();
-          }).then(function(){
+          }).then(function(data){
+            if (!data || data.ok !== true) {
+              var detail = data && (data.message || data.error);
+              setFeedback(detail || fallbackMsg, 'is-error');
+              return;
+            }
             setFeedback('Thanks! Please check your inbox for confirmation.', 'is-success');
             form.reset();
           }).catch(function(err){
-            var fallbackMsg = 'Something went wrong. Please try again later.';
             if (err && typeof err.json === 'function') {
               err.json().then(function(data){
-                var detail = data && (data.error || data.message);
+                var detail = data && (data.message || data.error);
                 setFeedback(detail || fallbackMsg, 'is-error');
               }).catch(function(){ setFeedback(fallbackMsg, 'is-error'); });
             } else {
@@ -338,6 +369,14 @@
           });
         });
       });
+
+      if (subscriptionNotice && subscriptionNotice.message && subscriptionNotice.url) {
+        try {
+          subscriptionNotice.url.searchParams.delete('subscribe_error');
+          subscriptionNotice.url.searchParams.delete('subscribe_message');
+          window.history.replaceState(null, '', subscriptionNotice.url.toString());
+        } catch (err) {}
+      }
     })();
   </script>
 

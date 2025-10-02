@@ -8,6 +8,7 @@ import ssl
 from datetime import datetime, timezone
 from email.message import EmailMessage
 from typing import Any, Dict, Optional
+from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
 from flask import Blueprint, current_app, jsonify, redirect, render_template, request
 from sqlalchemy import text
@@ -264,16 +265,37 @@ def create_subscription():
         elif existing_status not in {"confirmed"} and normalized_status == "confirmed":
             should_send_welcome = True
 
+    email_sent = True
     if should_send_welcome:
         try:
-            _send_subscription_welcome_email(
+            email_sent = _send_subscription_welcome_email(
                 recipient=email,
                 plan_code=plan_code,
                 locale=locale,
                 request_host=request.url_root,
             )
         except Exception:
-            log.exception("Welcome email send failed (non-fatal)")
+            email_sent = False
+            log.exception("Welcome email send failed")
+
+    if should_send_welcome and not email_sent:
+        error_code = "email_send_failed"
+        error_message = "We couldn't send the confirmation email. Please try again later."
+        if _want_json():
+            return (
+                jsonify({"ok": False, "error": error_code, "message": error_message}),
+                502,
+            )
+
+        target = request.referrer or request.url_root or "/"
+        parsed = urlparse(target)
+        query_params = dict(parse_qsl(parsed.query, keep_blank_values=True))
+        query_params["subscribe_error"] = error_code
+        query_params["subscribe_message"] = error_message
+        new_query = urlencode(query_params)
+        target = urlunparse(parsed._replace(query=new_query))
+        return redirect(target)
+
     if _want_json():
         return jsonify(payload)
 

@@ -4,8 +4,8 @@ from flask import Blueprint, render_template, jsonify
 price_bp = Blueprint("price", __name__)
 
 COURSE_INFO = {
-    "slug": "advanced-ai-utilization",
-    "title": "Advanced AI Utilization and Real-Time Deployment",
+    "slug": "one-on-one-tailored-training",
+    "title": "One on one Tailored Training Session",
     "subtitle": (
         "Private sessions customized to your goals, supported by a guided portal "
         "that documents the workflow step‑by‑step."

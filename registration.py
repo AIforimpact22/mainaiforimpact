@@ -138,7 +138,7 @@ PROMO_PRICE_FREE_EUR = int(os.getenv("PROMO_PRICE_FREE_EUR", "0"))
 COURSES = [
     {
         "code": "AAI-RTD",
-        "title": "Advanced AI Utilization and Real-Time Deployment",
+        "title": "One on one Tailored Training Session",
         "price_eur": BASE_PRICE_EUR,
         "seat_cap": None,
         "note": "1-on-1 format · €%d" % BASE_PRICE_EUR,

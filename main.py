@@ -174,9 +174,30 @@ def healthz():
 
 @app.get("/")
 def home():
+    services = [
+        {
+            "name": "AI Bootcamp",
+            "summary": "Hands-on, rapid upskilling for teams that need to apply AI to real operations in weeks, not months.",
+            "href": "/bootcamp/",
+            "cta": "Explore the bootcamp",
+        },
+        {
+            "name": "Data Renovation",
+            "summary": "Upgrade your data workflows and infrastructure so AI systems stay reliable and auditable in production.",
+            "href": "/renovation",
+            "cta": "Review renovation plans",
+        },
+    ]
     course = _fetch_course()
     if not course:
-        return render_template("index.html", course=None, weeks=[], modules_count=0, lessons_count=0)
+        return render_template(
+            "index.html",
+            course=None,
+            weeks=[],
+            modules_count=0,
+            lessons_count=0,
+            services=services,
+        )
     structure = course.get("structure") or {}
     weeks, modules, lessons = _summarize(structure)
     vm = {
@@ -187,8 +208,21 @@ def home():
         "level": "Advanced",
         "category": "Real-Time AI Deployment",
     }
+    services = [
+        {
+            "name": vm["title"],
+            "summary": "A guided curriculum with live build sessions to deploy AI tools inside your organization.",
+            "href": "#curriculum",
+            "cta": "View the curriculum",
+        }
+    ] + services
     return render_template("index.html",
-        course=vm, weeks=weeks, modules_count=modules, lessons_count=lessons)
+        course=vm,
+        weeks=weeks,
+        modules_count=modules,
+        lessons_count=lessons,
+        services=services,
+    )
 
 @app.get("/course/<int:cid>-<slug>")
 def course_detail(cid: int, slug: str):

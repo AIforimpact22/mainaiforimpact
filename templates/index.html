@@ -7,6 +7,33 @@
   /* Home page hero tuning */
   .photo-hero .bg { filter: brightness(0.86) contrast(1.05) saturate(1.06); }
   .photo-hero .inner { min-height: clamp(460px, 62vh, 700px); }
+  #services .services-grid {
+    display: grid;
+    gap: 18px;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+  #services .service-card {
+    background: var(--surface-card, #111315);
+    border-radius: 18px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    box-shadow: 0 22px 40px rgba(5, 9, 13, 0.18);
+  }
+  #services .service-card h2 {
+    margin: 0;
+    font-size: 1.4rem;
+  }
+  #services .service-card p {
+    margin: 0;
+  }
+  #services .service-card a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+  }
 </style>
 {% endblock %}
 
@@ -17,10 +44,13 @@
   <div class="overlay"></div>
 
   <div class="inner">
-    <h1>{{ (course.title if course else 'Advanced AI Utilization and Real-Time Deployment') }}</h1>
+    <h1>Ai For Impact is your multi-solution AI partner</h1>
     <p class="subhead">
-      Our AI approach helps you progress faster, cut costs, and stay resilient.
+      We blend strategic guidance, hands-on delivery, and embedded training so AI creates measurable impact fast.
     </p>
+    {% if course %}
+    <p class="muted">Includes the {{ course.title }} program for advanced real-time deployment teams.</p>
+    {% endif %}
 
     {% if course %}
     <div class="stat-chips">
@@ -30,14 +60,37 @@
     {% endif %}
 
     <div class="anchor-row">
-      <a href="#how-it-works">How it works ↓</a> &nbsp;•&nbsp;
-      <a href="#curriculum">Explore curriculum ↓</a>
+      <a href="#services">See our services ↓</a> &nbsp;•&nbsp;
+      <a href="#how-it-works">Understand the workflow ↓</a>
+      {% if course %}&nbsp;•&nbsp;<a href="#curriculum">Review the curriculum ↓</a>{% endif %}
     </div>
   </div>
 </section>
 {% endblock %}
 
 {% block content %}
+
+{% if services %}
+<section id="services" class="section-card" style="margin-top:26px;">
+  <div class="banner">
+    <small>Solutions</small>
+    <h1>Choose the engagement that fits</h1>
+    <p class="muted">From individual enablement to organization-wide delivery, we match the path to the outcomes you need.</p>
+  </div>
+
+  <div class="body">
+    <div class="services-grid">
+      {% for service in services %}
+      <article class="service-card">
+        <h2>{{ service.name }}</h2>
+        <p class="muted">{{ service.summary }}</p>
+        <a href="{{ service.href }}">{{ service.cta }} →</a>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
 
 <section id="how-it-works" class="section-card" style="margin-top:26px;">
   <div class="banner">
@@ -82,35 +135,6 @@
   </div>
 </section>
 
-<section id="curriculum" class="section-card" style="margin-top:26px;">
-  <div class="banner">
-    <small>Program</small>
-    <h1>Curriculum overview</h1>
-    <p class="muted">Modules inside the learning portal that support your 1-on-1 journey.</p>
-  </div>
-
-  <div class="body">
-    {% if course and weeks and weeks|length %}
-      <ol class="timeline">
-        {% for w in weeks %}
-          <li class="timeline-item">
-            <div class="dot"></div>
-            <div class="content">
-              <div class="week-title">{{ w.title }}</div>
-              <div class="muted small">{{ w.lessons_count }} sections</div>
-            </div>
-          </li>
-        {% endfor %}
-      </ol>
-    {% else %}
-      <div class="card">
-        <strong>No course found.</strong>
-        <p class="muted">Once you publish a course in the database, it will appear here automatically.</p>
-      </div>
-    {% endif %}
-  </div>
-</section>
-
 <section id="partners" class="section-card" style="margin-top:26px;" aria-labelledby="partners-title">
   <div class="banner">
     <h1 id="partners-title">We work with</h1>
@@ -142,6 +166,37 @@
     </ul>
   </div>
 </section>
+
+{% if course %}
+<section id="curriculum" class="section-card" style="margin-top:26px;">
+  <div class="banner">
+    <small>Program</small>
+    <h1>Curriculum overview</h1>
+    <p class="muted">Modules inside the learning portal that support your 1-on-1 journey.</p>
+  </div>
+
+  <div class="body">
+    {% if weeks and weeks|length %}
+      <ol class="timeline">
+        {% for w in weeks %}
+          <li class="timeline-item">
+            <div class="dot"></div>
+            <div class="content">
+              <div class="week-title">{{ w.title }}</div>
+              <div class="muted small">{{ w.lessons_count }} sections</div>
+            </div>
+          </li>
+        {% endfor %}
+      </ol>
+    {% else %}
+      <div class="card">
+        <strong>Curriculum coming soon.</strong>
+        <p class="muted">We're updating the modules and will publish the full outline shortly.</p>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
 
 {% endblock %}
 

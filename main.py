@@ -20,7 +20,7 @@ log = logging.getLogger("aiforimpact-default")
 
 BRAND_NAME = os.getenv("BRAND_NAME", "Ai For Impact")
 BRAND_LOGO_URL = os.getenv("BRAND_LOGO_URL", "https://i.imgur.com/STm5VaG.png")
-COURSE_TITLE = os.getenv("COURSE_TITLE", "Advanced AI Utilization and Real-Time Deployment")
+COURSE_TITLE = os.getenv("COURSE_TITLE", "One on one Tailored Training Session")
 COURSE_COVER_URL = os.getenv("COURSE_COVER_URL", "https://i.imgur.com/iIMdWOn.jpeg")
 BASE_PATH = os.getenv("BASE_PATH", "")
 
@@ -211,7 +211,7 @@ def home():
     services = [
         {
             "name": vm["title"],
-            "summary": "A guided curriculum with live build sessions to deploy AI tools inside your organization.",
+            "summary": "One on one tailored training sessions with live build support inside your organization.",
             "href": "#curriculum",
             "cta": "View the curriculum",
         }

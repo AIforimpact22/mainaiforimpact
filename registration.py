@@ -9,7 +9,7 @@ import smtplib
 import ssl
 from email.message import EmailMessage
 from datetime import datetime, timezone
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
 
@@ -22,6 +22,7 @@ from course_settings import (
 from sqlalchemy import create_engine, MetaData, Table, inspect, select, func
 from sqlalchemy.engine import URL
 from sqlalchemy.sql import text
+from werkzeug.security import check_password_hash, generate_password_hash
 
 register_bp = Blueprint("register", __name__, template_folder="templates")
 
@@ -127,8 +128,6 @@ COURSE_NAME = os.getenv("COURSE_NAME", "Ai For Impact")
 BRAND_NAME = os.getenv("BRAND_NAME", "Ai For Impact")
 BRAND_LOGO_URL = os.getenv("BRAND_LOGO_URL", "https://i.imgur.com/STm5VaG.png")
 POWERED_BY = os.getenv("POWERED_BY", "Climate Fundraising Platform B.V.")
-COURSE_ACCESS_CODE = os.getenv("COURSE_ACCESS_CODE", "letmein")
-
 BASE_PRICE_EUR = int(os.getenv("BASE_PRICE_EUR", "900"))
 PROMO_CODE = os.getenv("PROMO_CODE", "IMPACT-439")
 PROMO_PRICE_EUR = int(os.getenv("PROMO_PRICE_EUR", "439"))
@@ -142,7 +141,6 @@ COURSES = [
         "price_eur": BASE_PRICE_EUR,
         "seat_cap": None,
         "note": "1-on-1 format · €%d" % BASE_PRICE_EUR,
-        "requires_access_code": True,
     },
     {
         "code": BOOTCAMP_CODE,
@@ -150,7 +148,6 @@ COURSES = [
         "price_eur": BOOTCAMP_PRICE_EUR,
         "seat_cap": BOOTCAMP_SEAT_CAP,
         "note": "4-day cohort · %d seats · €%d per learner" % (BOOTCAMP_SEAT_CAP, BOOTCAMP_PRICE_EUR),
-        "requires_access_code": not BOOTCAMP_PUBLIC_REGISTRATION,
     },
 ]
 
@@ -172,7 +169,9 @@ def _is_dsn(s: str) -> bool:
     if not s:
         return False
     s = s.strip().lower()
-    return s.startswith("postgresql://") or s.startswith("postgresql+psycopg2://") or s.startswith("postgresql+pg8000://")
+    if s.startswith("postgresql://") or s.startswith("postgresql+psycopg2://") or s.startswith("postgresql+pg8000://"):
+        return True
+    return s.startswith("sqlite://")
 
 # Your DSN (fallback if envs not set)
 _HARDCODED_DSN = "postgresql+psycopg2://postgres:Garnet87@127.0.0.1:5432/aiforimpact"
@@ -210,34 +209,38 @@ def _sqlalchemy_url() -> str | URL:
 engine = create_engine(_sqlalchemy_url(), pool_pre_ping=True, pool_recycle=1800, future=True)
 metadata = MetaData()
 
-# Robust, dialect-aware reflection for 'registrations'
+# Robust, dialect-aware reflection for application tables
 TARGET_SCHEMA = os.getenv("DB_SCHEMA", "public")
 insp = inspect(engine)
 dialect = engine.dialect.name  # 'postgresql', 'sqlite', etc.
 
-if dialect == "postgresql":
-    tables_public = set(insp.get_table_names(schema=TARGET_SCHEMA))
-    tables_default = set(insp.get_table_names())
-    if "registrations" in tables_public:
-        _resolved_schema = TARGET_SCHEMA
-    elif "registrations" in tables_default:
-        _resolved_schema = None
-    else:
+
+def _resolve_table_schema(table_name: str) -> Optional[str]:
+    if dialect == "postgresql":
+        tables_public = set(insp.get_table_names(schema=TARGET_SCHEMA))
+        tables_default = set(insp.get_table_names())
+        if table_name in tables_public:
+            return TARGET_SCHEMA
+        if table_name in tables_default:
+            return None
         raise RuntimeError(
-            "Table 'registrations' not found in Postgres.\n"
+            f"Table '{table_name}' not found in Postgres.\n"
             f"  Checked schema '{TARGET_SCHEMA}': {sorted(tables_public)}\n"
             f"  Default search_path tables: {sorted(tables_default)}\n"
             "Ensure you're pointing at the correct DB and schema (set DB_SCHEMA if needed)."
         )
-else:
-    # We don't expect SQLite anymore, but keep a safe branch
-    names = set(insp.get_table_names())
-    if "registrations" in names:
-        _resolved_schema = None
-    else:
-        raise RuntimeError(f"Table 'registrations' not found. Visible tables: {sorted(names)}")
 
-registrations = Table("registrations", metadata, schema=_resolved_schema, autoload_with=engine)
+    names = set(insp.get_table_names())
+    if table_name in names:
+        return None
+    raise RuntimeError(f"Table '{table_name}' not found. Visible tables: {sorted(names)}")
+
+
+_registrations_schema = _resolve_table_schema("registrations")
+registrations = Table("registrations", metadata, schema=_registrations_schema, autoload_with=engine)
+
+_users_schema = _resolve_table_schema("users")
+users = Table("users", metadata, schema=_users_schema, autoload_with=engine)
 
 # ───────────────────────────────────────────────────────────────
 # Helpers
@@ -276,6 +279,48 @@ def _normalizer(allowed: List[str]):
 normalize_gender = _normalizer(GENDER_ENUM_LABELS)
 normalize_referral = _normalizer(REFERRAL_ENUM_LABELS)
 
+
+def _is_gmail_address(email: Optional[str]) -> bool:
+    if not email:
+        return False
+    email = email.strip().lower()
+    return bool(re.fullmatch(r"[a-z0-9._%+-]+@gmail\.com", email))
+
+
+def load_user(email: str) -> Optional[Dict[str, Any]]:
+    if not email:
+        return None
+    normalized = email.strip().lower()
+    with engine.connect() as conn:
+        row = conn.execute(
+            select(users).where(users.c.email == normalized)
+        ).mappings().first()
+        return dict(row) if row else None
+
+
+def update_user_credentials(
+    email: str,
+    *,
+    password_hash: Optional[str] = None,
+    must_change_password: Optional[bool] = None,
+) -> bool:
+    if not email:
+        return False
+    values: Dict[str, Any] = {"updated_at": datetime.now(timezone.utc)}
+    if password_hash is not None:
+        values["password_hash"] = password_hash
+    if must_change_password is not None:
+        values["must_change_password"] = must_change_password
+    if len(values) == 1:  # only updated_at
+        return False
+    with engine.begin() as conn:
+        result = conn.execute(
+            users.update()
+            .where(users.c.email == email.strip().lower())
+            .values(**values)
+        )
+    return result.rowcount > 0
+
 def _s(x):
     if x is None: return None
     x = x.strip()
@@ -298,12 +343,6 @@ def _course_by_code(code: str | None) -> Dict[str, Any] | None:
             return c
     return None
 
-def _course_allows_open_registration(code: str | None) -> bool:
-    course = _course_by_code(code)
-    if not course:
-        return False
-    return not course.get("requires_access_code", True)
-
 def _compute_price(promo_input, base_price=None):
     base = base_price if base_price is not None else BASE_PRICE_EUR
     if promo_input:
@@ -314,13 +353,11 @@ def _compute_price(promo_input, base_price=None):
             return PROMO_PRICE_FREE_EUR, PROMO_CODE_FREE, True
     return base, None, False
 
-def _require_signed_in(course_code: str | None = None):
-    if _course_allows_open_registration(course_code):
+def _require_signed_in(_: str | None = None) -> bool:
+    if session.get("user_email"):
         return True
-    if not session.get("signed_in"):
-        flash("Please sign in with the course access code.", "error")
-        return False
-    return True
+    flash("Please sign in with your Gmail account before continuing.", "error")
+    return False
 
 # ───────────────────────────────────────────────────────────────
 # Views
@@ -331,7 +368,11 @@ def page():
     selected_course_code = _s(request.args.get("course"))
     selected_course = _course_by_code(selected_course_code)
     base_price = selected_course["price_eur"] if selected_course else 0
-    signed_in = session.get("signed_in", False) or _course_allows_open_registration(selected_course_code)
+    if session.get("require_password_change"):
+        return redirect(url_for("register.change_password"))
+
+    user_email = session.get("user_email")
+    signed_in = bool(user_email)
     return render_template(
         "register.html",
         brand_name=BRAND_NAME,
@@ -339,7 +380,7 @@ def page():
         powered_by=POWERED_BY,
         course_name=COURSE_NAME,
         signed_in=signed_in,
-        user_email=session.get("user_email"),
+        user_email=user_email,
         errors=[],
         submitted=submitted,
         referrals=REFERRAL_CHOICES,
@@ -354,15 +395,40 @@ def page():
 
 @register_bp.post("/signin")
 def signin():
-    code = (request.form.get("access_code") or "").strip()
-    email = _s(request.form.get("user_email"))
     course_param = _s(request.form.get("course"))
-    if code == COURSE_ACCESS_CODE:
-        session["signed_in"] = True
-        session["user_email"] = email
-        flash("Signed in. Please complete your registration.", "success")
-    else:
-        flash("Invalid course access code.", "error")
+    email = _s(request.form.get("user_email"))
+    password = request.form.get("password") or ""
+
+    if not _is_gmail_address(email):
+        flash("Please use a Gmail address to sign in.", "error")
+        if course_param:
+            return redirect(url_for("register.page", course=course_param))
+        return redirect(url_for("register.page"))
+
+    user = load_user(email)
+    if not user or not user.get("password_hash"):
+        flash("Invalid email or password.", "error")
+        if course_param:
+            return redirect(url_for("register.page", course=course_param))
+        return redirect(url_for("register.page"))
+
+    if not check_password_hash(user["password_hash"], password):
+        flash("Invalid email or password.", "error")
+        if course_param:
+            return redirect(url_for("register.page", course=course_param))
+        return redirect(url_for("register.page"))
+
+    session.clear()
+    normalized_email = user["email"].strip().lower()
+    session["user_email"] = normalized_email
+    must_change = bool(user.get("must_change_password"))
+    session["require_password_change"] = must_change
+
+    if must_change:
+        flash("Please choose a new password to continue.", "info")
+        return redirect(url_for("register.change_password"))
+
+    flash("Signed in. Please complete your registration.", "success")
     if course_param:
         return redirect(url_for("register.page", course=course_param))
     return redirect(url_for("register.page"))
@@ -372,6 +438,58 @@ def logout():
     session.clear()
     flash("Signed out.", "success")
     return redirect(url_for("register.page"))
+
+
+@register_bp.route("/password/change", methods=["GET", "POST"])
+def change_password():
+    user_email = session.get("user_email")
+    if not user_email:
+        flash("Please sign in to update your password.", "error")
+        return redirect(url_for("register.page"))
+
+    if not _is_gmail_address(user_email):
+        session.clear()
+        flash("Only Gmail accounts are supported for registration.", "error")
+        return redirect(url_for("register.page"))
+
+    user = load_user(user_email)
+    if not user:
+        session.clear()
+        flash("We couldn't locate your account. Please contact support.", "error")
+        return redirect(url_for("register.page"))
+
+    errors: List[str] = []
+    if request.method == "POST":
+        new_password = (request.form.get("new_password") or "").strip()
+        confirm_password = (request.form.get("confirm_password") or "").strip()
+
+        if len(new_password) < 8:
+            errors.append("Password must be at least 8 characters long.")
+        if new_password != confirm_password:
+            errors.append("Password confirmation does not match.")
+
+        if not errors:
+            hashed = generate_password_hash(new_password)
+            updated = update_user_credentials(
+                user_email,
+                password_hash=hashed,
+                must_change_password=False,
+            )
+            if not updated:
+                errors.append("We couldn't update your password. Please try again or contact support.")
+            else:
+                session["require_password_change"] = False
+                flash("Password updated. You can now continue with registration.", "success")
+                return redirect(url_for("register.page"))
+
+        for err in errors:
+            flash(err, "error")
+
+    return render_template(
+        "password_change.html",
+        user_email=user_email,
+        errors=errors,
+    )
 
 @register_bp.route("/price-preview", methods=["GET", "POST"])
 def price_preview():
@@ -390,6 +508,10 @@ def price_preview():
 @register_bp.post("/submit")
 def submit():
     course_session_code = _s(request.form.get("course_session_code"))
+    if session.get("require_password_change"):
+        flash("Please update your password before completing the registration form.", "error")
+        return redirect(url_for("register.change_password"))
+
     if not _require_signed_in(course_session_code):
         if course_session_code:
             return redirect(url_for("register.page", course=course_session_code))
@@ -397,9 +519,18 @@ def submit():
 
     errors = []
 
-    user_email = _s(request.form.get("user_email")) or session.get("user_email")
-    if not user_email:
-        errors.append("Email is required.")
+    session_email = session.get("user_email")
+    form_email = _s(request.form.get("user_email"))
+    if not session_email:
+        errors.append("You must be signed in to submit the registration form.")
+        user_email = None
+    else:
+        normalized_session_email = session_email.strip().lower()
+        user_email = normalized_session_email
+        if form_email and form_email.strip().lower() != normalized_session_email:
+            errors.append("The registration email must match the signed-in Gmail account.")
+        if not _is_gmail_address(normalized_session_email):
+            errors.append("Registrations require a Gmail address. Please sign out and sign in with Gmail.")
 
     first = _s(request.form.get("first_name"))
     last  = _s(request.form.get("last_name"))
@@ -458,7 +589,7 @@ def submit():
             brand_logo_url=BRAND_LOGO_URL,
             powered_by=POWERED_BY,
             course_name=COURSE_NAME,
-            signed_in=session.get("signed_in", False) or _course_allows_open_registration(course_session_code),
+            signed_in=bool(session.get("user_email")),
             user_email=session.get("user_email"),
             errors=errors,
             submitted=False,

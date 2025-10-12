@@ -60,20 +60,22 @@
     {% if not signed_in %}
       <form method="post" action="{{ url_for('register.signin') }}" class="grid cols-2" autocomplete="on" novalidate>
         <div>
-          <label for="user_email">Email (optional)</label>
-          <input id="user_email" name="user_email" type="email" placeholder="you@example.com" autocomplete="email" />
+          <label for="signin_email">Gmail address</label>
+          <input id="signin_email" name="user_email" type="email" placeholder="you@gmail.com" autocomplete="email" required />
         </div>
         <div>
-          <label for="access_code">Course Access Code</label>
-          <input id="access_code" name="access_code" type="text" placeholder="Enter code" required />
+          <label for="signin_password">Password</label>
+          <input id="signin_password" name="password" type="password" placeholder="Enter your password" autocomplete="current-password" required />
         </div>
         <input type="hidden" name="course" value="{{ selected_course_code or '' }}">
         <div class="actions">
           <button type="submit">Sign in</button>
         </div>
+        <p class="muted">Only Gmail accounts are eligible for registration access.</p>
       </form>
 
     {% else %}
+      <div class="muted" style="margin-bottom:12px;">Signed in as <strong>{{ user_email }}</strong>. <a href="{{ url_for('register.logout') }}">Sign out</a></div>
       {% if submitted %}
         <div class="alert success">✅ Thank you! Your registration has been received.</div>
         <p class="muted">You can close this tab, or submit another registration below.</p>
@@ -161,8 +163,8 @@
         <div class="grid cols-2">
           <div>
             <label for="reg_email">Email</label>
-            <input id="reg_email" name="user_email" type="email" autocomplete="email" required value="{{ (form_data.user_email if form_data else (user_email or '')) or '' }}">
-
+            <input id="reg_email" name="user_email" type="email" autocomplete="email" required value="{{ user_email or '' }}" readonly>
+            
           </div>
           <div>
             <label for="job_title">Your Job / Role</label>

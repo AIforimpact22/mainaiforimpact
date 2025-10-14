@@ -1,13 +1,16 @@
 """Bootcamp landing page blueprint."""
 from __future__ import annotations
 
+import json
 import logging
 import os
 import re
 import smtplib
 import ssl
+from datetime import datetime, timezone
 from email.message import EmailMessage
-from typing import Dict, Tuple
+from pathlib import Path
+from typing import Dict, Optional, Tuple
 
 from flask import Blueprint, render_template, jsonify, request, url_for, redirect
 
@@ -28,6 +31,8 @@ SMTP_USERNAME = os.getenv("SMTP_USERNAME", "connect@aiforimpact.net")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "rgbvcjfocqpmjipy")
 SMTP_FROM = os.getenv("SMTP_FROM", "AiForImpact <connect@aiforimpact.net>")
 BOOTCAMP_REQUEST_TO = os.getenv("BOOTCAMP_REQUEST_TO", "connect@aiforimpact.net")
+_archive_path = os.getenv("BOOTCAMP_REQUEST_ARCHIVE", "instance/bootcamp_requests.jsonl").strip()
+BOOTCAMP_REQUEST_ARCHIVE: Optional[Path] = Path(_archive_path) if _archive_path else None
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
@@ -153,10 +158,17 @@ def request_cohort_quote():
     if errors:
         return _render_bootcamp_page(form, errors, False)
 
-    email_ok = _send_bootcamp_request_email(form)
-    if not email_ok:
-        errors.append("We could not send your request right now. Please try again or email connect@aiforimpact.net.")
+    delivery_ok, email_sent = _deliver_bootcamp_request(form)
+    if not delivery_ok:
+        errors.append(
+            "We could not record your request right now. Please try again or email connect@aiforimpact.net."
+        )
         return _render_bootcamp_page(form, errors, False)
+
+    if not email_sent:
+        log.warning(
+            "Bootcamp request email delivery failed; payload archived for manual follow-up."
+        )
 
     return redirect(url_for("bootcamp.bootcamp_page", request="sent"))
 
@@ -170,6 +182,36 @@ def bootcamp_api():
         "currency": BOOTCAMP_INFO["currency"],
         "seat_cap": BOOTCAMP_INFO["seat_cap"],
     })
+
+
+def _deliver_bootcamp_request(payload: Dict[str, str]) -> Tuple[bool, bool]:
+    archived = _archive_bootcamp_request(payload)
+    email_sent = _send_bootcamp_request_email(payload)
+
+    if not archived and not email_sent:
+        log.error("Bootcamp cohort request lost: unable to archive or send email.")
+
+    return archived or email_sent, email_sent
+
+
+def _archive_bootcamp_request(payload: Dict[str, str]) -> bool:
+    try:
+        if not BOOTCAMP_REQUEST_ARCHIVE:
+            return False
+
+        BOOTCAMP_REQUEST_ARCHIVE.parent.mkdir(parents=True, exist_ok=True)
+        entry = {
+            "received_at": datetime.now(timezone.utc).isoformat(),
+            "payload": payload,
+        }
+        with BOOTCAMP_REQUEST_ARCHIVE.open("a", encoding="utf-8") as fp:
+            fp.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+        log.debug("Bootcamp request archived to %s", BOOTCAMP_REQUEST_ARCHIVE)
+        return True
+    except Exception:
+        log.exception("Failed to archive bootcamp cohort request locally")
+        return False
 
 
 def _send_bootcamp_request_email(payload: Dict[str, str]) -> bool:

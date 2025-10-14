@@ -79,6 +79,18 @@
           <textarea id="direct-contact-message" name="message" maxlength="{{ message_limit }}" required placeholder="Write your message ({{ message_limit }} characters max)"></textarea>
           <div class="char-count" data-remaining aria-live="polite">{{ message_limit }} characters remaining</div>
         </div>
+        <div class="form-field">
+          <label for="direct-contact-code">Verification code word</label>
+          <input type="text"
+                 id="direct-contact-code"
+                 name="code_word"
+                 required
+                 inputmode="text"
+                 placeholder="{{ contact_code_word }}"
+                 aria-describedby="direct-contact-code-help"
+                 autocomplete="off">
+          <p class="muted" id="direct-contact-code-help">Type the code word "{{ contact_code_word }}" so we know you’re a real person.</p>
+        </div>
         <button type="submit" class="btn" data-submit>Send message</button>
         <p id="direct-contact-feedback"
            class="form-feedback muted{% if contact_success %} is-success{% elif contact_status == 'error' %} is-error{% endif %}"

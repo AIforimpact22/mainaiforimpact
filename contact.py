@@ -17,7 +17,6 @@ from flask import (
 from bootcamp import send_email_notification
 
 CONTACT_RECIPIENT = "connect@aiforimpact.net"
-CONTACT_CODE_WORD = "IMPACT"
 MESSAGE_LIMIT = 500
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
@@ -41,7 +40,6 @@ def _contact_form_payload() -> Dict[str, str]:
         "name": (request.form.get("name") or "").strip(),
         "email": (request.form.get("email") or "").strip(),
         "message": (request.form.get("message") or "").strip(),
-        "code_word": (request.form.get("code_word") or "").strip(),
     }
 
 
@@ -58,7 +56,6 @@ def contact_page():
         contact_success=success,
         contact_error=error_message,
         contact_recipient=CONTACT_RECIPIENT,
-        contact_code_word=CONTACT_CODE_WORD,
         message_limit=MESSAGE_LIMIT,
     )
 
@@ -77,13 +74,6 @@ def submit_contact_form():
         errors.append("Message is required.")
     elif len(form["message"]) > MESSAGE_LIMIT:
         errors.append(f"Message must be {MESSAGE_LIMIT} characters or fewer.")
-
-    if not form["code_word"]:
-        errors.append("Enter the verification code word to submit the form.")
-    elif form["code_word"].lower() != CONTACT_CODE_WORD.lower():
-        errors.append(
-            f"The verification code word didn't match. Please type {CONTACT_CODE_WORD}."
-        )
 
     if errors:
         if _wants_json_response():

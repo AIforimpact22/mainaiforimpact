@@ -178,7 +178,8 @@ def request_cohort_quote():
         "contact_name",
         "contact_email",
         "team_size",
-        "timeline",
+        "timeline_start",
+        "timeline_end",
         "goals",
         "notes",
     ]}
@@ -195,6 +196,26 @@ def request_cohort_quote():
 
     if form["team_size"] and not form["team_size"].isdigit():
         errors.append("Team size must be a number.")
+
+    timeline_start_raw = form.get("timeline_start") or ""
+    timeline_end_raw = form.get("timeline_end") or ""
+    timeline_start = timeline_end = None
+    if timeline_start_raw and not timeline_end_raw:
+        errors.append("Please select an end date for your preferred timeline.")
+    elif timeline_end_raw and not timeline_start_raw:
+        errors.append("Please select a start date for your preferred timeline.")
+    elif timeline_start_raw and timeline_end_raw:
+        try:
+            timeline_start = datetime.strptime(timeline_start_raw, "%Y-%m-%d").date()
+            timeline_end = datetime.strptime(timeline_end_raw, "%Y-%m-%d").date()
+        except ValueError:
+            errors.append("Preferred dates must be valid calendar dates.")
+        else:
+            if timeline_end < timeline_start:
+                errors.append("Preferred end date must be on or after the start date.")
+            else:
+                form["timeline_start"] = timeline_start.isoformat()
+                form["timeline_end"] = timeline_end.isoformat()
 
     if errors:
         return _render_bootcamp_page(form, errors, False)
@@ -255,6 +276,23 @@ def _archive_bootcamp_request(payload: Dict[str, str]) -> bool:
         return False
 
 
+def _format_preferred_dates(start_raw: str, end_raw: str) -> str:
+    if not start_raw and not end_raw:
+        return "N/A"
+
+    def _humanize(value: str) -> str:
+        try:
+            return datetime.strptime(value, "%Y-%m-%d").strftime("%b %d, %Y")
+        except ValueError:
+            return value
+
+    if start_raw and end_raw:
+        return f"{_humanize(start_raw)} → {_humanize(end_raw)}"
+    if start_raw:
+        return _humanize(start_raw)
+    return _humanize(end_raw)
+
+
 def _smtp_authenticate(session: smtplib.SMTP, username: str, password: str) -> None:
     session.user, session.password = username, password
     if SMTP_AUTH_METHOD:
@@ -279,7 +317,10 @@ def _send_bootcamp_request_email(payload: Dict[str, str]) -> bool:
 
     subject = f"Bootcamp cohort request — {payload['company_name']}"
     team_size = payload.get("team_size") or "N/A"
-    timeline = payload.get("timeline") or "N/A"
+    timeline = _format_preferred_dates(
+        payload.get("timeline_start") or "",
+        payload.get("timeline_end") or "",
+    )
     goals = payload.get("goals") or "N/A"
     notes = payload.get("notes") or "N/A"
 
@@ -289,7 +330,7 @@ def _send_bootcamp_request_email(payload: Dict[str, str]) -> bool:
         f"Contact: {payload['contact_name']}\n"
         f"Email: {payload['contact_email']}\n"
         f"Team size: {team_size}\n"
-        f"Timeline: {timeline}\n"
+        f"Preferred dates: {timeline}\n"
         f"Goals: {goals}\n"
         f"Notes: {notes}\n"
     )

@@ -182,8 +182,17 @@
             <input id="team_size" name="team_size" type="text" inputmode="numeric" placeholder="e.g. 12" value="{{ request_form.team_size if request_form and request_form.team_size is defined else '' }}">
           </div>
           <div>
-            <label for="timeline">Ideal timeline</label>
-            <input id="timeline" name="timeline" type="text" placeholder="Quarter, month, or target dates" value="{{ request_form.timeline if request_form and request_form.timeline is defined else '' }}">
+            <div class="grid cols-2">
+              <div>
+                <label for="timeline_start">Preferred start date</label>
+                <input id="timeline_start" name="timeline_start" type="date" value="{{ request_form.timeline_start if request_form and request_form.timeline_start is defined else '' }}">
+              </div>
+              <div>
+                <label for="timeline_end">Preferred end date</label>
+                <input id="timeline_end" name="timeline_end" type="date" value="{{ request_form.timeline_end if request_form and request_form.timeline_end is defined else '' }}">
+              </div>
+            </div>
+            <p class="muted" style="margin-top:6px;">Optional — choose the date range that works best for your team.</p>
           </div>
           <div>
             <label for="goals">Training goals</label>

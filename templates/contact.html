@@ -18,6 +18,15 @@
     .form-feedback{font-size:14px;margin:0}
     .form-feedback.is-success{color:#8be087}
     .form-feedback.is-error{color:#ff8383}
+    .color-challenge{display:flex;flex-direction:column;gap:10px}
+    .color-challenge legend{font-weight:700;font-size:15px;color:var(--ink)}
+    .color-options{display:flex;flex-wrap:wrap;gap:10px}
+    .color-choice{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid #23283a;border-radius:10px;background:#0d1020;color:var(--ink);cursor:pointer;transition:transform .15s ease,border-color .15s ease}
+    .color-choice:hover{transform:translateY(-1px);border-color:rgba(92,169,255,.6)}
+    .color-choice input{margin:0}
+    .color-choice:focus-within{outline:2px solid rgba(92,169,255,.6);outline-offset:2px}
+    .color-swatch{width:18px;height:18px;border-radius:50%;border:1px solid rgba(255,255,255,.4);background:var(--swatch-color);display:inline-block}
+    .color-name{font-size:14px}
   </style>
 {% endblock %}
 
@@ -79,6 +88,19 @@
           <textarea id="direct-contact-message" name="message" maxlength="{{ message_limit }}" required placeholder="Write your message ({{ message_limit }} characters max)"></textarea>
           <div class="char-count" data-remaining aria-live="polite">{{ message_limit }} characters remaining</div>
         </div>
+        <fieldset class="form-field color-challenge">
+          <legend>{{ challenge_prompt }}</legend>
+          <div class="color-options" role="group" aria-label="{{ challenge_prompt }}">
+            {% for option in challenge_options %}
+            <label class="color-choice">
+              <input type="radio" name="challenge_selection" value="{{ option.value }}" required>
+              <span class="color-swatch" style="--swatch-color: {{ option.color }}" aria-hidden="true"></span>
+              <span class="color-name">{{ option.label }}</span>
+            </label>
+            {% endfor %}
+          </div>
+          <input type="hidden" name="challenge_answer" value="{{ challenge_answer }}">
+        </fieldset>
         <button type="submit" class="btn" data-submit>Send message</button>
         <p id="direct-contact-feedback"
            class="form-feedback muted{% if contact_success %} is-success{% elif contact_status == 'error' %} is-error{% endif %}"

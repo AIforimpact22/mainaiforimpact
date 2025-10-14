@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import random
 import re
 from typing import Dict
 
@@ -22,6 +23,36 @@ _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 contact_bp = Blueprint("contact", __name__)
 
+_COLOR_CHALLENGES = (
+    {
+        "prompt": "Select BLUE",
+        "answer": "blue",
+        "options": (
+            {"value": "blue", "label": "Blue", "color": "#3b82f6"},
+            {"value": "red", "label": "Red", "color": "#ef4444"},
+            {"value": "green", "label": "Green", "color": "#22c55e"},
+        ),
+    },
+    {
+        "prompt": "Select RED",
+        "answer": "red",
+        "options": (
+            {"value": "yellow", "label": "Yellow", "color": "#facc15"},
+            {"value": "red", "label": "Red", "color": "#ef4444"},
+            {"value": "purple", "label": "Purple", "color": "#a855f7"},
+        ),
+    },
+    {
+        "prompt": "Select GREEN",
+        "answer": "green",
+        "options": (
+            {"value": "orange", "label": "Orange", "color": "#fb923c"},
+            {"value": "green", "label": "Green", "color": "#22c55e"},
+            {"value": "blue", "label": "Blue", "color": "#3b82f6"},
+        ),
+    },
+)
+
 
 def _wants_json_response() -> bool:
     if request.is_json:
@@ -40,6 +71,8 @@ def _contact_form_payload() -> Dict[str, str]:
         "name": (request.form.get("name") or "").strip(),
         "email": (request.form.get("email") or "").strip(),
         "message": (request.form.get("message") or "").strip(),
+        "challenge_selection": (request.form.get("challenge_selection") or "").strip(),
+        "challenge_answer": (request.form.get("challenge_answer") or "").strip(),
     }
 
 
@@ -50,6 +83,8 @@ def contact_page():
     success = status == "sent"
     error_message = message if status == "error" else ""
 
+    challenge = random.choice(_COLOR_CHALLENGES)
+
     return render_template(
         "contact.html",
         contact_status=status if status in {"sent", "error"} else "",
@@ -57,6 +92,9 @@ def contact_page():
         contact_error=error_message,
         contact_recipient=CONTACT_RECIPIENT,
         message_limit=MESSAGE_LIMIT,
+        challenge_prompt=challenge["prompt"],
+        challenge_answer=challenge["answer"],
+        challenge_options=challenge["options"],
     )
 
 
@@ -74,6 +112,13 @@ def submit_contact_form():
         errors.append("Message is required.")
     elif len(form["message"]) > MESSAGE_LIMIT:
         errors.append(f"Message must be {MESSAGE_LIMIT} characters or fewer.")
+
+    challenge_selection = form["challenge_selection"].lower()
+    challenge_answer = form["challenge_answer"].lower()
+    if not challenge_selection or not challenge_answer:
+        errors.append("Please complete the color confirmation step.")
+    elif challenge_selection != challenge_answer:
+        errors.append("The selected color doesn't match the prompt. Please try again.")
 
     if errors:
         if _wants_json_response():

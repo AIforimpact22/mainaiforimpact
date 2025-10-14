@@ -31,6 +31,18 @@
   .faq p { margin:8px 0 0; color:var(--muted); }
 
   .timeline .week-title { font-weight:800; }
+
+  .request-card form { display:grid; gap:12px; margin-top:14px; text-align:left; }
+  .request-card label { font-weight:700; font-size:14px; display:block; margin-bottom:6px; }
+  .request-card input,
+  .request-card textarea { width:100%; padding:10px 12px; border-radius:10px; border:1px solid #2a3348; background:#0f1320; color:#e6ecff; font-size:14px; }
+  .request-card textarea { min-height:100px; resize:vertical; }
+  .request-card button { appearance:none; border:none; border-radius:10px; padding:10px 16px; font-weight:800; cursor:pointer; background:var(--accent); color:#051327; }
+  .request-card button:hover { filter:brightness(1.08); }
+  .request-card .note { font-size:13px; color:var(--muted); }
+  .request-card .alert { border-radius:10px; padding:12px 14px; font-size:14px; }
+  .request-card .alert.error { background:#2a1414; border:1px solid #4a2020; color:#f1a5a5; }
+  .request-card .alert.success { background:#10241a; border:1px solid #1f4833; color:#8be6a5; }
 </style>
 
 <script type="application/ld+json">
@@ -136,6 +148,57 @@
       </div>
 
       <p class="price-note" style="margin-top:12px;">Group bundles available for teams—contact us for a tailored invoice.</p>
+
+      <div class="card request-card" style="margin-top:18px;">
+        <h2 style="margin-top:0;">Request a private cohort</h2>
+        <p class="muted" style="margin-top:6px;">Need dates for your team? Share a few details and we'll follow up with a tailored proposal.</p>
+
+        {% if request_success %}
+          <div class="alert success" role="status">✅ Thanks! We've received your cohort request. Expect a reply from connect@aiforimpact.net shortly.</div>
+        {% elif request_errors and request_errors|length %}
+          <div class="alert error" role="alert">
+            <strong>Please review:</strong>
+            <ul style="margin:8px 0 0 18px; padding:0;">
+              {% for err in request_errors %}<li>{{ err }}</li>{% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+
+        <form method="post" action="{{ url_for('bootcamp.request_cohort_quote') }}" novalidate>
+          <div>
+            <label for="company_name">Company *</label>
+            <input id="company_name" name="company_name" type="text" required placeholder="Your company" value="{{ request_form.company_name if request_form and request_form.company_name is defined else '' }}">
+          </div>
+          <div>
+            <label for="contact_name">Primary contact *</label>
+            <input id="contact_name" name="contact_name" type="text" required placeholder="Full name" value="{{ request_form.contact_name if request_form and request_form.contact_name is defined else '' }}">
+          </div>
+          <div>
+            <label for="contact_email">Work email *</label>
+            <input id="contact_email" name="contact_email" type="email" required placeholder="you@company.com" value="{{ request_form.contact_email if request_form and request_form.contact_email is defined else '' }}">
+          </div>
+          <div>
+            <label for="team_size">Team size</label>
+            <input id="team_size" name="team_size" type="text" inputmode="numeric" placeholder="e.g. 12" value="{{ request_form.team_size if request_form and request_form.team_size is defined else '' }}">
+          </div>
+          <div>
+            <label for="timeline">Ideal timeline</label>
+            <input id="timeline" name="timeline" type="text" placeholder="Quarter, month, or target dates" value="{{ request_form.timeline if request_form and request_form.timeline is defined else '' }}">
+          </div>
+          <div>
+            <label for="goals">Training goals</label>
+            <textarea id="goals" name="goals" placeholder="What should your team be able to do after the bootcamp?">{{ request_form.goals if request_form and request_form.goals is defined else '' }}</textarea>
+          </div>
+          <div>
+            <label for="notes">Additional notes</label>
+            <textarea id="notes" name="notes" placeholder="Purchase order requirements, budget notes, etc.">{{ request_form.notes if request_form and request_form.notes is defined else '' }}</textarea>
+          </div>
+          <div>
+            <button type="submit">Send request</button>
+            <div class="note">We reply within one business day from connect@aiforimpact.net.</div>
+          </div>
+        </form>
+      </div>
     </aside>
   </div>
 </section>

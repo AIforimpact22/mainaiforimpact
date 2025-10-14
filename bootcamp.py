@@ -307,39 +307,26 @@ def _smtp_authenticate(session: smtplib.SMTP, username: str, password: str) -> N
         session.login(username, password)
 
 
-def _send_bootcamp_request_email(payload: Dict[str, str]) -> bool:
+def send_email_notification(
+    subject: str,
+    text_body: str,
+    to_address: str,
+    reply_to: str | None = None,
+) -> bool:
+    """Send a plaintext email notification using the configured SMTP backend."""
     if EMAIL_BACKEND != "smtp":
-        log.warning("Bootcamp request email skipped: EMAIL_BACKEND=%s", EMAIL_BACKEND)
+        log.warning("Email notification skipped: EMAIL_BACKEND=%s", EMAIL_BACKEND)
         return False
-    if not (SMTP_USERNAME and SMTP_PASSWORD and BOOTCAMP_REQUEST_TO):
-        log.warning("Bootcamp request email skipped: SMTP not fully configured")
+    if not (SMTP_USERNAME and SMTP_PASSWORD and to_address):
+        log.warning("Email notification skipped: SMTP not fully configured")
         return False
-
-    subject = f"Bootcamp cohort request — {payload['company_name']}"
-    team_size = payload.get("team_size") or "N/A"
-    timeline = _format_preferred_dates(
-        payload.get("timeline_start") or "",
-        payload.get("timeline_end") or "",
-    )
-    goals = payload.get("goals") or "N/A"
-    notes = payload.get("notes") or "N/A"
-
-    text_body = (
-        "A company submitted a bootcamp cohort request.\n\n"
-        f"Company: {payload['company_name']}\n"
-        f"Contact: {payload['contact_name']}\n"
-        f"Email: {payload['contact_email']}\n"
-        f"Team size: {team_size}\n"
-        f"Preferred dates: {timeline}\n"
-        f"Goals: {goals}\n"
-        f"Notes: {notes}\n"
-    )
 
     message = EmailMessage()
     message["Subject"] = subject
     message["From"] = SMTP_FROM or SMTP_USERNAME
-    message["To"] = BOOTCAMP_REQUEST_TO
-    message["Reply-To"] = payload["contact_email"]
+    message["To"] = to_address
+    if reply_to:
+        message["Reply-To"] = reply_to
     message.set_content(text_body)
 
     try:
@@ -361,8 +348,37 @@ def _send_bootcamp_request_email(payload: Dict[str, str]) -> bool:
                     smtp.ehlo()
                 _smtp_authenticate(smtp, SMTP_USERNAME, SMTP_PASSWORD)
                 smtp.send_message(message)
-        log.info("Bootcamp cohort request email sent to %s", BOOTCAMP_REQUEST_TO)
+        log.info("Email notification sent to %s", to_address)
         return True
     except Exception:
-        log.exception("Failed to send bootcamp cohort request email")
+        log.exception("Failed to send email notification")
         return False
+
+
+def _send_bootcamp_request_email(payload: Dict[str, str]) -> bool:
+    subject = f"Bootcamp cohort request — {payload['company_name']}"
+    team_size = payload.get("team_size") or "N/A"
+    timeline = _format_preferred_dates(
+        payload.get("timeline_start") or "",
+        payload.get("timeline_end") or "",
+    )
+    goals = payload.get("goals") or "N/A"
+    notes = payload.get("notes") or "N/A"
+
+    text_body = (
+        "A company submitted a bootcamp cohort request.\n\n"
+        f"Company: {payload['company_name']}\n"
+        f"Contact: {payload['contact_name']}\n"
+        f"Email: {payload['contact_email']}\n"
+        f"Team size: {team_size}\n"
+        f"Preferred dates: {timeline}\n"
+        f"Goals: {goals}\n"
+        f"Notes: {notes}\n"
+    )
+
+    return send_email_notification(
+        subject,
+        text_body,
+        BOOTCAMP_REQUEST_TO,
+        reply_to=payload.get("contact_email") or None,
+    )

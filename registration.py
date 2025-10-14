@@ -135,6 +135,8 @@ PROMO_PRICE_EUR = int(os.getenv("PROMO_PRICE_EUR", "439"))
 PROMO_CODE_FREE = os.getenv("PROMO_CODE_FREE", "IMPACT-100")
 PROMO_PRICE_FREE_EUR = int(os.getenv("PROMO_PRICE_FREE_EUR", "0"))
 
+DEFAULT_ENROLLMENT_STATUS = os.getenv("DEFAULT_ENROLLMENT_STATUS", "pending").strip() or "pending"
+
 COURSES = [
     {
         "code": "AAI-RTD",
@@ -503,6 +505,8 @@ def submit():
             if applied_promo else f"PRICE_EUR:{final_price_eur}"
         ),
         reason_choose_us=_clip(request.form.get("reason_choose_us")),
+
+        enrollment_status=_s(request.form.get("enrollment_status")) or DEFAULT_ENROLLMENT_STATUS,
 
         invoice_name=_s(request.form.get("invoice_name")),
         invoice_company=_s(request.form.get("invoice_company")),

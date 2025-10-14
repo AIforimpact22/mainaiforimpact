@@ -1,6 +1,26 @@
 {% extends "base.html" %}
 {% block title %}Contact — Ai For Impact{% endblock %}
 
+{% block head %}
+  {{ super() }}
+  <style>
+    .contact-grid{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+    .contact-form{display:flex;flex-direction:column;gap:16px;margin-top:14px}
+    .contact-form .form-field{display:flex;flex-direction:column;gap:6px}
+    .contact-form label{font-weight:700;font-size:15px;color:var(--ink)}
+    .contact-form input,
+    .contact-form textarea{background:#090b12;border:1px solid #23283a;border-radius:9px;padding:12px 14px;color:var(--ink);font-size:15px;min-width:0}
+    .contact-form input:focus,
+    .contact-form textarea:focus{outline:2px solid rgba(92,169,255,.6);outline-offset:1px}
+    .contact-form textarea{resize:vertical;min-height:140px}
+    .contact-form .char-count{font-size:13px;color:var(--muted)}
+    .contact-form button{align-self:flex-start}
+    .form-feedback{font-size:14px;margin:0}
+    .form-feedback.is-success{color:#8be087}
+    .form-feedback.is-error{color:#ff8383}
+  </style>
+{% endblock %}
+
 {% block content %}
 <section class="section-card" style="margin-top:26px;" aria-labelledby="contact-title">
   <div class="banner">
@@ -8,7 +28,7 @@
     <p class="muted">We’d love to hear from you.</p>
   </div>
 
-  <div class="body">
+  <div class="body contact-grid">
     <div class="card">
       <h2 style="margin-top:0">How we can help</h2>
       <p class="muted">
@@ -28,6 +48,31 @@
       <p>
         <a href="mailto:connect@aiforimpact.net" rel="nofollow">connect@aiforimpact.net</a>
       </p>
+      <p class="muted" style="margin-top:18px">
+        You can also write to <strong>noreply@aiforimpact.net</strong>; every message is automatically forwarded to our
+        connect inbox.
+      </p>
+    </div>
+    <div class="card">
+      <h2 style="margin-top:0">Send us a direct note</h2>
+      <p class="muted">Share up to 500 characters and we’ll route it straight to our support team.</p>
+      <form id="direct-contact-form" class="contact-form" action="mailto:noreply@aiforimpact.net" method="post" enctype="text/plain" novalidate>
+        <div class="form-field">
+          <label for="direct-contact-name">Your name</label>
+          <input type="text" id="direct-contact-name" name="name" maxlength="120" autocomplete="name" placeholder="Jane Doe">
+        </div>
+        <div class="form-field">
+          <label for="direct-contact-email">Email</label>
+          <input type="email" id="direct-contact-email" name="email" required autocomplete="email" placeholder="you@example.com">
+        </div>
+        <div class="form-field">
+          <label for="direct-contact-message">How can we help?</label>
+          <textarea id="direct-contact-message" name="message" maxlength="500" required placeholder="Write your message (500 characters max)"></textarea>
+          <div class="char-count" data-remaining aria-live="polite">500 characters remaining</div>
+        </div>
+        <button type="submit" class="btn">Compose email</button>
+        <p id="direct-contact-feedback" class="form-feedback muted" hidden role="status"></p>
+      </form>
     </div>
   </div>
 </section>
@@ -49,4 +94,63 @@
     </address>
   </div>
 </section>
+
+<script>
+  (function(){
+    const form = document.getElementById("direct-contact-form");
+    if (!form) return;
+    const messageField = form.querySelector("textarea[name='message']");
+    const counter = form.querySelector("[data-remaining]");
+    const feedback = document.getElementById("direct-contact-feedback");
+    const limit = messageField ? parseInt(messageField.getAttribute("maxlength"), 10) || 500 : 500;
+
+    function updateCounter(){
+      if (!messageField || !counter) return;
+      const used = messageField.value.length;
+      const remaining = Math.max(limit - used, 0);
+      counter.textContent = `${remaining} characters remaining`;
+    }
+
+    updateCounter();
+    form.addEventListener("input", updateCounter);
+
+    form.addEventListener("submit", function(event){
+      event.preventDefault();
+      if (!form.reportValidity()) {
+        if (feedback) {
+          feedback.hidden = false;
+          feedback.textContent = "Please complete the required fields before sending.";
+          feedback.classList.remove("is-success");
+          feedback.classList.add("is-error");
+        }
+        return;
+      }
+
+      const formData = new FormData(form);
+      const name = (formData.get("name") || "").toString().trim();
+      const email = (formData.get("email") || "").toString().trim();
+      const message = (formData.get("message") || "").toString().trim();
+
+      const subject = name ? `Contact from ${name}` : "Contact from Ai For Impact website";
+      const bodyLines = [
+        name ? `Name: ${name}` : "Name: (not provided)",
+        `Email: ${email}`,
+        "",
+        message,
+        "",
+        "— Sent via noreply@aiforimpact.net (forwarded to connect@aiforimpact.net)",
+      ];
+
+      const mailtoUrl = `mailto:noreply@aiforimpact.net?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyLines.join("\n"))}`;
+      window.location.href = mailtoUrl;
+
+      if (feedback) {
+        feedback.hidden = false;
+        feedback.textContent = "We’ll open your email client and forward the message straight to connect@aiforimpact.net.";
+        feedback.classList.remove("is-error");
+        feedback.classList.add("is-success");
+      }
+    });
+  })();
+</script>
 {% endblock %}

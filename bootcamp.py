@@ -25,39 +25,12 @@ bootcamp_bp = Blueprint("bootcamp", __name__)
 log = logging.getLogger(__name__)
 
 EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "smtp").strip().lower()
-
-
-def _get_env_setting(key: str, default: str = "") -> str:
-    value = os.getenv(key)
-    if value is None:
-        return default.strip()
-    return value.strip()
-
-
-def _load_secret_file(path: str) -> str:
-    if not path:
-        return ""
-    try:
-        with open(path, "r", encoding="utf-8") as handle:
-            return handle.read().strip()
-    except OSError:
-        log.warning("Unable to read secret file %s", path)
-        return ""
-
-
-SMTP_HOST = _get_env_setting("SMTP_HOST", "smtp.gmail.com")
-SMTP_PORT = int(_get_env_setting("SMTP_PORT", "465"))
-SMTP_USERNAME = _get_env_setting("SMTP_USERNAME", "connect@aiforimpact.net")
-
-_smtp_password = _get_env_setting("SMTP_PASSWORD")
-if not _smtp_password:
-    _smtp_password = _load_secret_file(_get_env_setting("SMTP_PASSWORD_FILE"))
-if not _smtp_password:
-    _smtp_password = _get_env_setting("SMTP_APP_PASSWORD")
-SMTP_PASSWORD = _smtp_password
-
-SMTP_FROM = _get_env_setting("SMTP_FROM", "AiForImpact <connect@aiforimpact.net>")
-BOOTCAMP_REQUEST_TO = _get_env_setting("BOOTCAMP_REQUEST_TO", "connect@aiforimpact.net")
+SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "465"))
+SMTP_USERNAME = os.getenv("SMTP_USERNAME", "connect@aiforimpact.net")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "rgbvcjfocqpmjipy")
+SMTP_FROM = os.getenv("SMTP_FROM", "AiForImpact <connect@aiforimpact.net>")
+BOOTCAMP_REQUEST_TO = os.getenv("BOOTCAMP_REQUEST_TO", "connect@aiforimpact.net")
 _archive_path = os.getenv("BOOTCAMP_REQUEST_ARCHIVE", "instance/bootcamp_requests.jsonl").strip()
 BOOTCAMP_REQUEST_ARCHIVE: Optional[Path] = Path(_archive_path) if _archive_path else None
 

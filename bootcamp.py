@@ -47,6 +47,12 @@ def _load_secret_file(path: str) -> str:
 
 SMTP_HOST = _get_env_setting("SMTP_HOST", "smtp.gmail.com")
 SMTP_PORT = int(_get_env_setting("SMTP_PORT", "465"))
+SMTP_TIMEOUT_RAW = _get_env_setting("SMTP_TIMEOUT")
+try:
+    SMTP_TIMEOUT = float(SMTP_TIMEOUT_RAW) if SMTP_TIMEOUT_RAW else None
+except ValueError:
+    log.warning("Invalid SMTP_TIMEOUT value %s; ignoring", SMTP_TIMEOUT_RAW)
+    SMTP_TIMEOUT = None
 SMTP_USERNAME = _get_env_setting("SMTP_USERNAME", "connect@aiforimpact.net")
 
 _smtp_password = _get_env_setting("SMTP_PASSWORD")
@@ -58,6 +64,14 @@ SMTP_PASSWORD = _smtp_password
 
 SMTP_FROM = _get_env_setting("SMTP_FROM", "AiForImpact <connect@aiforimpact.net>")
 BOOTCAMP_REQUEST_TO = _get_env_setting("BOOTCAMP_REQUEST_TO", "connect@aiforimpact.net")
+_smtp_starttls_default = "true" if SMTP_PORT not in (25, 2525, 465) else "false"
+SMTP_STARTTLS = _get_env_setting("SMTP_STARTTLS", _smtp_starttls_default).lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
+SMTP_AUTH_METHOD = _get_env_setting("SMTP_AUTH_METHOD").upper()
 _archive_path = os.getenv("BOOTCAMP_REQUEST_ARCHIVE", "instance/bootcamp_requests.jsonl").strip()
 BOOTCAMP_REQUEST_ARCHIVE: Optional[Path] = Path(_archive_path) if _archive_path else None
 
@@ -241,6 +255,20 @@ def _archive_bootcamp_request(payload: Dict[str, str]) -> bool:
         return False
 
 
+def _smtp_authenticate(session: smtplib.SMTP, username: str, password: str) -> None:
+    session.user, session.password = username, password
+    if SMTP_AUTH_METHOD:
+        method = SMTP_AUTH_METHOD.replace("-", "_")
+        auth_callable = getattr(session, f"auth_{method.lower()}", None)
+        if not auth_callable:
+            raise smtplib.SMTPException(
+                f"SMTP auth method {SMTP_AUTH_METHOD} is not supported by smtplib"
+            )
+        session.auth(SMTP_AUTH_METHOD, auth_callable)
+    else:
+        session.login(username, password)
+
+
 def _send_bootcamp_request_email(payload: Dict[str, str]) -> bool:
     if EMAIL_BACKEND != "smtp":
         log.warning("Bootcamp request email skipped: EMAIL_BACKEND=%s", EMAIL_BACKEND)
@@ -275,13 +303,22 @@ def _send_bootcamp_request_email(payload: Dict[str, str]) -> bool:
 
     try:
         if SMTP_PORT == 465:
-            with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=ssl.create_default_context()) as smtp:
-                smtp.login(SMTP_USERNAME, SMTP_PASSWORD)
+            if SMTP_STARTTLS:
+                log.debug(
+                    "SMTP_STARTTLS is enabled but port is 465; implicit TLS connection will be used"
+                )
+            with smtplib.SMTP_SSL(
+                SMTP_HOST, SMTP_PORT, context=ssl.create_default_context(), timeout=SMTP_TIMEOUT
+            ) as smtp:
+                _smtp_authenticate(smtp, SMTP_USERNAME, SMTP_PASSWORD)
                 smtp.send_message(message)
         else:
-            with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as smtp:
-                smtp.starttls(context=ssl.create_default_context())
-                smtp.login(SMTP_USERNAME, SMTP_PASSWORD)
+            with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=SMTP_TIMEOUT) as smtp:
+                if SMTP_STARTTLS:
+                    smtp.ehlo()
+                    smtp.starttls(context=ssl.create_default_context())
+                    smtp.ehlo()
+                _smtp_authenticate(smtp, SMTP_USERNAME, SMTP_PASSWORD)
                 smtp.send_message(message)
         log.info("Bootcamp cohort request email sent to %s", BOOTCAMP_REQUEST_TO)
         return True

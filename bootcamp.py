@@ -1,5 +1,15 @@
 """Bootcamp landing page blueprint."""
-from flask import Blueprint, render_template, jsonify
+from __future__ import annotations
+
+import logging
+import os
+import re
+import smtplib
+import ssl
+from email.message import EmailMessage
+from typing import Dict, Tuple
+
+from flask import Blueprint, render_template, jsonify, request, url_for, redirect
 
 from course_settings import (
     BOOTCAMP_CODE,
@@ -8,6 +18,18 @@ from course_settings import (
 )
 
 bootcamp_bp = Blueprint("bootcamp", __name__)
+
+log = logging.getLogger(__name__)
+
+EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "smtp").strip().lower()
+SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "465"))
+SMTP_USERNAME = os.getenv("SMTP_USERNAME", "connect@aiforimpact.net")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "rgbvcjfocqpmjipy")
+SMTP_FROM = os.getenv("SMTP_FROM", "AiForImpact <connect@aiforimpact.net>")
+BOOTCAMP_REQUEST_TO = os.getenv("BOOTCAMP_REQUEST_TO", "connect@aiforimpact.net")
+
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 BOOTCAMP_INFO = {
     "slug": "ai-implementation-bootcamp",
@@ -83,7 +105,60 @@ BOOTCAMP_INFO = {
 
 @bootcamp_bp.get("/")
 def bootcamp_page():
-    return render_template("bootcamp.html", bootcamp=BOOTCAMP_INFO, PRICE_SYMBOL="€")
+    status = request.args.get("request")
+    success = status == "sent"
+    return _render_bootcamp_page({}, [], success)
+
+
+def _render_bootcamp_page(
+    form_data: Dict[str, str],
+    errors: Tuple[str, ...] | list[str],
+    success: bool,
+):
+    return render_template(
+        "bootcamp.html",
+        bootcamp=BOOTCAMP_INFO,
+        PRICE_SYMBOL="€",
+        request_form=form_data or {},
+        request_errors=list(errors or []),
+        request_success=bool(success),
+    )
+
+
+@bootcamp_bp.post("/request")
+def request_cohort_quote():
+    form = {k: (request.form.get(k) or "").strip() for k in [
+        "company_name",
+        "contact_name",
+        "contact_email",
+        "team_size",
+        "timeline",
+        "goals",
+        "notes",
+    ]}
+
+    errors = []
+    if not form["company_name"]:
+        errors.append("Company name is required.")
+    if not form["contact_name"]:
+        errors.append("Contact name is required.")
+    if not form["contact_email"]:
+        errors.append("Contact email is required.")
+    elif not _EMAIL_RE.match(form["contact_email"]):
+        errors.append("Contact email must be valid.")
+
+    if form["team_size"] and not form["team_size"].isdigit():
+        errors.append("Team size must be a number.")
+
+    if errors:
+        return _render_bootcamp_page(form, errors, False)
+
+    email_ok = _send_bootcamp_request_email(form)
+    if not email_ok:
+        errors.append("We could not send your request right now. Please try again or email connect@aiforimpact.net.")
+        return _render_bootcamp_page(form, errors, False)
+
+    return redirect(url_for("bootcamp.bootcamp_page", request="sent"))
 
 
 @bootcamp_bp.get("/api")
@@ -95,3 +170,52 @@ def bootcamp_api():
         "currency": BOOTCAMP_INFO["currency"],
         "seat_cap": BOOTCAMP_INFO["seat_cap"],
     })
+
+
+def _send_bootcamp_request_email(payload: Dict[str, str]) -> bool:
+    if EMAIL_BACKEND != "smtp":
+        log.warning("Bootcamp request email skipped: EMAIL_BACKEND=%s", EMAIL_BACKEND)
+        return False
+    if not (SMTP_USERNAME and SMTP_PASSWORD and BOOTCAMP_REQUEST_TO):
+        log.warning("Bootcamp request email skipped: SMTP not fully configured")
+        return False
+
+    subject = f"Bootcamp cohort request — {payload['company_name']}"
+    team_size = payload.get("team_size") or "N/A"
+    timeline = payload.get("timeline") or "N/A"
+    goals = payload.get("goals") or "N/A"
+    notes = payload.get("notes") or "N/A"
+
+    text_body = (
+        "A company submitted a bootcamp cohort request.\n\n"
+        f"Company: {payload['company_name']}\n"
+        f"Contact: {payload['contact_name']}\n"
+        f"Email: {payload['contact_email']}\n"
+        f"Team size: {team_size}\n"
+        f"Timeline: {timeline}\n"
+        f"Goals: {goals}\n"
+        f"Notes: {notes}\n"
+    )
+
+    message = EmailMessage()
+    message["Subject"] = subject
+    message["From"] = SMTP_FROM or SMTP_USERNAME
+    message["To"] = BOOTCAMP_REQUEST_TO
+    message["Reply-To"] = payload["contact_email"]
+    message.set_content(text_body)
+
+    try:
+        if SMTP_PORT == 465:
+            with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=ssl.create_default_context()) as smtp:
+                smtp.login(SMTP_USERNAME, SMTP_PASSWORD)
+                smtp.send_message(message)
+        else:
+            with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as smtp:
+                smtp.starttls(context=ssl.create_default_context())
+                smtp.login(SMTP_USERNAME, SMTP_PASSWORD)
+                smtp.send_message(message)
+        log.info("Bootcamp cohort request email sent to %s", BOOTCAMP_REQUEST_TO)
+        return True
+    except Exception:
+        log.exception("Failed to send bootcamp cohort request email")
+        return False

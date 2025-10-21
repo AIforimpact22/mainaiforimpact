@@ -88,7 +88,7 @@ BOOTCAMP_INFO = {
     "price_eur": BOOTCAMP_PRICE_EUR,
     "currency": "EUR",
     "seat_cap": BOOTCAMP_SEAT_CAP,
-    "cover_url": None,
+    "cover_url": "https://i.imgur.com/Amgeg9j.jpeg",
     "features": [
         "4 immersive days that blend morning theory with afternoon build labs.",
         "Hands-on practice with real tooling so you leave with working assets.",

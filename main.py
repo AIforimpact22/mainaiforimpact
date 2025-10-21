@@ -152,6 +152,43 @@ def _summarize(structure: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], int, in
         weeks.append({"title": s.get("title") or "", "lessons_count": len(lessons)})
     return weeks, len(ordered), total
 
+def _fetch_certificates(limit: int = 50) -> List[Dict[str, Any]]:
+    sql = text(
+        """
+        SELECT id, full_name, date_of_joining, date_of_completion, credential, certificate_url
+        FROM training_certificates
+        ORDER BY date_of_completion DESC NULLS LAST, id DESC
+        LIMIT :limit
+        """
+    )
+    certificates: List[Dict[str, Any]] = []
+    try:
+        with ENGINE.begin() as conn:
+            rows = conn.execute(sql, {"limit": limit}).mappings().all()
+            for row in rows:
+                joining = row.get("date_of_joining")
+                completion = row.get("date_of_completion")
+
+                def _fmt_date(value: Any) -> str:
+                    try:
+                        return value.strftime("%b %d, %Y")  # type: ignore[attr-defined]
+                    except Exception:
+                        return str(value) if value is not None else ""
+
+                certificates.append(
+                    {
+                        "id": row.get("id"),
+                        "full_name": row.get("full_name") or "",
+                        "date_of_joining": _fmt_date(joining),
+                        "date_of_completion": _fmt_date(completion),
+                        "credential": row.get("credential") or "",
+                        "certificate_url": row.get("certificate_url") or "",
+                    }
+                )
+    except SQLAlchemyError as e:
+        log.exception("DB error when fetching certificates: %s", e)
+    return certificates
+
 _slug_re = re.compile(r"[^a-z0-9\-]+")
 def slugify(s: str) -> str:
     s = s.strip().lower()
@@ -239,7 +276,12 @@ def course_detail(cid: int, slug: str):
         "category": "Real-Time AI Deployment",
     }
     return render_template("course_detail.html",
-        course=vm, weeks=weeks, modules_count=modules, lessons_count=lessons)
+        course=vm,
+        weeks=weeks,
+        modules_count=modules,
+        lessons_count=lessons,
+        certificates=_fetch_certificates(),
+    )
 
 # ---- Blueprints ----
 from registration import register_bp

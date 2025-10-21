@@ -1,6 +1,44 @@
 {% extends "base.html" %}
 {% block title %}{{ course.title if course else 'Learning Portal' }}{% endblock %}
 
+{% block head %}
+  <style>
+    .course-tabs{margin-top:26px;padding:24px;background:var(--card);border:1px solid #1a1f2e;border-radius:16px}
+    .course-tabs .tabs-header{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:22px}
+    .course-tabs .tab-btn{appearance:none;border:0;padding:10px 18px;border-radius:999px;font-weight:700;font-size:15px;
+      background:rgba(255,255,255,.08);color:var(--ink);cursor:pointer;transition:background .18s ease,transform .08s ease,
+      box-shadow .18s ease}
+    .course-tabs .tab-btn:hover{background:rgba(255,255,255,.14)}
+    .course-tabs .tab-btn.is-active{background:var(--accent);color:#051327;box-shadow:0 8px 20px rgba(92,169,255,.35)}
+    .course-tabs .tab-btn:focus-visible{outline:2px solid #fff;outline-offset:2px}
+    .course-tabs .tabs-panels{position:relative}
+    .course-tabs .tab-panel{display:none}
+    .course-tabs .tab-panel.is-active{display:block}
+    .course-tabs .timeline{margin-top:0}
+    .cert-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:6px}
+    .cert-card{background:rgba(5,8,16,.68);border:1px solid rgba(255,255,255,.05);border-radius:14px;padding:18px;
+      box-shadow:0 10px 30px rgba(2,6,14,.25);display:flex;flex-direction:column;gap:14px}
+    .cert-preview{position:relative;padding-top:65%;border-radius:10px;overflow:hidden;background:rgba(15,20,32,.85);
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.05)}
+    .cert-preview img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+    .cert-name{font-weight:800;font-size:18px;line-height:1.2}
+    .cert-dates{margin:0;color:var(--muted);font-size:14px;line-height:1.4}
+    .cert-meta{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;color:var(--muted)}
+    .cert-cta{display:inline-flex;align-items:center;justify-content:center;padding:10px 14px;border-radius:9px;font-weight:700;
+      background:var(--accent);color:#051327;text-decoration:none;transition:transform .1s ease,box-shadow .2s ease}
+    .cert-cta:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(92,169,255,.35)}
+    .cert-empty{margin:18px 0 0;color:var(--muted)}
+    @media (max-width:900px){
+      .cert-grid{grid-template-columns:1fr}
+    }
+    @media (max-width:620px){
+      .course-tabs{padding:20px}
+      .cert-meta{flex-direction:column;align-items:flex-start}
+      .cert-cta{width:100%}
+    }
+  </style>
+{% endblock %}
+
 {% block hero %}
 {% if course %}
 <section class="spotlight-hero">
@@ -41,29 +79,73 @@
   {% if err %}<div class="alert error">Error: {{ err }}</div>{% endif %}
 
   {% if course %}
-  <section id="curriculum" class="section-card">
-    <div class="banner">
-      <small>Program</small>
-      <h1>Curriculum overview</h1>
-      <p class="muted">What you will cover in this course.</p>
+  <section id="curriculum" class="course-tabs" aria-label="Course information">
+    <div class="tabs-header" role="tablist">
+      <button class="tab-btn is-active" type="button" role="tab" aria-selected="true" aria-controls="tab-curriculum" data-tab-target="curriculum">Curriculum</button>
+      <button class="tab-btn" type="button" role="tab" aria-selected="false" aria-controls="tab-certificates" data-tab-target="certificates">Certificates</button>
     </div>
+    <div class="tabs-panels">
+      <div class="tab-panel is-active" id="tab-curriculum" role="tabpanel" tabindex="0">
+        <div class="banner">
+          <small>Program</small>
+          <h1>Curriculum overview</h1>
+          <p class="muted">What you will cover in this course.</p>
+        </div>
 
-    <div class="body">
-      {% if weeks and weeks|length %}
-        <ol class="timeline">
-          {% for w in weeks %}
-            <li class="timeline-item">
-              <div class="dot"></div>
-              <div class="content">
-                <div class="week-title">{{ w.title }}</div>
-                <div class="muted small">{{ w.lessons_count }} sections</div>
-              </div>
-            </li>
-          {% endfor %}
-        </ol>
-      {% else %}
-        <p class="muted">The curriculum will appear here.</p>
-      {% endif %}
+        <div class="body">
+          {% if weeks and weeks|length %}
+            <ol class="timeline">
+              {% for w in weeks %}
+                <li class="timeline-item">
+                  <div class="dot"></div>
+                  <div class="content">
+                    <div class="week-title">{{ w.title }}</div>
+                    <div class="muted small">{{ w.lessons_count }} sections</div>
+                  </div>
+                </li>
+              {% endfor %}
+            </ol>
+          {% else %}
+            <p class="muted">The curriculum will appear here.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-certificates" role="tabpanel" tabindex="0" hidden>
+        <div class="banner">
+          <small>Recognition</small>
+          <h1>Certified graduates</h1>
+          <p class="muted">Celebrate the learners who have completed this training.</p>
+        </div>
+
+        <div class="body">
+          {% if certificates and certificates|length %}
+            <div class="cert-grid">
+              {% for cert in certificates %}
+                <article class="cert-card">
+                  {% if cert.certificate_url %}
+                    <div class="cert-preview">
+                      <img src="{{ cert.certificate_url }}" alt="Certificate for {{ cert.full_name }}" loading="lazy">
+                    </div>
+                  {% endif %}
+                  <div class="cert-name">{{ cert.full_name }}</div>
+                  <p class="cert-dates">
+                    Joined {{ cert.date_of_joining or '—' }} · Completed {{ cert.date_of_completion or '—' }}
+                  </p>
+                  <div class="cert-meta">
+                    <span>{{ cert.credential|title }}</span>
+                    {% if cert.certificate_url %}
+                      <a class="cert-cta" href="{{ cert.certificate_url }}" target="_blank" rel="noopener">View certificate ↗</a>
+                    {% endif %}
+                  </div>
+                </article>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="cert-empty">Certificates will appear here as learners complete the program.</p>
+          {% endif %}
+        </div>
+      </div>
     </div>
   </section>
   {% endif %}
@@ -82,6 +164,33 @@
         if (b1) b1.href = base + "/learn/{{ course.id }}/" + uid;
       }
     } catch(e){}
+  })();
+</script>
+<script>
+  (function(){
+    var container = document.querySelector('.course-tabs');
+    if (!container) return;
+    var buttons = container.querySelectorAll('[data-tab-target]');
+    var panels = container.querySelectorAll('.tab-panel');
+
+    function setActive(targetId){
+      buttons.forEach(function(btn){
+        var isMatch = btn.getAttribute('data-tab-target') === targetId;
+        btn.classList.toggle('is-active', isMatch);
+        btn.setAttribute('aria-selected', isMatch ? 'true' : 'false');
+      });
+      panels.forEach(function(panel){
+        var match = panel.id === 'tab-' + targetId;
+        panel.classList.toggle('is-active', match);
+        panel.toggleAttribute('hidden', !match);
+      });
+    }
+
+    buttons.forEach(function(btn){
+      btn.addEventListener('click', function(){
+        setActive(btn.getAttribute('data-tab-target'));
+      });
+    });
   })();
 </script>
 {% endif %}

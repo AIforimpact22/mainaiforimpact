@@ -18,6 +18,12 @@
                  background: rgba(92,169,255,.15); border:1px solid #2a3348; font-weight:800; font-size:12px; }
   .incl-text { margin-top: 2px; }
 
+  .audience-list,
+  .logistics-list { margin: 10px 0 0; padding-left: 20px; display:grid; gap:6px; font-size:14px; color:var(--muted); }
+  .audience-list li,
+  .logistics-list li { margin:0; }
+  .logistics-list strong { color:var(--ink); font-weight:700; margin-right:6px; }
+
   .cta-row { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:16px; }
   .btn.secondary { background:transparent; border:1px solid #2a3348; color:var(--ink); }
 
@@ -201,6 +207,35 @@
         </div>
         {% endfor %}
       </div>
+
+      {% if bootcamp.audience %}
+      <div class="hr"></div>
+
+      <h2>Who it's for</h2>
+      <ul class="audience-list">
+        {% for item in bootcamp.audience %}
+        <li>{{ item }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+
+      {% if bootcamp.logistics %}
+      {% set prereqs = bootcamp.logistics.prereqs %}
+      {% set equipment = bootcamp.logistics.equipment %}
+      {% if prereqs or equipment %}
+      <div class="hr"></div>
+
+      <h2>Prereqs & logistics</h2>
+      <ul class="logistics-list">
+        {% if prereqs %}
+        <li><strong>Prereqs:</strong> {{ prereqs }}</li>
+        {% endif %}
+        {% if equipment %}
+        <li><strong>Bring:</strong> {{ equipment }}</li>
+        {% endif %}
+      </ul>
+      {% endif %}
+      {% endif %}
 
       <div class="hr"></div>
 

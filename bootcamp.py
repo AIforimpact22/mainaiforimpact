@@ -107,6 +107,15 @@ BOOTCAMP_INFO = {
         "Certificate of completion highlighting your applied AI skills.",
         "Session recordings and templates you can revisit long after the cohort.",
     ],
+    "audience": [
+        "Researchers turning datasets into tools",
+        "Entrepreneurs prototyping AI products",
+        "Analysts/engineers upskilling to applied AI",
+    ],
+    "logistics": {
+        "prereqs": "Basic Python helpful (not required).",
+        "equipment": "Bring a laptop; accounts: GitHub.",
+    },
     "daily_flow": [
         {
             "title": "Day 1 · Foundations to Deployment",

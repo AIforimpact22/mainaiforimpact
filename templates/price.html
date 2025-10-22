@@ -13,6 +13,19 @@
   .price-currency { font-size: .6em; opacity: .9; margin-right: 6px; }
   .price-note { color: var(--muted); margin-top: 8px; font-size: 14px; }
 
+  .session-selector { display:grid; gap:12px; margin-bottom: 16px; }
+  .session-selector h2 { margin:0; font-size: 18px; }
+  .session-buttons { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+  .session-button { border:1px solid #1a1f2e; border-radius:999px; padding:8px 16px; background:rgba(255,255,255,0.02);
+                    color:var(--ink); font-weight:600; cursor:pointer; transition:background .2s ease, border-color .2s ease; }
+  .session-button:hover { background:rgba(92,169,255,0.12); border-color:#5ca9ff; }
+  .session-button.is-active { background:#5ca9ff; color:#0b1022; border-color:#5ca9ff; }
+  .session-button:focus-visible { outline:2px solid #5ca9ff; outline-offset:2px; }
+  .session-button .session-city { display:block; font-size:15px; }
+  .session-button .session-date { display:block; font-size:12px; opacity:.8; }
+  .session-meta { display:grid; gap:4px; }
+  .session-meta strong { color:var(--ink); }
+
   .incl-list { display:grid; gap:10px; margin-top: 8px; }
   .incl-item { display:flex; gap:10px; align-items:flex-start; }
   .incl-bullet { width:22px; height:22px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
@@ -133,11 +146,44 @@
     </div>
 
     <!-- Right: Price card -->
+    {% set has_sessions = bootcamp_sessions and bootcamp_sessions|length > 0 %}
+    {% if has_sessions %}
+      {% set initial_session = bootcamp_sessions[0] %}
+    {% endif %}
+
     <aside class="card price-card" aria-label="Price summary">
-      <div class="price-amount">
-        <span class="price-currency" aria-hidden="true">{{ PRICE_SYMBOL }}</span>{{ "%d"|format(course.price_eur) }}
-      </div>
-      <div class="price-note">One-time course fee &middot; {{ course.currency }}</div>
+      {% if has_sessions %}
+        <div class="session-selector" aria-live="polite">
+          <h2>Upcoming bootcamps</h2>
+          <div class="session-buttons" role="group" aria-label="Select bootcamp">
+            {% for session in bootcamp_sessions %}
+              <button
+                class="session-button{% if loop.first %} is-active{% endif %}"
+                data-session-id="{{ session.id }}"
+                type="button"
+                aria-pressed="{{ 'true' if loop.first else 'false' }}"
+              >
+                <span class="session-city">{{ session.city }}</span>
+                <span class="session-date">{{ session.start_date }}</span>
+              </button>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="price-amount" aria-live="polite">
+          <span class="price-currency" id="selectedPriceSymbol" aria-hidden="true">{{ initial_session.price_symbol }}</span>
+          <span id="selectedPriceAmountValue">{{ "%d"|format(initial_session.price_eur) }}</span>
+        </div>
+        <div class="price-note session-meta" id="selectedPriceNote">
+          <div>Next bootcamp: <strong id="selectedSessionLabel">{{ initial_session.label }}</strong></div>
+          <div><span id="selectedSessionSpots">{{ initial_session.spots_label }}</span> &middot; <span id="selectedSessionCurrency">{{ initial_session.currency }}</span></div>
+        </div>
+      {% else %}
+        <div class="price-amount">
+          <span class="price-currency" aria-hidden="true">{{ PRICE_SYMBOL }}</span>{{ "%d"|format(course.price_eur) }}
+        </div>
+        <div class="price-note">One-time course fee &middot; {{ course.currency }}</div>
+      {% endif %}
 
       <div class="cta-row">
         <a class="btn" href="{{ bp('/register') }}">Register now</a>
@@ -172,6 +218,78 @@
 {% endblock %}
 
 {% block body_end %}
+{% if bootcamp_sessions and bootcamp_sessions|length > 0 %}
+<script id="bootcampSessionsData" type="application/json">{{ bootcamp_sessions | tojson }}</script>
+<script>
+  (function(){
+    var dataEl = document.getElementById('bootcampSessionsData');
+    if(!dataEl) return;
+    var sessions;
+    try {
+      sessions = JSON.parse(dataEl.textContent || '[]');
+    } catch (err) {
+      sessions = [];
+    }
+    if(!sessions.length) return;
+
+    var sessionMap = {};
+    sessions.forEach(function(session){
+      sessionMap[session.id] = session;
+    });
+
+    var buttons = Array.prototype.slice.call(document.querySelectorAll('[data-session-id]'));
+    var priceValue = document.getElementById('selectedPriceAmountValue');
+    var priceSymbol = document.getElementById('selectedPriceSymbol');
+    var label = document.getElementById('selectedSessionLabel');
+    var spots = document.getElementById('selectedSessionSpots');
+    var currency = document.getElementById('selectedSessionCurrency');
+
+    function selectSession(sessionId){
+      var session = sessionMap[sessionId];
+      if(!session) return;
+
+      if(priceValue) {
+        var amount = Number(session.price_eur || session.price || 0);
+        if(isNaN(amount)) {
+          priceValue.textContent = session.price_eur;
+        } else {
+          priceValue.textContent = amount.toLocaleString(undefined, { maximumFractionDigits: 0 });
+        }
+      }
+
+      if(priceSymbol && session.price_symbol) {
+        priceSymbol.textContent = session.price_symbol;
+      }
+
+      if(label) {
+        label.textContent = session.label || '';
+      }
+
+      if(spots) {
+        spots.textContent = session.spots_label || '';
+      }
+
+      if(currency) {
+        currency.textContent = session.currency || '';
+      }
+
+      buttons.forEach(function(btn){
+        var isActive = btn.getAttribute('data-session-id') === sessionId;
+        btn.classList.toggle('is-active', isActive);
+        btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      });
+    }
+
+    buttons.forEach(function(btn){
+      btn.addEventListener('click', function(){
+        selectSession(btn.getAttribute('data-session-id'));
+      });
+    });
+
+    selectSession(sessions[0].id);
+  })();
+</script>
+{% endif %}
 <script>
   // Reveal a clickable email only in the browser (simple anti-scrape)
   (function(){

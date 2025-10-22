@@ -287,11 +287,6 @@
                       <div>{{ offer.price_type }}</div>
                     </div>
                     <div class="seat-offer-price">{{ offer.price_display }}</div>
-                    {% if offer.seats_available is not none and offer.seats_total is not none %}
-                      <div class="seat-offer-meta">{{ offer.seats_available }} of {{ offer.seats_total }} seats remaining</div>
-                    {% elif offer.seats_total is not none %}
-                      <div class="seat-offer-meta">{{ offer.seats_total }} seats available</div>
-                    {% endif %}
                     {% if offer.notes %}
                       <div class="seat-offer-notes">{{ offer.notes }}</div>
                     {% endif %}

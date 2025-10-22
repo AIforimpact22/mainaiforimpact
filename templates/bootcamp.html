@@ -4,6 +4,11 @@
 {% block head %}
 <style>
   .pricing-hero .inner { min-height: 300px; }
+  .badge-row { display:flex; flex-wrap:wrap; gap:8px; }
+  .badge { display:inline-flex; align-items:center; justify-content:center; padding:6px 12px; border-radius:999px; background:rgba(118,180,255,0.18); border:1px solid rgba(118,180,255,0.32); font-weight:800; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:#bcd9ff; }
+  .badge-button { background:none; border:none; padding:0; font:inherit; color:inherit; cursor:pointer; }
+  .badge-button:hover { color:#ffffff; }
+  .badge-button:focus-visible { outline:2px solid rgba(118,180,255,0.7); outline-offset:2px; }
   .pricing-wrap { display:grid; grid-template-columns: 1.2fr 0.8fr; gap:18px; }
   @media (max-width: 900px) { .pricing-wrap { grid-template-columns: 1fr; } }
 
@@ -11,6 +16,22 @@
   .price-amount { font-weight: 900; font-size: clamp(38px, 6vw, 58px); line-height: 1; letter-spacing: .2px; }
   .price-currency { font-size: .6em; opacity: .9; margin-right: 6px; }
   .price-note { color: var(--muted); margin-top: 8px; font-size: 14px; }
+  .price-toggle { width:100%; margin-top:12px; }
+  .price-toggle button { width:100%; appearance:none; border:none; border-radius:12px; padding:12px 16px; font-weight:800; cursor:pointer; background:rgba(118,180,255,0.18); color:#bcd9ff; border:1px solid rgba(118,180,255,0.38); transition:background .2s ease, transform .2s ease; }
+  .price-toggle button:hover { background:rgba(118,180,255,0.28); transform:translateY(-1px); }
+  .price-toggle button[aria-expanded="true"] { background:rgba(118,180,255,0.35); color:#0e172b; }
+  .seat-pricing-panel { margin-top:16px; text-align:left; display:grid; gap:16px; }
+  .seat-pricing-item { border:1px solid rgba(118,180,255,0.28); border-radius:14px; padding:14px 16px; background:rgba(8,12,22,0.78); }
+  .seat-pricing-header { display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; font-weight:800; font-size:15px; margin-bottom:10px; }
+  .seat-pricing-header .seat-location { text-transform:uppercase; letter-spacing:.08em; color:#9dc9ff; }
+  .seat-pricing-header .seat-date { color:#e6ecff; }
+  .seat-offer-list { display:grid; gap:12px; }
+  .seat-offer { display:grid; gap:6px; padding:12px; border-radius:12px; background:rgba(118,180,255,0.08); border:1px solid rgba(118,180,255,0.16); }
+  .seat-offer-title { display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; font-weight:700; }
+  .seat-offer-price { font-size:18px; font-weight:800; color:#f7f9ff; }
+  .seat-offer-meta { font-size:13px; color:var(--muted); }
+  .seat-offer-notes { font-size:13px; color:#bcd9ff; margin-top:6px; }
+  .seat-pricing-empty { font-size:14px; color:var(--muted); text-align:center; margin-top:12px; }
 
   .incl-list { display:grid; gap:10px; margin-top: 10px; }
   .incl-item { display:flex; gap:10px; align-items:flex-start; }
@@ -120,7 +141,11 @@
     <div class="badge-row">
       <span class="badge">Bootcamp</span>
       <span class="badge">{{ bootcamp.seat_cap }} seats per cohort</span>
-      <span class="badge">€{{ bootcamp.price_eur }} per learner</span>
+      <span class="badge">
+        <button type="button" class="badge-button" data-seat-pricing-open>
+          View seat pricing
+        </button>
+      </span>
     </div>
     <h1>{{ bootcamp.title }}</h1>
     <p class="subhead">{{ bootcamp.subtitle }}</p>
@@ -240,10 +265,47 @@
     </div>
 
     <aside class="card price-card" aria-label="Bootcamp price summary">
-      <div class="price-amount">
-        <span class="price-currency" aria-hidden="true">{{ PRICE_SYMBOL }}</span>{{ "%d"|format(bootcamp.price_eur) }}
+      <div class="price-toggle">
+        <button type="button" data-seat-pricing-toggle aria-expanded="false" aria-controls="seat-pricing-panel">
+          View seat pricing
+        </button>
       </div>
-      <div class="price-note">Per learner · {{ bootcamp.currency }}</div>
+
+      <div id="seat-pricing-panel" class="seat-pricing-panel" hidden>
+        {% if bootcamp.seat_prices %}
+          {% for cohort in bootcamp.seat_prices %}
+            <div class="seat-pricing-item">
+              <div class="seat-pricing-header">
+                <div class="seat-location">{{ cohort.location }}</div>
+                <div class="seat-date">{% if cohort.event_date_display %}{{ cohort.event_date_display }}{% else %}Date TBA{% endif %}</div>
+              </div>
+              <div class="seat-offer-list">
+                {% for offer in cohort.offers %}
+                  <div class="seat-offer">
+                    <div class="seat-offer-title">
+                      <div>{{ offer.seat_tier }}</div>
+                      <div>{{ offer.price_type }}</div>
+                    </div>
+                    <div class="seat-offer-price">{{ offer.price_display }}</div>
+                    {% if offer.seats_available is not none and offer.seats_total is not none %}
+                      <div class="seat-offer-meta">{{ offer.seats_available }} of {{ offer.seats_total }} seats remaining</div>
+                    {% elif offer.seats_total is not none %}
+                      <div class="seat-offer-meta">{{ offer.seats_total }} seats available</div>
+                    {% endif %}
+                    {% if offer.notes %}
+                      <div class="seat-offer-notes">{{ offer.notes }}</div>
+                    {% endif %}
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="seat-pricing-empty">Pricing details will be announced soon. Contact us for a custom quote.</div>
+        {% endif %}
+      </div>
+
+      <div class="price-note" style="margin-top:12px;">Per learner · {{ bootcamp.currency }}</div>
       <div class="price-note">Cohort capped at {{ bootcamp.seat_cap }} seats.</div>
 
       <div class="cta-row">
@@ -315,6 +377,40 @@
     </aside>
   </div>
 </section>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var toggle = document.querySelector('[data-seat-pricing-toggle]');
+    var panel = document.getElementById('seat-pricing-panel');
+    if (!toggle || !panel) { return; }
+
+    var setExpanded = function (expanded) {
+      toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+      if (expanded) {
+        panel.removeAttribute('hidden');
+      } else {
+        panel.setAttribute('hidden', '');
+      }
+    };
+
+    toggle.addEventListener('click', function () {
+      var expanded = toggle.getAttribute('aria-expanded') === 'true';
+      setExpanded(!expanded);
+    });
+
+    document.querySelectorAll('[data-seat-pricing-open]').forEach(function (opener) {
+      opener.addEventListener('click', function () {
+        var alreadyOpen = toggle.getAttribute('aria-expanded') === 'true';
+        if (!alreadyOpen) {
+          setExpanded(true);
+        }
+        if (typeof panel.scrollIntoView === 'function') {
+          panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+  });
+</script>
 
 {% if bootcamp.testimonials %}
 <section class="section-card testimony-section" aria-label="Bootcamp testimonials" style="margin-top:18px;">

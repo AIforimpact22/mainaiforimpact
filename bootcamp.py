@@ -11,7 +11,7 @@ import ssl
 from datetime import datetime, timezone
 from email.message import EmailMessage
 from pathlib import Path
-from typing import Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 from flask import (
     Blueprint,
@@ -191,12 +191,29 @@ BOOTCAMP_INFO = {
             ),
         },
     ],
+    "testimonials": [],
 }
 
 DEFAULT_DAY_TITLES = (
     "Day 1 · Foundations to Deployment",
     "Day 2 · Intelligence & Capstone",
 )
+
+
+def _resolve_db_engine():
+    try:
+        engine = current_app.config.get("DB_ENGINE")  # type: ignore[attr-defined]
+    except RuntimeError:
+        engine = None
+
+    if engine is None:
+        try:
+            from main import ENGINE as default_engine  # type: ignore
+        except ImportError:
+            default_engine = None
+        engine = default_engine
+
+    return engine
 
 
 def _get_bootcamp_vm() -> Dict[str, object]:
@@ -209,21 +226,12 @@ def _get_bootcamp_vm() -> Dict[str, object]:
             vm["modules"] = modules
         if daily_flow:
             vm["daily_flow"] = daily_flow
+    vm["testimonials"] = _fetch_bootcamp_testimonials()
     return vm
 
 
 def _fetch_curriculum_from_backend() -> Optional[Dict[str, object]]:
-    try:
-        engine = current_app.config.get("DB_ENGINE")  # type: ignore[attr-defined]
-    except RuntimeError:
-        engine = None
-
-    if engine is None:
-        try:
-            from main import ENGINE as default_engine  # type: ignore
-        except ImportError:
-            default_engine = None
-        engine = default_engine
+    engine = _resolve_db_engine()
 
     if engine is None:
         return None
@@ -326,6 +334,68 @@ def _fetch_curriculum_from_backend() -> Optional[Dict[str, object]]:
 
     daily_flow = _build_daily_flow(modules)
     return {"modules": modules, "daily_flow": daily_flow}
+
+
+def _format_certificate_date(value: Any) -> str:
+    if not value:
+        return ""
+    try:
+        return value.strftime("%b %Y")  # type: ignore[attr-defined]
+    except Exception:
+        try:
+            parsed = datetime.fromisoformat(str(value))
+        except ValueError:
+            return str(value)
+        else:
+            return parsed.strftime("%b %Y")
+
+
+def _fetch_bootcamp_testimonials(limit: int = 6) -> list[dict[str, str]]:
+    engine = _resolve_db_engine()
+    if engine is None:
+        return []
+
+    query = text(
+        """
+        SELECT id, full_name, credential, certificate_url, testimony, date_of_completion
+        FROM training_certificates
+        WHERE testimony IS NOT NULL AND btrim(testimony) <> ''
+        ORDER BY date_of_completion DESC NULLS LAST, id DESC
+        LIMIT :limit
+        """
+    )
+
+    testimonials: list[dict[str, str]] = []
+
+    try:
+        with engine.begin() as conn:
+            rows = conn.execute(query, {"limit": limit}).mappings().all()
+    except SQLAlchemyError:
+        log.exception("Failed to fetch bootcamp testimonials from backend")
+        return []
+
+    for row in rows:
+        testimony_raw = row.get("testimony")
+        testimony = str(testimony_raw).strip() if testimony_raw is not None else ""
+        if not testimony:
+            continue
+
+        full_name_raw = row.get("full_name")
+        credential_raw = row.get("credential")
+        certificate_url_raw = row.get("certificate_url")
+        completed_raw = row.get("date_of_completion")
+
+        testimonials.append(
+            {
+                "full_name": (str(full_name_raw).strip() if full_name_raw else "Bootcamp graduate"),
+                "credential": str(credential_raw).strip() if credential_raw else "",
+                "certificate_url": str(certificate_url_raw).strip() if certificate_url_raw else "",
+                "testimony": testimony,
+                "completed": _format_certificate_date(completed_raw),
+            }
+        )
+
+    return testimonials
 
 
 def _join_titles(titles: list[str]) -> str:

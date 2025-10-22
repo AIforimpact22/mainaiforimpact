@@ -1,6 +1,7 @@
 """Bootcamp landing page blueprint."""
 from __future__ import annotations
 
+import copy
 import json
 import logging
 import os
@@ -12,7 +13,17 @@ from email.message import EmailMessage
 from pathlib import Path
 from typing import Dict, Optional, Tuple
 
-from flask import Blueprint, render_template, jsonify, request, url_for, redirect
+from flask import (
+    Blueprint,
+    render_template,
+    jsonify,
+    request,
+    url_for,
+    redirect,
+    current_app,
+)
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 
 from course_settings import (
     BOOTCAMP_CODE,
@@ -99,29 +110,65 @@ BOOTCAMP_INFO = {
     "daily_flow": [
         {
             "title": "Day 1 · Foundations to Deployment",
-            "copy": (
+            "description": (
                 "Kickoff, team formation, and Modules 1–6. We move from core collaboration habits "
                 "through modular coding, advanced SQL, deployment, and real-time dashboards with guided labs."
             ),
         },
         {
             "title": "Day 2 · Intelligence & Capstone",
-            "copy": (
+            "description": (
                 "Modules 7–9 focus on machine learning predictions, operational LLM workflows, and an intensive "
                 "capstone build sprint that culminates in peer demos and feedback."
             ),
         },
     ],
     "modules": [
-        "Ice Breaker for Coding – intro activities that build confidence and collaboration.",
-        "Start Coding with AI – practical workflows for working alongside assistants.",
-        "Modularity – structuring clean, reusable components that scale.",
-        "Advanced SQL and Databases – deep dives into querying and modeling data.",
-        "Deploy App with Server – packaging and launching apps to live environments.",
-        "Data Visualization & Real-Time – streaming insights and dashboards people actually use.",
-        "Machine Learning Prediction – building, evaluating, and deploying predictive models.",
-        "Operational LLMs – using large language models for explanation, extraction, and automation.",
-        "Capstone Project – Day 2 build sprint that blends every module into a shipped asset you can present immediately.",
+        {
+            "title": "Module 1: Ice Breaker for Coding",
+            "description": "Intro activities that build confidence and collaboration.",
+            "lessons_count": None,
+        },
+        {
+            "title": "Module 2: Start Coding with AI",
+            "description": "Practical workflows for working alongside assistants.",
+            "lessons_count": None,
+        },
+        {
+            "title": "Module 3: Modularity",
+            "description": "Structuring clean, reusable components that scale.",
+            "lessons_count": None,
+        },
+        {
+            "title": "Module 4: Advanced SQL and Databases",
+            "description": "Deep dives into querying and modeling data.",
+            "lessons_count": None,
+        },
+        {
+            "title": "Module 5: Deploy App with Server",
+            "description": "Packaging and launching apps to live environments.",
+            "lessons_count": None,
+        },
+        {
+            "title": "Module 6: Data Visualization & Real-Time",
+            "description": "Streaming insights and dashboards people actually use.",
+            "lessons_count": None,
+        },
+        {
+            "title": "Module 7: Machine Learning Prediction",
+            "description": "Building, evaluating, and deploying predictive models.",
+            "lessons_count": None,
+        },
+        {
+            "title": "Module 8: Operational LLMs",
+            "description": "Using large language models for explanation, extraction, and automation.",
+            "lessons_count": None,
+        },
+        {
+            "title": "Week 9: Capstone Project",
+            "description": "Day 2 build sprint that blends every module into a shipped asset you can present immediately.",
+            "lessons_count": None,
+        },
     ],
     "faqs": [
         {
@@ -146,6 +193,189 @@ BOOTCAMP_INFO = {
     ],
 }
 
+DEFAULT_DAY_TITLES = (
+    "Day 1 · Foundations to Deployment",
+    "Day 2 · Intelligence & Capstone",
+)
+
+
+def _get_bootcamp_vm() -> Dict[str, object]:
+    vm = copy.deepcopy(BOOTCAMP_INFO)
+    curriculum = _fetch_curriculum_from_backend()
+    if curriculum:
+        modules = curriculum.get("modules")
+        daily_flow = curriculum.get("daily_flow")
+        if modules:
+            vm["modules"] = modules
+        if daily_flow:
+            vm["daily_flow"] = daily_flow
+    return vm
+
+
+def _fetch_curriculum_from_backend() -> Optional[Dict[str, object]]:
+    try:
+        engine = current_app.config.get("DB_ENGINE")  # type: ignore[attr-defined]
+    except RuntimeError:
+        engine = None
+
+    if engine is None:
+        try:
+            from main import ENGINE as default_engine  # type: ignore
+        except ImportError:
+            default_engine = None
+        engine = default_engine
+
+    if engine is None:
+        return None
+
+    lookup_title = os.getenv("BOOTCAMP_CURRICULUM_TITLE", "").strip()
+    fallback_title = os.getenv("COURSE_TITLE", "").strip()
+    lookup_title = lookup_title or fallback_title
+
+    query = text(
+        """
+        SELECT id, title, structure
+        FROM courses
+        WHERE (:title = '' OR title ILIKE :title)
+        ORDER BY COALESCE(published_at, created_at) DESC
+        LIMIT 1
+        """
+    )
+    published_fallback = text(
+        """
+        SELECT id, title, structure
+        FROM courses
+        WHERE is_published = TRUE
+        ORDER BY COALESCE(published_at, created_at) DESC
+        LIMIT 1
+        """
+    )
+
+    try:
+        with engine.begin() as conn:
+            row = conn.execute(query, {"title": lookup_title}).mappings().first()
+            if not row:
+                row = conn.execute(published_fallback).mappings().first()
+            if not row:
+                return None
+            structure_raw = row.get("structure")
+    except SQLAlchemyError:
+        log.exception("Failed to fetch bootcamp curriculum from backend")
+        return None
+
+    structure: Dict[str, object] = {}
+    if isinstance(structure_raw, dict):
+        structure = structure_raw
+    elif isinstance(structure_raw, (bytes, bytearray, memoryview)):
+        try:
+            structure = json.loads(bytes(structure_raw).decode("utf-8"))
+        except json.JSONDecodeError:
+            log.warning("Bootcamp curriculum payload was not valid JSON")
+    elif isinstance(structure_raw, str):
+        try:
+            structure = json.loads(structure_raw)
+        except json.JSONDecodeError:
+            log.warning("Bootcamp curriculum payload was not valid JSON")
+
+    if not structure:
+        return None
+
+    sections = structure.get("sections") if isinstance(structure, dict) else []
+    if not isinstance(sections, list):
+        sections = []
+
+    ordered_sections = sorted(
+        (
+            s
+            for s in sections
+            if isinstance(s, dict)
+        ),
+        key=lambda s: (s.get("order") is None, s.get("order", 0)),
+    )
+
+    modules: list[Dict[str, object]] = []
+    for index, section in enumerate(ordered_sections, start=1):
+        title = section.get("title") or f"Module {index}"
+        title_str = str(title)
+        display_title = (
+            f"Module {index}: {title_str}"
+            if not title_str.lower().startswith(("module ", "week "))
+            else title_str
+        )
+        summary = section.get("summary") or section.get("description")
+        lessons = section.get("lessons") or []
+        lessons_count = None
+        if isinstance(lessons, list):
+            if lessons:
+                lessons_count = len(lessons)
+        else:
+            raw_count = section.get("lessons_count")
+            if isinstance(raw_count, int):
+                lessons_count = raw_count
+
+        modules.append(
+            {
+                "title": display_title,
+                "description": summary.strip() if isinstance(summary, str) and summary.strip() else None,
+                "lessons_count": lessons_count,
+            }
+        )
+
+    if not modules:
+        return None
+
+    daily_flow = _build_daily_flow(modules)
+    return {"modules": modules, "daily_flow": daily_flow}
+
+
+def _join_titles(titles: list[str]) -> str:
+    if not titles:
+        return ""
+    if len(titles) == 1:
+        return titles[0]
+    if len(titles) == 2:
+        return f"{titles[0]} and {titles[1]}"
+    return ", ".join(titles[:-1]) + f", and {titles[-1]}"
+
+
+def _build_daily_flow(modules: list[Dict[str, object]]) -> list[Dict[str, str]]:
+    day_one_modules = modules[:6]
+    day_two_modules = modules[6:]
+
+    flow: list[Dict[str, str]] = []
+
+    if day_one_modules:
+        names = []
+        for module in day_one_modules:
+            mt = module.get("title")
+            if isinstance(mt, str):
+                parts = mt.split(": ", 1)
+                names.append(parts[1] if len(parts) == 2 else parts[0])
+        desc_titles = _join_titles([n for n in names if n])
+        description = (
+            f"Kickoff, labs, and collaborative builds across {desc_titles}."
+            if desc_titles
+            else BOOTCAMP_INFO["daily_flow"][0]["description"]
+        )
+        flow.append({"title": DEFAULT_DAY_TITLES[0], "description": description})
+
+    if day_two_modules:
+        names = []
+        for module in day_two_modules:
+            mt = module.get("title")
+            if isinstance(mt, str):
+                parts = mt.split(": ", 1)
+                names.append(parts[1] if len(parts) == 2 else parts[0])
+        desc_titles = _join_titles([n for n in names if n])
+        description = (
+            f"Machine intelligence, automation, and capstone delivery covering {desc_titles}."
+            if desc_titles
+            else BOOTCAMP_INFO["daily_flow"][1]["description"]
+        )
+        flow.append({"title": DEFAULT_DAY_TITLES[1], "description": description})
+
+    return flow
+
 
 @bootcamp_bp.get("/")
 def bootcamp_page():
@@ -161,7 +391,7 @@ def _render_bootcamp_page(
 ):
     return render_template(
         "bootcamp.html",
-        bootcamp=BOOTCAMP_INFO,
+        bootcamp=_get_bootcamp_vm(),
         PRICE_SYMBOL="€",
         request_form=form_data or {},
         request_errors=list(errors or []),
@@ -235,12 +465,15 @@ def request_cohort_quote():
 
 @bootcamp_bp.get("/api")
 def bootcamp_api():
+    bootcamp = _get_bootcamp_vm()
     return jsonify({
-        "title": BOOTCAMP_INFO["title"],
-        "subtitle": BOOTCAMP_INFO["subtitle"],
-        "price": BOOTCAMP_INFO["price_eur"],
-        "currency": BOOTCAMP_INFO["currency"],
-        "seat_cap": BOOTCAMP_INFO["seat_cap"],
+        "title": bootcamp.get("title"),
+        "subtitle": bootcamp.get("subtitle"),
+        "price": bootcamp.get("price_eur"),
+        "currency": bootcamp.get("currency"),
+        "seat_cap": bootcamp.get("seat_cap"),
+        "modules": bootcamp.get("modules"),
+        "daily_flow": bootcamp.get("daily_flow"),
     })
 
 

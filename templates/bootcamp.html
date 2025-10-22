@@ -176,33 +176,6 @@
     </div>
   </div>
 </section>
-{% if bootcamp.testimonials %}
-<section class="section-card testimony-section" aria-label="Bootcamp testimonials" style="margin-top:26px;">
-  <div class="banner">
-    <h2>Stories from recent graduates</h2>
-    <p class="muted">Real feedback from learners who earned their certificate.</p>
-  </div>
-  <div class="testimony-grid">
-    {% for item in bootcamp.testimonials %}
-    <article class="testimony-card">
-      <div class="testimony-meta">
-        <div class="testimony-name">{{ item.full_name }}</div>
-        {% if item.credential %}
-        <div class="testimony-credential">{{ item.credential }}</div>
-        {% endif %}
-        {% if item.completed %}
-        <div class="testimony-date">Completed {{ item.completed }}</div>
-        {% endif %}
-        {% if item.certificate_url %}
-        <a class="testimony-link" href="{{ item.certificate_url }}" target="_blank" rel="noopener">View certificate ↗</a>
-        {% endif %}
-      </div>
-      <div class="testimony-quote">{{ item.testimony|safe }}</div>
-    </article>
-    {% endfor %}
-  </div>
-</section>
-{% endif %}
 <section class="section-card" style="margin-top:26px;">
   <div class="pricing-wrap">
     <div class="card">
@@ -330,6 +303,34 @@
     </aside>
   </div>
 </section>
+
+{% if bootcamp.testimonials %}
+<section class="section-card testimony-section" aria-label="Bootcamp testimonials" style="margin-top:18px;">
+  <div class="banner">
+    <h2>Stories from recent graduates</h2>
+    <p class="muted">Real feedback from learners who earned their certificate.</p>
+  </div>
+  <div class="testimony-grid">
+    {% for item in bootcamp.testimonials %}
+    <article class="testimony-card">
+      <div class="testimony-meta">
+        <div class="testimony-name">{{ item.full_name }}</div>
+        {% if item.credential %}
+        <div class="testimony-credential">{{ item.credential }}</div>
+        {% endif %}
+        {% if item.completed %}
+        <div class="testimony-date">Completed {{ item.completed }}</div>
+        {% endif %}
+        {% if item.certificate_url %}
+        <a class="testimony-link" href="{{ item.certificate_url }}" target="_blank" rel="noopener">View certificate ↗</a>
+        {% endif %}
+      </div>
+      <div class="testimony-quote">{{ item.testimony|safe }}</div>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
 
 <section class="section-card" style="margin-top:18px;">
   <div class="banner">

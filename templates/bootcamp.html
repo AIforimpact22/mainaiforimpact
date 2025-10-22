@@ -75,7 +75,8 @@
   .testimony-link { position:relative; z-index:1; display:inline-flex; align-items:center; gap:6px; font-weight:700; font-size:13px; color:#0e172b; background:rgba(139,233,197,0.88); border-radius:999px; padding:8px 14px; border:1px solid rgba(139,233,197,0.8); text-decoration:none; box-shadow:0 10px 25px rgba(12,59,43,0.35); transition:transform .3s ease, box-shadow .3s ease; white-space:nowrap; }
   .testimony-link svg { width:14px; height:14px; }
   .testimony-link:hover { transform:translateY(-1px); box-shadow:0 14px 32px rgba(12,59,43,0.38); }
-  .testimony-quote { position:relative; z-index:1; margin:0; font-size:16px; line-height:1.65; color:#f3f7ff; }
+  .testimony-quote { position:relative; z-index:1; margin:0; font-size:16px; line-height:1.65; color:#f3f7ff; max-width:100%; }
+  .testimony-quote > * { max-width:none !important; }
   .testimony-quote::before { content:"\201C"; position:absolute; left:-10px; top:-18px; font-size:60px; color:rgba(118,180,255,0.35); font-family:serif; }
   .testimony-quote p { margin:0; }
   .testimony-quote p + p { margin-top:12px; }

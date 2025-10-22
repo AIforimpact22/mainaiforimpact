@@ -43,6 +43,20 @@
   .request-card .alert { border-radius:10px; padding:12px 14px; font-size:14px; }
   .request-card .alert.error { background:#2a1414; border:1px solid #4a2020; color:#f1a5a5; }
   .request-card .alert.success { background:#10241a; border:1px solid #1f4833; color:#8be6a5; }
+
+  .experience-section { margin-top:30px; }
+  .experience-section .banner { text-align:center; margin-bottom:18px; }
+  .experience-row { display:grid; gap:16px; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+  .experience-item { background:rgba(16,20,33,0.72); border:1px solid #1a1f2e; border-radius:18px; padding:22px 18px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:12px; min-height:180px; }
+  .experience-icon { width:60px; height:60px; border-radius:16px; display:flex; align-items:center; justify-content:center; color:#e6ecff; }
+  .experience-title { font-weight:800; font-size:16px; }
+  .experience-copy { margin:0; font-size:14px; color:var(--muted); }
+  .experience-icon.learn { background:linear-gradient(135deg, rgba(118,180,255,0.2), rgba(118,180,255,0.05)); border:1px solid rgba(118,180,255,0.3); color:#9dc9ff; }
+  .experience-icon.build { background:linear-gradient(135deg, rgba(139,233,197,0.22), rgba(139,233,197,0.05)); border:1px solid rgba(139,233,197,0.32); color:#9ceac9; }
+  .experience-icon.ship { background:linear-gradient(135deg, rgba(255,179,122,0.22), rgba(255,179,122,0.05)); border:1px solid rgba(255,179,122,0.32); color:#ffc79a; }
+  .experience-icon.certificate { background:linear-gradient(135deg, rgba(255,218,122,0.22), rgba(255,218,122,0.05)); border:1px solid rgba(255,218,122,0.32); color:#ffe08b; }
+  .experience-icon.resources { background:linear-gradient(135deg, rgba(213,178,255,0.22), rgba(213,178,255,0.05)); border:1px solid rgba(213,178,255,0.32); color:#e2c2ff; }
+  .experience-icon svg { width:28px; height:28px; }
 </style>
 
 <script type="application/ld+json">
@@ -92,6 +106,65 @@
 {% endblock %}
 
 {% block content %}
+<section class="section-card experience-section" aria-label="Bootcamp experience highlights">
+  <div class="banner">
+    <h2>The experience pillars</h2>
+    <p class="muted">Every cohort moves through five moments designed to compound progress.</p>
+  </div>
+  <div class="experience-row">
+    <div class="experience-item">
+      <div class="experience-icon learn" aria-hidden="true">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4.5 5.25A2.25 2.25 0 0 1 6.75 3h6.5A2.75 2.75 0 0 1 16 5.75v12.64a.75.75 0 0 1-1.127.65L12 17.77l-2.873 1.27A.75.75 0 0 1 8 18.39V6.5H6.75a.25.25 0 0 0-.25.25v12a.75.75 0 0 1-1.5 0z" fill="currentColor"/>
+          <path d="M18 6h1.25A.75.75 0 0 1 20 6.75v11.5a.75.75 0 0 1-1.195.6L18 17.84z" fill="currentColor" opacity=".6"/>
+        </svg>
+      </div>
+      <div class="experience-title">Learn</div>
+      <p class="experience-copy">Live expert sessions demystify the latest AI capabilities.</p>
+    </div>
+    <div class="experience-item">
+      <div class="experience-icon build" aria-hidden="true">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4 12.5 12 8l8 4.5-8 4.5z" fill="currentColor"/>
+          <path d="M4 12.5v5l8 4.5v-5z" fill="currentColor" opacity=".65"/>
+          <path d="M20 12.5v5l-8 4.5v-5z" fill="currentColor" opacity=".45"/>
+        </svg>
+      </div>
+      <div class="experience-title">Build</div>
+      <p class="experience-copy">Hands-on labs translate concepts into working prototypes.</p>
+    </div>
+    <div class="experience-item">
+      <div class="experience-icon ship" aria-hidden="true">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2c2.761 0 5 3.477 5 7.765 0 1.55-.224 3.163-.645 4.61a1.2 1.2 0 0 1-.74.81L12 16.5l-3.615-1.315a1.2 1.2 0 0 1-.74-.81A21.44 21.44 0 0 1 7 9.765C7 5.477 9.239 2 12 2Z" fill="currentColor"/>
+          <path d="M9 17.25 12 18.5l3-1.25V20l-3 2-3-2z" fill="currentColor" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="experience-title">Ship</div>
+      <p class="experience-copy">Sprint reviews ensure teams launch something real by day four.</p>
+    </div>
+    <div class="experience-item">
+      <div class="experience-icon certificate" aria-hidden="true">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M7 4.5A2.5 2.5 0 0 1 9.5 2h5A2.5 2.5 0 0 1 17 4.5v8a2.5 2.5 0 0 1-2.5 2.5h-5A2.5 2.5 0 0 1 7 12.5z" fill="currentColor"/>
+          <path d="M10 14.5v5.11l2-1.11 2 1.11V14.5z" fill="currentColor" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="experience-title">Certificate</div>
+      <p class="experience-copy">Earn a credential that signals applied AI fluency to stakeholders.</p>
+    </div>
+    <div class="experience-item">
+      <div class="experience-icon resources" aria-hidden="true">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M6.5 4A2.5 2.5 0 0 1 9 1.5h8A2.5 2.5 0 0 1 19.5 4v11A2.5 2.5 0 0 1 17 17.5H9a2.5 2.5 0 0 1-2.5-2.5z" fill="currentColor"/>
+          <path d="M4.5 7A2.5 2.5 0 0 1 7 4.5h8A2.5 2.5 0 0 1 17.5 7v11A2.5 2.5 0 0 1 15 20.5H7a2.5 2.5 0 0 1-2.5-2.5z" fill="currentColor" opacity=".65"/>
+        </svg>
+      </div>
+      <div class="experience-title">Resources</div>
+      <p class="experience-copy">Take-home playbooks, templates, and prompts keep momentum going.</p>
+    </div>
+  </div>
+</section>
 <section class="section-card" style="margin-top:26px;">
   <div class="pricing-wrap">
     <div class="card">

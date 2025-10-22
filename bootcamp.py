@@ -82,7 +82,7 @@ BOOTCAMP_INFO = {
     "code": BOOTCAMP_CODE,
     "title": "AI Implementation Bootcamp",
     "subtitle": (
-        "Four-day cohort focused on shipping AI-powered products with peers, guided by "
+        "Two-day cohort focused on shipping AI-powered products with peers, guided by "
         "experts who work in production every day."
     ),
     "price_eur": BOOTCAMP_PRICE_EUR,
@@ -90,7 +90,7 @@ BOOTCAMP_INFO = {
     "seat_cap": BOOTCAMP_SEAT_CAP,
     "cover_url": "https://i.imgur.com/Amgeg9j.jpeg",
     "features": [
-        "4 immersive days that blend morning theory with afternoon build labs.",
+        "2 immersive days that blend morning theory with afternoon build labs.",
         "Hands-on practice with real tooling so you leave with working assets.",
         "Project-based learning culminating in a mentored capstone showcase.",
         "Certificate of completion highlighting your applied AI skills.",
@@ -98,20 +98,18 @@ BOOTCAMP_INFO = {
     ],
     "daily_flow": [
         {
-            "title": "Day 1 · Foundations & Collaboration",
-            "copy": "Kickoff, ice breakers, and Modules 1–3. We align on goals and pair up for peer feedback.",
+            "title": "Day 1 · Foundations to Deployment",
+            "copy": (
+                "Kickoff, team formation, and Modules 1–6. We move from core collaboration habits "
+                "through modular coding, advanced SQL, deployment, and real-time dashboards with guided labs."
+            ),
         },
         {
-            "title": "Day 2 · Systems & Deployment",
-            "copy": "Deep work on databases and shipping to servers (Modules 4–5) with guided labs.",
-        },
-        {
-            "title": "Day 3 · Data Stories & Intelligence",
-            "copy": "Visualizations, real-time dashboards, and machine learning predictions (Modules 6–7).",
-        },
-        {
-            "title": "Day 4 · Operational LLMs & Capstone",
-            "copy": "Operational LLM patterns (Module 8) plus a mentored capstone sprint and showcase before we close the cohort.",
+            "title": "Day 2 · Intelligence & Capstone",
+            "copy": (
+                "Modules 7–9 focus on machine learning predictions, operational LLM workflows, and an intensive "
+                "capstone build sprint that culminates in peer demos and feedback."
+            ),
         },
     ],
     "modules": [
@@ -123,7 +121,7 @@ BOOTCAMP_INFO = {
         "Data Visualization & Real-Time – streaming insights and dashboards people actually use.",
         "Machine Learning Prediction – building, evaluating, and deploying predictive models.",
         "Operational LLMs – using large language models for explanation, extraction, and automation.",
-        "Capstone Project – Day 4 build sprint that blends every module into a shipped asset you can present immediately.",
+        "Capstone Project – Day 2 build sprint that blends every module into a shipped asset you can present immediately.",
     ],
     "faqs": [
         {
@@ -132,7 +130,7 @@ BOOTCAMP_INFO = {
         },
         {
             "q": "What are the schedule and format?",
-            "a": "We meet for four consecutive days with live theory, guided labs, and project clinics. Recordings are provided each day.",
+            "a": "We meet for two consecutive days with live theory, guided labs, and project clinics. Recordings are provided each day.",
         },
         {
             "q": "Do I need prior AI experience?",

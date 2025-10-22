@@ -11,6 +11,7 @@ import ssl
 from datetime import datetime, timezone
 from email.message import EmailMessage
 from pathlib import Path
+from decimal import Decimal
 from typing import Any, Dict, Optional, Tuple
 
 from flask import (
@@ -227,6 +228,7 @@ def _get_bootcamp_vm() -> Dict[str, object]:
         if daily_flow:
             vm["daily_flow"] = daily_flow
     vm["testimonials"] = _fetch_bootcamp_testimonials()
+    vm["seat_prices"] = _fetch_bootcamp_seat_prices()
     return vm
 
 
@@ -445,6 +447,126 @@ def _build_daily_flow(modules: list[Dict[str, object]]) -> list[Dict[str, str]]:
         flow.append({"title": DEFAULT_DAY_TITLES[1], "description": description})
 
     return flow
+
+
+def _format_price(amount: Any, currency: str) -> str:
+    if amount is None:
+        return ""
+
+    if isinstance(amount, (bytes, bytearray, memoryview)):
+        try:
+            amount = amount.decode("utf-8")
+        except Exception:
+            amount = "0"
+
+    if not isinstance(amount, Decimal):
+        try:
+            amount = Decimal(str(amount))
+        except Exception:
+            return str(amount)
+
+    currency_code = (currency or "").strip().upper() or "EUR"
+    symbols = {"EUR": "€", "USD": "$", "GBP": "£", "AUD": "A$", "CAD": "C$"}
+    symbol = symbols.get(currency_code)
+    formatted_amount = f"{amount:,.2f}"
+    if symbol:
+        return f"{symbol}{formatted_amount}"
+    return f"{currency_code} {formatted_amount}"
+
+
+def _fetch_bootcamp_seat_prices() -> list[Dict[str, object]]:
+    engine = _resolve_db_engine()
+    if engine is None:
+        return []
+
+    query = text(
+        """
+        SELECT bootcamp_name, location, event_date, seat_tier, price_type, price,
+               currency, seats_total, seats_sold, notes
+        FROM public.bootcamp_seat_prices
+        WHERE is_active = TRUE
+        ORDER BY event_date NULLS LAST, location ASC, seat_tier ASC, price_type ASC
+        """
+    )
+
+    try:
+        with engine.begin() as conn:
+            rows = conn.execute(query).mappings().all()
+    except SQLAlchemyError:
+        log.exception("Failed to fetch bootcamp seat prices")
+        return []
+
+    grouped: Dict[tuple[str, object], Dict[str, object]] = {}
+    for row in rows:
+        location_raw = row.get("location") or ""
+        location = str(location_raw).strip() or "To be announced"
+        event_date = row.get("event_date")
+        group_key = (location.lower(), event_date)
+
+        group = grouped.get(group_key)
+        if not group:
+            date_display = ""
+            iso_date = ""
+            if event_date:
+                try:
+                    date_display = event_date.strftime("%b %d, %Y")
+                    iso_date = event_date.isoformat()
+                except Exception:
+                    date_display = str(event_date)
+                    iso_date = str(event_date)
+            group = {
+                "bootcamp_name": row.get("bootcamp_name") or "",
+                "location": location,
+                "event_date": event_date,
+                "event_date_display": date_display,
+                "event_date_iso": iso_date,
+                "offers": [],
+            }
+            grouped[group_key] = group
+
+        seats_total = row.get("seats_total")
+        seats_sold = row.get("seats_sold") or 0
+        seats_available = None
+        if isinstance(seats_total, int):
+            try:
+                seats_available = max(seats_total - int(seats_sold), 0)
+            except Exception:
+                seats_available = None
+
+        tier_raw = row.get("seat_tier") or "Standard"
+        price_type_raw = row.get("price_type") or "Regular"
+        tier_name = str(tier_raw).replace("_", " ").title()
+        price_type = str(price_type_raw).replace("_", " ").title()
+
+        group["offers"].append(
+            {
+                "seat_tier": tier_name,
+                "price_type": price_type,
+                "price_display": _format_price(row.get("price"), row.get("currency") or ""),
+                "currency": row.get("currency") or "",
+                "notes": row.get("notes") or "",
+                "seats_total": seats_total,
+                "seats_available": seats_available,
+            }
+        )
+
+    def sort_key(item: Dict[str, object]):
+        event_date = item.get("event_date")
+        location = str(item.get("location") or "")
+        return (
+            event_date is None,
+            event_date or datetime.max.date(),
+            location.lower(),
+        )
+
+    sorted_groups = sorted(grouped.values(), key=sort_key)
+
+    for group in sorted_groups:
+        offers = group.get("offers")
+        if isinstance(offers, list):
+            offers.sort(key=lambda o: (str(o.get("seat_tier")), str(o.get("price_type"))))
+
+    return sorted_groups
 
 
 @bootcamp_bp.get("/")

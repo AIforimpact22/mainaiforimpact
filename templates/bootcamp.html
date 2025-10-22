@@ -61,7 +61,7 @@
   .testimony-section .banner { text-align:center; margin-bottom:18px; }
   .testimony-grid { display:grid; gap:16px; grid-template-columns:minmax(0, 1fr); }
   .testimony-card { background:rgba(16,20,33,0.72); border:1px solid #1a1f2e; border-radius:18px; padding:22px 24px; display:flex; flex-direction:column; gap:16px; position:relative; overflow:hidden; }
-  .testimony-quote { margin:0; font-size:16px; line-height:1.6; color:#f3f6ff; }
+  .testimony-quote { margin:0; font-size:16px; line-height:1.6; color:#f3f6ff; margin-top:auto; }
   .testimony-meta { display:flex; flex-direction:column; gap:4px; }
   .testimony-name { font-weight:800; font-size:15px; }
   .testimony-credential { font-size:14px; color:var(--muted); }
@@ -185,7 +185,6 @@
   <div class="testimony-grid">
     {% for item in bootcamp.testimonials %}
     <article class="testimony-card">
-      <p class="testimony-quote">&ldquo;{{ item.testimony }}&rdquo;</p>
       <div class="testimony-meta">
         <div class="testimony-name">{{ item.full_name }}</div>
         {% if item.credential %}
@@ -198,6 +197,7 @@
         <a class="testimony-link" href="{{ item.certificate_url }}" target="_blank" rel="noopener">View certificate ↗</a>
         {% endif %}
       </div>
+      <div class="testimony-quote">{{ item.testimony|safe }}</div>
     </article>
     {% endfor %}
   </div>

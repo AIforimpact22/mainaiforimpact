@@ -167,6 +167,10 @@
              href="{{ bp('/bootcamp/') }}"
              {% if request and request.path.startswith(bp('/bootcamp')) %}data-active="true" aria-current="page"{% endif %}
           >Bootcamp</a>
+          <a class="nav-pill"
+             href="{{ bp('/blog/') }}"
+             {% if request and request.path.startswith(bp('/blog')) %}data-active="true" aria-current="page"{% endif %}
+          >Blog</a>
           <a class="nav-pill" href="{{ bp('/renovation') }}">Data Renovation</a>
           <a class="nav-pill" href="{{ bp('/about/') }}">About</a>
           <a class="nav-pill" href="{{ bp('/contact/') }}">Contact</a>

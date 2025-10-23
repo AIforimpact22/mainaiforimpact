@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Blog · {{ BRAND_NAME or 'Ai For Impact' }}{% endblock %}
+{% block body_class %}page-blog{% endblock %}
+{% block head %}
+  {{ super() }}
+  <style>
+    .blog-intro{margin:clamp(18px,4vw,32px) 0 clamp(24px,5vw,40px);text-align:left}
+    .blog-intro h1{margin:0 0 12px;font-size:clamp(28px,4.8vw,46px);line-height:1.05;font-weight:900}
+    .blog-intro p{margin:0;color:var(--muted);font-size:clamp(16px,2.4vw,18px);max-width:720px}
+    .blog-grid{display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));margin-bottom:clamp(40px,8vw,64px)}
+    .blog-card{background:var(--card);border:1px solid #1a1f2e;border-radius:18px;overflow:hidden;display:flex;flex-direction:column;min-height:100%}
+    .blog-card__link{display:flex;flex-direction:column;color:inherit;height:100%}
+    .blog-card__image{padding-top:58%;background-size:cover;background-position:center}
+    .blog-card__body{padding:20px 22px 24px;display:flex;flex-direction:column;gap:12px}
+    .blog-card__meta{margin:0;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.18em;font-weight:700}
+    .blog-card__title{margin:0;font-size:20px;line-height:1.35;font-weight:800}
+    .blog-card__summary{margin:0;color:var(--muted);font-size:15px;line-height:1.6}
+    .blog-card__footer{margin-top:auto;font-size:13px;color:var(--muted);display:flex;gap:12px;align-items:center}
+    .blog-card__footer svg{width:16px;height:16px;color:var(--accent)}
+  </style>
+{% endblock %}
+{% block content %}
+  <section class="blog-intro" aria-labelledby="blog-title">
+    <h1 id="blog-title">Blog</h1>
+    <p>
+      Field notes, build diaries, and launch updates from the Ai For Impact team.
+      We share how we stand up operational AI, design focused bootcamps, and move
+      from prototype to production with confidence.
+    </p>
+  </section>
+
+  <section class="blog-grid" aria-label="Latest posts">
+    {% for post in posts %}
+      <article class="blog-card">
+        <a class="blog-card__link" href="{{ bp('/blog/' ~ post.slug ~ '/') }}">
+          <div class="blog-card__image" style="background-image:url('{{ post.hero_image }}');" role="img" aria-label="{{ post.hero_image_alt }}"></div>
+          <div class="blog-card__body">
+            <p class="blog-card__meta">{{ post.published_on.strftime('%B %d, %Y') }} · {{ post.location }} · {{ post.read_time_minutes }} min read</p>
+            <h2 class="blog-card__title">{{ post.title }}</h2>
+            <p class="blog-card__summary">{{ post.summary }}</p>
+            <div class="blog-card__footer" aria-hidden="true">
+              <span>Read story</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M5 12h14"></path>
+                <path d="M13 6l6 6-6 6"></path>
+              </svg>
+            </div>
+          </div>
+        </a>
+      </article>
+    {% else %}
+      <p>No posts published yet—check back soon.</p>
+    {% endfor %}
+  </section>
+{% endblock %}

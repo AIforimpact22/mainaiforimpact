@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Blog — {{ BRAND_NAME }}{% endblock %}
+
+{% block head %}
+  {{ super() }}
+  <style>
+    .blog-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;margin-top:22px}
+    .blog-card{background:var(--card);border:1px solid #1a1f2e;border-radius:14px;overflow:hidden;display:flex;flex-direction:column;min-height:280px}
+    .blog-card figure{margin:0;height:160px;background:#090b12;position:relative}
+    .blog-card figure img{width:100%;height:100%;object-fit:cover;display:block}
+    .blog-card .fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.12em;background:rgba(9,11,18,.6)}
+    .blog-card .body{padding:18px;display:flex;flex-direction:column;gap:10px;flex:1}
+    .blog-card h2{margin:0;font-size:20px;line-height:1.3;font-weight:800}
+    .blog-card .meta{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px}
+    .blog-card p{margin:0;font-size:15px;line-height:1.6;color:var(--muted)}
+    .blog-empty{margin-top:28px}
+    .blog-empty .card{background:rgba(9,11,18,.72)}
+  </style>
+{% endblock %}
+
+{% block hero %}
+<section class="cover-hero" aria-label="Blog">
+  <div class="bg" style="background-image:url('{{ COURSE_COVER_URL }}');"></div>
+  <div class="overlay"></div>
+  <div class="inner">
+    <h1>Latest from {{ BRAND_NAME }}</h1>
+    <p class="subhead">Insights, updates, and resources from our team working on AI for real-world impact.</p>
+  </div>
+</section>
+{% endblock %}
+
+{% block content %}
+  {% if error_message %}
+    <section class="section-card blog-empty" role="alert">
+      <div class="card">
+        <p>{{ error_message }}</p>
+      </div>
+    </section>
+  {% elif posts %}
+    <section class="section-card" aria-label="Blog posts" style="margin-top:26px;">
+      <div class="banner">
+        <small>Blog</small>
+        <h1>Articles & Updates</h1>
+        <p class="muted">Browse recent writing from the Ai For Impact community.</p>
+      </div>
+      <div class="body blog-grid">
+        {% for post in posts %}
+          <article class="blog-card" aria-labelledby="post-{{ post.id }}-title">
+            {% if post.cover_image_url %}
+              <figure>
+                <img src="{{ post.cover_image_url }}" alt="Cover image for {{ post.title }}" loading="lazy" decoding="async">
+              </figure>
+            {% else %}
+              <figure>
+                <div class="fallback">Ai For Impact</div>
+              </figure>
+            {% endif %}
+            <div class="body">
+              <h2 id="post-{{ post.id }}-title">{{ post.title }}</h2>
+              {% if post.author or post.published %}
+                <p class="meta">
+                  {% if post.author %}<span>{{ post.author }}</span>{% endif %}
+                  {% if post.author and post.published %}<span aria-hidden="true">•</span>{% endif %}
+                  {% if post.published %}<time datetime="{{ post.published_iso }}">{{ post.published }}</time>{% endif %}
+                </p>
+              {% endif %}
+              {% if post.excerpt %}
+                <p>{{ post.excerpt }}</p>
+              {% endif %}
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    </section>
+  {% else %}
+    <section class="section-card blog-empty">
+      <div class="card">
+        <h2 style="margin-top:0;">No posts yet</h2>
+        <p class="muted">We're getting our first articles ready. Check back soon for updates from the team.</p>
+      </div>
+    </section>
+  {% endif %}
+{% endblock %}

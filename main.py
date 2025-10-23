@@ -331,6 +331,9 @@ app.register_blueprint(price_bp, url_prefix="/price")
 from subscriptions import subscription_bp
 app.register_blueprint(subscription_bp)
 
+from blog_page import blog_bp
+app.register_blueprint(blog_bp, url_prefix="/blog")
+
 @app.get("/renovation")
 def renovation():
     return render_template("renovation.html")

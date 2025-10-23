@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}{{ post.title }} · Blog · {{ super() }}{% endblock %}
+{% block meta_description %}{{ post.title }}{% endblock %}
+{% block content %}
+<div class="page page-blog-post">
+  <article class="section-card blog-post" aria-labelledby="post-title">
+    <header class="post-header">
+      <p class="eyebrow"><a href="{{ bp('/blog/') }}">← Back to blog</a></p>
+      <h1 id="post-title">{{ post.title }}</h1>
+      {% if post.author or post.published %}
+      <p class="meta">
+        {% if post.author %}<span class="author">{{ post.author }}</span>{% endif %}
+        {% if post.author and post.published %}<span aria-hidden="true">·</span>{% endif %}
+        {% if post.published %}
+        <time datetime="{{ post.published_iso }}">{{ post.published }}</time>
+        {% endif %}
+      </p>
+      {% endif %}
+      {% if post.cover_image_url %}
+      <figure class="cover">
+        <img src="{{ post.cover_image_url }}" alt="" loading="lazy" />
+      </figure>
+      {% endif %}
+    </header>
+    <div class="post-content">
+      {{ post.html_content | safe }}
+    </div>
+  </article>
+</div>
+{% endblock %}
+{% block head %}
+{{ super() }}
+<style>
+.page-blog-post{padding:40px 0}
+.blog-post{max-width:880px;margin:0 auto;background:rgba(9,11,18,0.72)}
+.blog-post .post-header{padding:36px 32px 12px;display:flex;flex-direction:column;gap:12px}
+.blog-post .post-header .eyebrow{margin:0;font-size:14px}
+.blog-post .post-header .eyebrow a{color:var(--muted)}
+.blog-post .post-header h1{margin:0;font-size:36px;line-height:1.15;font-weight:800}
+.blog-post .post-header .meta{margin:0;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap}
+.blog-post .post-header .cover{margin:12px -32px 0}
+.blog-post .post-header .cover img{display:block;width:100%;height:auto;object-fit:cover;border-radius:14px 14px 0 0}
+.blog-post .post-content{padding:0 32px 40px;font-size:17px;line-height:1.7;color:var(--muted)}
+.blog-post .post-content h2,.blog-post .post-content h3,.blog-post .post-content h4{color:var(--foreground);margin-top:28px}
+.blog-post .post-content p{margin:16px 0}
+.blog-post .post-content ul,.blog-post .post-content ol{margin:16px 0 16px 24px}
+.blog-post .post-content pre{background:#0b0d16;border-radius:12px;padding:16px;overflow:auto;font-size:15px}
+.blog-post .post-content code{font-family:var(--font-mono);background:rgba(255,255,255,0.05);padding:2px 6px;border-radius:6px}
+@media (max-width:720px){
+  .blog-post{margin:0 16px}
+  .blog-post .post-header{padding:28px 24px 10px}
+  .blog-post .post-header h1{font-size:28px}
+  .blog-post .post-header .cover{margin:12px -24px 0}
+  .blog-post .post-content{padding:0 24px 32px}
+}
+</style>
+{% endblock %}

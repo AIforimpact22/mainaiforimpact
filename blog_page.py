@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, List
 
-from flask import Blueprint, current_app, render_template
+from flask import Blueprint, abort, current_app, render_template
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -27,6 +27,24 @@ _POSTS_SQL = text(
     WHERE status = 'published'
     ORDER BY COALESCE(published_at, created_at) DESC, id DESC
     LIMIT :limit
+    """
+)
+
+_POST_BY_SLUG_SQL = text(
+    """
+    SELECT
+        id,
+        slug,
+        title,
+        html_content,
+        excerpt,
+        cover_image_url,
+        author_name,
+        published_at,
+        created_at
+    FROM blog_posts
+    WHERE status = 'published' AND slug = :slug
+    LIMIT 1
     """
 )
 
@@ -100,3 +118,38 @@ def blog_index():
         posts=posts,
         error_message=error_message,
     )
+
+
+@blog_bp.route("/<slug>/", methods=["GET"], strict_slashes=False)
+def blog_detail(slug: str):
+    engine = current_app.config.get("DB_ENGINE")
+    if not engine:
+        abort(404)
+
+    normalized_slug = (slug or "").strip()
+    if not normalized_slug:
+        abort(404)
+
+    try:
+        with engine.begin() as conn:
+            row = conn.execute(_POST_BY_SLUG_SQL, {"slug": normalized_slug}).mappings().first()
+    except SQLAlchemyError as exc:  # pragma: no cover - defensive path
+        current_app.logger.exception("Failed to load blog post %s: %s", slug, exc)
+        abort(500)
+
+    if not row:
+        abort(404)
+
+    published_raw = row.get("published_at") or row.get("created_at")
+    post = {
+        "id": row.get("id"),
+        "title": row.get("title") or "Untitled post",
+        "slug": row.get("slug") or "",
+        "cover_image_url": row.get("cover_image_url") or "",
+        "author": row.get("author_name") or "",
+        "published": _format_date(published_raw),
+        "published_iso": _format_iso(published_raw),
+        "html_content": row.get("html_content") or "",
+    }
+
+    return render_template("blog_post.html", post=post)

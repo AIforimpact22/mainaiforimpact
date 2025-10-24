@@ -151,25 +151,22 @@
         {# Helper: compute whether we're in the Course area #}
         {% set _course_area_active =
             request and (
-              request.path.startswith(bp('/course')) or
+              request.path.startswith(bp('/course/')) or
               request.path.startswith(bp('/price')) or
               request.path.startswith(bp('/register'))
-            )
-        %}
-        {% set _learning_area_active =
-            request and (
-              request.path.startswith(bp('/learning')) or
-              request.path.startswith(bp('/bootcamp')) or
-              _course_area_active
             )
         %}
 
         <nav class="nav-actions" aria-label="Pages">
           <a class="nav-pill" href="{{ bp('/') }}">Home</a>
           <a class="nav-pill"
-             href="{{ bp('/learning') }}"
-             {% if _learning_area_active %}data-active="true" aria-current="page"{% endif %}
-          >Learning</a>
+             href="{{ self.course_href() }}"
+             {% if _course_area_active %}data-active="true" aria-current="page"{% endif %}
+          >Course</a>
+          <a class="nav-pill"
+             href="{{ bp('/bootcamp/') }}"
+             {% if request and request.path.startswith(bp('/bootcamp')) %}data-active="true" aria-current="page"{% endif %}
+          >Bootcamp</a>
           <a class="nav-pill"
              href="{{ bp('/blog/') }}"
              {% if request and request.path.startswith(bp('/blog')) %}data-active="true" aria-current="page"{% endif %}
@@ -420,20 +417,9 @@
             var href = cleanPath(el.getAttribute('href') || '');
             if (!href || /^https?:\/\//i.test(href)) return;
             var active = (href === '/') ? (here === '/') : here.startsWith(href);
-            // Special rule: treat training subpages as part of Learning
-            if (el.textContent.trim() === 'Learning') {
-              var coursePath = cleanPath("{{ bp('/course') }}");
-              var pricePath = cleanPath("{{ bp('/price') }}");
-              var registerPath = cleanPath("{{ bp('/register') }}");
-              var bootcampPath = cleanPath("{{ bp('/bootcamp') }}");
-              if (
-                here.startsWith(coursePath) ||
-                here.startsWith(pricePath) ||
-                here.startsWith(registerPath) ||
-                here.startsWith(bootcampPath)
-              ) {
-                active = true;
-              }
+            // Special rule: treat /price and /register as part of Course
+            if (el.textContent.trim() === 'Course' && (here.startsWith(cleanPath("{{ bp('/price') }}")) || here.startsWith(cleanPath("{{ bp('/register') }}")))) {
+              active = true;
             }
             if (active) { el.dataset.active = "true"; el.setAttribute('aria-current','page'); }
           } catch(e){}

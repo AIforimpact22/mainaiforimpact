@@ -271,6 +271,10 @@
             <span class="countdown-value" data-countdown-minutes>00</span>
             <span class="countdown-unit-label">Minutes</span>
           </div>
+          <div class="countdown-unit">
+            <span class="countdown-value" data-countdown-seconds>00</span>
+            <span class="countdown-unit-label">Seconds</span>
+          </div>
         </div>
         <div class="countdown-complete">The next cohort has started! Catch the replay or join the following session.</div>
       </div>
@@ -545,6 +549,7 @@
         var daysEl = countdownPanel.querySelector('[data-countdown-days]');
         var hoursEl = countdownPanel.querySelector('[data-countdown-hours]');
         var minutesEl = countdownPanel.querySelector('[data-countdown-minutes]');
+        var secondsEl = countdownPanel.querySelector('[data-countdown-seconds]');
 
         var pad = function (value) {
           return String(Math.max(0, value)).padStart(2, '0');
@@ -558,6 +563,7 @@
             if (daysEl) { daysEl.textContent = '00'; }
             if (hoursEl) { hoursEl.textContent = '00'; }
             if (minutesEl) { minutesEl.textContent = '00'; }
+            if (secondsEl) { secondsEl.textContent = '00'; }
             return;
           }
 
@@ -565,11 +571,13 @@
           var days = Math.floor(totalSeconds / 86400);
           var hours = Math.floor((totalSeconds % 86400) / 3600);
           var minutes = Math.floor((totalSeconds % 3600) / 60);
+          var seconds = totalSeconds % 60;
 
           countdownPanel.removeAttribute('data-countdown-complete');
           if (daysEl) { daysEl.textContent = pad(days); }
           if (hoursEl) { hoursEl.textContent = pad(hours); }
           if (minutesEl) { minutesEl.textContent = pad(minutes); }
+          if (secondsEl) { secondsEl.textContent = pad(seconds); }
         };
 
         updateCountdown();

@@ -76,13 +76,17 @@ ENGINE = create_engine(_sqlalchemy_url(), pool_pre_ping=True, future=True)
 app.config["DB_ENGINE"] = ENGINE
 
 # -------------- Template helpers --------------
+def _bp(path: str) -> str:
+    base = (BASE_PATH or "").rstrip("/")
+    if not path.startswith("/"):
+        path = "/" + path
+    return (base + path) or "/"
+
+
 @app.context_processor
 def inject_helpers():
     def bp(path: str) -> str:
-        base = (BASE_PATH or "").rstrip("/")
-        if not path.startswith("/"):
-            path = "/" + path
-        return (base + path) or "/"
+        return _bp(path)
 
     def page_allowed(name: str) -> bool:
         return name != "player"
@@ -211,11 +215,12 @@ def healthz():
 
 @app.get("/")
 def home():
+    learning_root = _bp('/learning')
     services = [
         {
             "name": "AI Bootcamp",
             "summary": "Hands-on, rapid upskilling for teams that need to apply AI to real operations in weeks, not months.",
-            "href": "/bootcamp/",
+            "href": f"{learning_root}#bootcamp",
             "cta": "Explore the bootcamp",
         },
         {
@@ -249,7 +254,7 @@ def home():
         {
             "name": vm["title"],
             "summary": "One on one tailored training sessions with live build support inside your organization.",
-            "href": "#curriculum",
+            "href": f"{learning_root}#course",
             "cta": "View the curriculum",
         }
     ] + services
@@ -259,6 +264,62 @@ def home():
         modules_count=modules,
         lessons_count=lessons,
         services=services,
+    )
+
+@app.get("/learning")
+def learning():
+    course = _fetch_course()
+    course_vm: Optional[Dict[str, Any]] = None
+    course_metrics = {"modules": 0, "lessons": 0, "weeks": 0}
+    course_week_preview: List[Dict[str, Any]] = []
+
+    if course:
+        structure = course.get("structure") or {}
+        weeks, modules, lessons = _summarize(structure)
+        title = course.get("title") or COURSE_TITLE
+        course_vm = {
+            "id": course["id"],
+            "title": title,
+            "slug": slugify(title),
+            "cover_url": COURSE_COVER_URL,
+            "level": "Advanced",
+            "category": "Real-Time AI Deployment",
+        }
+        course_metrics = {"modules": modules, "lessons": lessons, "weeks": len(weeks)}
+        course_week_preview = weeks[:3]
+
+    bootcamp: Optional[Dict[str, Any]] = None
+    try:
+        from bootcamp import _get_bootcamp_vm  # type: ignore
+    except ImportError:
+        bootcamp = None
+    else:
+        try:
+            bootcamp = _get_bootcamp_vm()
+        except Exception:
+            log.exception("Failed to build bootcamp overview")
+            bootcamp = None
+
+    bootcamp_features_preview: List[Any] = []
+    bootcamp_daily_preview: List[Any] = []
+    if bootcamp:
+        features = bootcamp.get("features")
+        if isinstance(features, list):
+            bootcamp_features_preview = features[:3]
+        daily_flow = bootcamp.get("daily_flow")
+        if isinstance(daily_flow, list):
+            bootcamp_daily_preview = daily_flow[:2]
+
+    return render_template(
+        "learning.html",
+        course=course_vm,
+        course_metrics=course_metrics,
+        course_week_preview=course_week_preview,
+        course_total_weeks=course_metrics["weeks"],
+        course_has_more_weeks=course_metrics["weeks"] > len(course_week_preview),
+        bootcamp=bootcamp,
+        bootcamp_features_preview=bootcamp_features_preview,
+        bootcamp_daily_preview=bootcamp_daily_preview,
     )
 
 @app.get("/course/<int:cid>-<slug>")

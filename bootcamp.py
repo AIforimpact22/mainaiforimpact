@@ -8,7 +8,7 @@ import os
 import re
 import smtplib
 import ssl
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
 from pathlib import Path
 from decimal import Decimal
@@ -89,8 +89,42 @@ BOOTCAMP_REQUEST_ARCHIVE: Optional[Path] = Path(_archive_path) if _archive_path 
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
-DEFAULT_NEXT_EVENT = datetime(2025, 1, 3, 15, 0, tzinfo=timezone.utc)
-DEFAULT_NEXT_EVENT_DISPLAY = DEFAULT_NEXT_EVENT.strftime("%b %d, %Y")
+BOOTCAMP_EVENT_TIMEZONE = timezone(timedelta(hours=3))
+
+
+def _format_event_datetime(dt: datetime) -> str:
+    """Format a datetime for display in the bootcamp timezone."""
+
+    localized = dt.astimezone(BOOTCAMP_EVENT_TIMEZONE)
+    offset = localized.utcoffset() or timedelta(0)
+    total_minutes = int(offset.total_seconds() // 60)
+    if total_minutes == 0:
+        tz_label = "GMT"
+    else:
+        sign = "+" if total_minutes >= 0 else "-"
+        abs_minutes = abs(total_minutes)
+        hours, minutes = divmod(abs_minutes, 60)
+        if minutes:
+            tz_label = f"GMT{sign}{hours:02d}:{minutes:02d}"
+        else:
+            tz_label = f"GMT{sign}{hours}"
+
+    return f"{localized.strftime('%b %d, %Y · %I:%M %p')} {tz_label}"
+
+
+def _format_iso_datetime_for_display(value: str) -> str:
+    normalized = value.strip().replace("Z", "+00:00")
+    try:
+        parsed = datetime.fromisoformat(normalized)
+    except ValueError:
+        return value
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=BOOTCAMP_EVENT_TIMEZONE)
+    return _format_event_datetime(parsed)
+
+
+DEFAULT_NEXT_EVENT = datetime(2025, 1, 3, 9, 0, tzinfo=BOOTCAMP_EVENT_TIMEZONE)
+DEFAULT_NEXT_EVENT_DISPLAY = _format_event_datetime(DEFAULT_NEXT_EVENT)
 
 
 BOOTCAMP_INFO = {
@@ -244,7 +278,10 @@ def _get_bootcamp_vm() -> Dict[str, object]:
         display_value = str(display_raw).strip() if display_raw else ""
         if iso_value:
             next_event_iso = iso_value
-            next_event_display = display_value or iso_value
+            if display_value:
+                next_event_display = display_value
+            else:
+                next_event_display = _format_iso_datetime_for_display(iso_value)
             break
 
     if not next_event_iso:

@@ -4,52 +4,84 @@
 {% block head %}
 <style>
   .pricing-hero .inner { min-height: 300px; }
-  .countdown-banner {
-    margin-top: 20px;
+  .countdown-hero .inner {
+    min-height: clamp(420px, 65vh, 560px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(48px, 6vw, 72px) clamp(20px, 5vw, 48px);
+    text-align: center;
+  }
+  .countdown-hero-content {
     display: grid;
-    gap: 12px;
-    padding: 18px 20px;
-    border-radius: 18px;
-    background: rgba(8, 12, 22, 0.78);
-    border: 1px solid rgba(118, 180, 255, 0.35);
-    max-width: clamp(320px, 70%, 520px);
-    box-shadow: 0 18px 45px rgba(5, 12, 25, 0.38);
+    gap: clamp(18px, 3vw, 28px);
+    width: 100%;
+  }
+  .countdown-hero-content h1 {
+    margin: 0;
+    font-size: clamp(42px, 7vw, 72px);
+  }
+  .countdown-hero-content .subhead {
+    margin: 0 auto;
+    max-width: 72ch;
+    font-size: clamp(18px, 2.6vw, 24px);
+    color: rgba(230, 236, 255, 0.88);
+  }
+  .countdown-panel {
+    display: grid;
+    gap: clamp(18px, 3vw, 28px);
+    padding: clamp(28px, 4vw, 40px);
+    border-radius: 24px;
+    background: rgba(8, 12, 22, 0.82);
+    border: 1px solid rgba(118, 180, 255, 0.42);
+    box-shadow: 0 22px 55px rgba(5, 12, 25, 0.45);
+  }
+  .countdown-panel-header {
+    display: grid;
+    gap: 6px;
+    justify-items: center;
   }
   .countdown-heading {
-    font-size: 12px;
-    letter-spacing: .12em;
+    font-size: 14px;
+    letter-spacing: .18em;
     text-transform: uppercase;
     font-weight: 800;
     color: #9dc9ff;
   }
   .countdown-due {
-    font-size: 16px;
+    font-size: clamp(20px, 3vw, 28px);
     font-weight: 700;
     color: #f3f7ff;
   }
-  .countdown-timer {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
+  .countdown-description {
+    margin: 0 auto;
+    font-size: clamp(16px, 2.2vw, 19px);
+    max-width: 68ch;
+    color: rgba(188, 217, 255, 0.88);
+  }
+  .countdown-grid {
+    display: grid;
+    gap: clamp(16px, 3vw, 24px);
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   }
   .countdown-unit {
     display: grid;
-    gap: 4px;
+    gap: 10px;
     justify-items: center;
-    padding: 10px 14px;
-    border-radius: 14px;
-    background: rgba(118, 180, 255, 0.14);
-    border: 1px solid rgba(118, 180, 255, 0.24);
-    min-width: 82px;
+    padding: clamp(18px, 3vw, 24px);
+    border-radius: 18px;
+    background: rgba(118, 180, 255, 0.16);
+    border: 1px solid rgba(118, 180, 255, 0.36);
   }
   .countdown-value {
     font-weight: 900;
-    font-size: clamp(26px, 5vw, 34px);
+    font-size: clamp(48px, 12vw, 96px);
+    letter-spacing: .04em;
     color: #ffffff;
   }
   .countdown-unit-label {
-    font-size: 11px;
-    letter-spacing: .08em;
+    font-size: 12px;
+    letter-spacing: .12em;
     text-transform: uppercase;
     color: rgba(188, 217, 255, 0.85);
   }
@@ -57,18 +89,45 @@
     display: none;
     font-weight: 700;
     color: #8be6a5;
+    font-size: clamp(16px, 2.2vw, 19px);
   }
-  .countdown-banner[data-countdown-complete="true"] .countdown-timer {
+  .countdown-panel[data-countdown-complete="true"] .countdown-grid {
     display: none;
   }
-  .countdown-banner[data-countdown-complete="true"] .countdown-complete {
+  .countdown-panel[data-countdown-complete="true"] .countdown-complete {
     display: block;
+  }
+  .countdown-cta {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .countdown-cta .btn {
+    min-width: 180px;
+  }
+  .countdown-cta .btn.secondary {
+    background: transparent;
+    border: 1px solid rgba(118, 180, 255, 0.38);
+    color: #bcd9ff;
+  }
+  .countdown-cta .btn.secondary:hover {
+    color: #ffffff;
+    border-color: rgba(118, 180, 255, 0.6);
+  }
+  @media (max-width: 720px) {
+    .countdown-hero .inner {
+      padding: clamp(36px, 10vw, 48px) 20px;
+    }
+    .countdown-panel {
+      padding: clamp(24px, 8vw, 32px);
+    }
+    .countdown-value {
+      font-size: clamp(42px, 18vw, 72px);
+    }
   }
   .badge-row { display:flex; flex-wrap:wrap; gap:8px; }
   .badge { display:inline-flex; align-items:center; justify-content:center; padding:6px 12px; border-radius:999px; background:rgba(118,180,255,0.18); border:1px solid rgba(118,180,255,0.32); font-weight:800; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:#bcd9ff; }
-  .badge-button { background:none; border:none; padding:0; font:inherit; color:inherit; cursor:pointer; }
-  .badge-button:hover { color:#ffffff; }
-  .badge-button:focus-visible { outline:2px solid rgba(118,180,255,0.7); outline-offset:2px; }
   .pricing-wrap { display:grid; grid-template-columns: 1.2fr 0.8fr; gap:18px; }
   @media (max-width: 900px) { .pricing-wrap { grid-template-columns: 1fr; } }
 
@@ -194,46 +253,50 @@
 
 {% block hero %}
 {% set cover_url = (bootcamp.cover_url if bootcamp and bootcamp.cover_url else COURSE_COVER_URL) %}
-<section class="cover-hero pricing-hero" aria-label="Bootcamp cover">
+<section class="cover-hero countdown-hero pricing-hero" aria-label="Bootcamp countdown hero">
   <div class="bg" style="background-image:url('{{ cover_url }}');"></div>
   <div class="overlay"></div>
   <div class="inner">
-    <div class="badge-row">
-      <span class="badge">Bootcamp</span>
-      <span class="badge">{{ bootcamp.seat_cap }} seats per cohort</span>
-      <span class="badge">
-        <button type="button" class="badge-button" data-seat-pricing-open>
-          View seat pricing
-        </button>
-      </span>
-    </div>
-    <h1>{{ bootcamp.title }}</h1>
-    <p class="subhead">{{ bootcamp.subtitle }}</p>
-    {% if bootcamp.next_event_date_iso %}
-    <div class="countdown-banner" data-countdown="{{ bootcamp.next_event_date_iso }}" aria-live="polite">
-      <div class="countdown-heading">Next cohort begins</div>
-      <div class="countdown-due">{{ bootcamp.next_event_date_display }}</div>
-      <div class="countdown-timer">
-        <div class="countdown-unit">
-          <span class="countdown-value" data-countdown-days>00</span>
-          <span class="countdown-unit-label">Days</span>
-        </div>
-        <div class="countdown-unit">
-          <span class="countdown-value" data-countdown-hours>00</span>
-          <span class="countdown-unit-label">Hours</span>
-        </div>
-        <div class="countdown-unit">
-          <span class="countdown-value" data-countdown-minutes>00</span>
-          <span class="countdown-unit-label">Minutes</span>
-        </div>
-        <div class="countdown-unit">
-          <span class="countdown-value" data-countdown-seconds>00</span>
-          <span class="countdown-unit-label">Seconds</span>
-        </div>
+    <div class="countdown-hero-content">
+      <div class="badge-row">
+        <span class="badge">Bootcamp</span>
+        <span class="badge">{{ bootcamp.seat_cap }} seats per cohort</span>
       </div>
-      <div class="countdown-complete">The next cohort has started! Catch the replay or join the following session.</div>
+      <h1>{{ bootcamp.title }}</h1>
+      <p class="subhead">{{ bootcamp.subtitle }}</p>
+      {% if bootcamp.next_event_date_iso %}
+      <div class="countdown-panel" data-countdown="{{ bootcamp.next_event_date_iso }}" aria-live="polite">
+        <div class="countdown-panel-header">
+          <div class="countdown-heading">Next cohort begins</div>
+          <div class="countdown-due">{{ bootcamp.next_event_date_display }}</div>
+        </div>
+        <p class="countdown-description">Secure your seat to join a focused cohort shipping real AI solutions in four days.</p>
+        <div class="countdown-grid">
+          <div class="countdown-unit">
+            <span class="countdown-value" data-countdown-days>00</span>
+            <span class="countdown-unit-label">Days</span>
+          </div>
+          <div class="countdown-unit">
+            <span class="countdown-value" data-countdown-hours>00</span>
+            <span class="countdown-unit-label">Hours</span>
+          </div>
+          <div class="countdown-unit">
+            <span class="countdown-value" data-countdown-minutes>00</span>
+            <span class="countdown-unit-label">Minutes</span>
+          </div>
+          <div class="countdown-unit">
+            <span class="countdown-value" data-countdown-seconds>00</span>
+            <span class="countdown-unit-label">Seconds</span>
+          </div>
+        </div>
+        <div class="countdown-complete">The next cohort has started! Catch the replay or join the following session.</div>
+      </div>
+      {% endif %}
+      <div class="countdown-cta">
+        <a class="btn" href="{{ bp('/register/?course=' ~ bootcamp.code) }}">Secure your seat</a>
+        <button type="button" class="btn secondary" data-seat-pricing-open>View seat pricing</button>
+      </div>
     </div>
-    {% endif %}
   </div>
 </section>
 {% endblock %}

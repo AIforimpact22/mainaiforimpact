@@ -3,53 +3,95 @@
 
 {% block head %}
 <style>
-  .pricing-hero .inner { min-height: 300px; }
-  .countdown-banner {
-    margin-top: 20px;
+  .countdown-hero .inner {
+    min-height: clamp(520px, 82vh, 640px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(60px, 10vw, 120px) clamp(24px, 8vw, 80px);
+  }
+  .countdown-hero__content {
+    width: min(100%, 980px);
     display: grid;
-    gap: 12px;
-    padding: 18px 20px;
-    border-radius: 18px;
+    gap: clamp(20px, 4vw, 32px);
+    text-align: center;
+  }
+  .countdown-hero__intro {
+    display: grid;
+    gap: clamp(14px, 3vw, 22px);
+    justify-items: center;
+  }
+  .countdown-hero .badge-row {
+    justify-content: center;
+  }
+  .countdown-hero h1 {
+    margin: 0;
+    font-size: clamp(38px, 6vw, 68px);
+  }
+  .countdown-hero .subhead {
+    margin: 0;
+    max-width: 760px;
+    color: rgba(222, 230, 255, 0.9);
+    font-size: clamp(18px, 2.5vw, 22px);
+    line-height: 1.55;
+  }
+  .countdown-hero__panel {
+    display: grid;
+    gap: clamp(18px, 3vw, 26px);
+    padding: clamp(26px, 4vw, 36px);
+    border-radius: 26px;
     background: rgba(8, 12, 22, 0.78);
     border: 1px solid rgba(118, 180, 255, 0.35);
-    max-width: clamp(320px, 70%, 520px);
-    box-shadow: 0 18px 45px rgba(5, 12, 25, 0.38);
+    box-shadow: 0 28px 70px rgba(5, 12, 25, 0.45);
+    text-align: center;
   }
-  .countdown-heading {
-    font-size: 12px;
-    letter-spacing: .12em;
+  .countdown-hero__meta {
+    display: grid;
+    gap: 10px;
+    justify-items: center;
+  }
+  .countdown-label {
+    font-size: clamp(12px, 1.6vw, 14px);
+    letter-spacing: .16em;
     text-transform: uppercase;
     font-weight: 800;
     color: #9dc9ff;
   }
-  .countdown-due {
-    font-size: 16px;
+  .countdown-date {
+    font-size: clamp(20px, 3vw, 26px);
     font-weight: 700;
     color: #f3f7ff;
   }
-  .countdown-timer {
+  .countdown-support {
+    margin: 0;
+    font-size: clamp(15px, 2.4vw, 18px);
+    color: rgba(214, 225, 255, 0.86);
+  }
+  .countdown-hero__timer {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
+    justify-content: center;
+    gap: clamp(16px, 3.5vw, 24px);
   }
   .countdown-unit {
     display: grid;
-    gap: 4px;
+    gap: clamp(6px, 1.8vw, 10px);
     justify-items: center;
-    padding: 10px 14px;
-    border-radius: 14px;
+    padding: clamp(16px, 3vw, 24px);
+    border-radius: 20px;
     background: rgba(118, 180, 255, 0.14);
     border: 1px solid rgba(118, 180, 255, 0.24);
-    min-width: 82px;
+    min-width: clamp(92px, 22vw, 150px);
   }
   .countdown-value {
     font-weight: 900;
-    font-size: clamp(26px, 5vw, 34px);
+    font-size: clamp(48px, 11vw, 92px);
+    line-height: 1;
     color: #ffffff;
   }
   .countdown-unit-label {
-    font-size: 11px;
-    letter-spacing: .08em;
+    font-size: clamp(12px, 2vw, 16px);
+    letter-spacing: .12em;
     text-transform: uppercase;
     color: rgba(188, 217, 255, 0.85);
   }
@@ -57,18 +99,51 @@
     display: none;
     font-weight: 700;
     color: #8be6a5;
+    text-align: center;
+    font-size: clamp(16px, 2.4vw, 20px);
   }
-  .countdown-banner[data-countdown-complete="true"] .countdown-timer {
+  .countdown-hero__panel[data-countdown-complete="true"] .countdown-hero__timer {
     display: none;
   }
-  .countdown-banner[data-countdown-complete="true"] .countdown-complete {
+  .countdown-hero__panel[data-countdown-complete="true"] .countdown-complete {
     display: block;
+  }
+  .countdown-hero__cta {
+    justify-content: center;
+    gap: clamp(12px, 3vw, 20px);
+  }
+  .countdown-hero__cta .btn {
+    min-width: 190px;
+  }
+  .countdown-hero__cta .btn.secondary {
+    background: transparent;
+    border: 1px solid rgba(118, 180, 255, 0.4);
+    color: #e6ecff;
+  }
+  @media (max-width: 720px) {
+    .countdown-hero .inner {
+      padding: 60px 18px 70px;
+      min-height: auto;
+    }
+    .countdown-hero__content {
+      gap: 24px;
+    }
+    .countdown-hero__panel {
+      padding: 24px 20px;
+      border-radius: 22px;
+      gap: 20px;
+    }
+    .countdown-hero__cta {
+      flex-direction: column;
+      align-items: center;
+    }
+    .countdown-hero__cta .btn {
+      width: 100%;
+      max-width: 320px;
+    }
   }
   .badge-row { display:flex; flex-wrap:wrap; gap:8px; }
   .badge { display:inline-flex; align-items:center; justify-content:center; padding:6px 12px; border-radius:999px; background:rgba(118,180,255,0.18); border:1px solid rgba(118,180,255,0.32); font-weight:800; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:#bcd9ff; }
-  .badge-button { background:none; border:none; padding:0; font:inherit; color:inherit; cursor:pointer; }
-  .badge-button:hover { color:#ffffff; }
-  .badge-button:focus-visible { outline:2px solid rgba(118,180,255,0.7); outline-offset:2px; }
   .pricing-wrap { display:grid; grid-template-columns: 1.2fr 0.8fr; gap:18px; }
   @media (max-width: 900px) { .pricing-wrap { grid-template-columns: 1fr; } }
 
@@ -101,6 +176,7 @@
 
   .cta-row { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:16px; }
   .btn.secondary { background:transparent; border:1px solid #2a3348; color:var(--ink); }
+  .countdown-hero .btn.secondary { border-color: rgba(118, 180, 255, 0.4); color: #e6ecff; }
 
   .section-card h2 { margin:0 0 6px 0; font-size: 20px; }
 
@@ -194,46 +270,52 @@
 
 {% block hero %}
 {% set cover_url = (bootcamp.cover_url if bootcamp and bootcamp.cover_url else COURSE_COVER_URL) %}
-<section class="cover-hero pricing-hero" aria-label="Bootcamp cover">
+<section class="cover-hero countdown-hero" aria-label="Bootcamp cover">
   <div class="bg" style="background-image:url('{{ cover_url }}');"></div>
   <div class="overlay"></div>
   <div class="inner">
-    <div class="badge-row">
-      <span class="badge">Bootcamp</span>
-      <span class="badge">{{ bootcamp.seat_cap }} seats per cohort</span>
-      <span class="badge">
-        <button type="button" class="badge-button" data-seat-pricing-open>
-          View seat pricing
-        </button>
-      </span>
-    </div>
-    <h1>{{ bootcamp.title }}</h1>
-    <p class="subhead">{{ bootcamp.subtitle }}</p>
-    {% if bootcamp.next_event_date_iso %}
-    <div class="countdown-banner" data-countdown="{{ bootcamp.next_event_date_iso }}" aria-live="polite">
-      <div class="countdown-heading">Next cohort begins</div>
-      <div class="countdown-due">{{ bootcamp.next_event_date_display }}</div>
-      <div class="countdown-timer">
-        <div class="countdown-unit">
-          <span class="countdown-value" data-countdown-days>00</span>
-          <span class="countdown-unit-label">Days</span>
+    <div class="countdown-hero__content">
+      <div class="countdown-hero__intro">
+        <div class="badge-row">
+          <span class="badge">Bootcamp</span>
+          <span class="badge">{{ bootcamp.seat_cap }} seats per cohort</span>
         </div>
-        <div class="countdown-unit">
-          <span class="countdown-value" data-countdown-hours>00</span>
-          <span class="countdown-unit-label">Hours</span>
-        </div>
-        <div class="countdown-unit">
-          <span class="countdown-value" data-countdown-minutes>00</span>
-          <span class="countdown-unit-label">Minutes</span>
-        </div>
-        <div class="countdown-unit">
-          <span class="countdown-value" data-countdown-seconds>00</span>
-          <span class="countdown-unit-label">Seconds</span>
-        </div>
+        <h1>{{ bootcamp.title }}</h1>
+        <p class="subhead">{{ bootcamp.subtitle }}</p>
       </div>
-      <div class="countdown-complete">The next cohort has started! Catch the replay or join the following session.</div>
+      {% if bootcamp.next_event_date_iso %}
+      <div class="countdown-hero__panel" data-countdown="{{ bootcamp.next_event_date_iso }}" aria-live="polite">
+        <div class="countdown-hero__meta">
+          <span class="countdown-label">Next cohort begins</span>
+          <span class="countdown-date">{{ bootcamp.next_event_date_display }}</span>
+        </div>
+        <p class="countdown-support">Secure your seat before the cohort fills—we keep enrollment intentionally small.</p>
+        <div class="countdown-hero__timer">
+          <div class="countdown-unit">
+            <span class="countdown-value" data-countdown-days>00</span>
+            <span class="countdown-unit-label">Days</span>
+          </div>
+          <div class="countdown-unit">
+            <span class="countdown-value" data-countdown-hours>00</span>
+            <span class="countdown-unit-label">Hours</span>
+          </div>
+          <div class="countdown-unit">
+            <span class="countdown-value" data-countdown-minutes>00</span>
+            <span class="countdown-unit-label">Minutes</span>
+          </div>
+          <div class="countdown-unit">
+            <span class="countdown-value" data-countdown-seconds>00</span>
+            <span class="countdown-unit-label">Seconds</span>
+          </div>
+        </div>
+        <p class="countdown-complete" role="status">The next cohort has started! Catch the replay or join the following session.</p>
+      </div>
+      {% endif %}
+      <div class="cta-row countdown-hero__cta">
+        <a class="btn" href="{{ bp('/register/?course=' ~ bootcamp.code) }}">Register for the Bootcamp</a>
+        <button type="button" class="btn secondary" data-seat-pricing-open>View seat pricing</button>
+      </div>
     </div>
-    {% endif %}
   </div>
 </section>
 {% endblock %}
@@ -491,15 +573,15 @@
       });
     }
 
-    var countdown = document.querySelector('[data-countdown]');
-    if (countdown) {
-      var targetRaw = countdown.getAttribute('data-countdown');
+    var countdownPanel = document.querySelector('.countdown-hero__panel[data-countdown]') || document.querySelector('[data-countdown]');
+    if (countdownPanel) {
+      var targetRaw = countdownPanel.getAttribute('data-countdown');
       var targetDate = targetRaw ? new Date(targetRaw) : null;
       if (targetDate && !isNaN(targetDate.getTime())) {
-        var daysEl = countdown.querySelector('[data-countdown-days]');
-        var hoursEl = countdown.querySelector('[data-countdown-hours]');
-        var minutesEl = countdown.querySelector('[data-countdown-minutes]');
-        var secondsEl = countdown.querySelector('[data-countdown-seconds]');
+        var daysEl = countdownPanel.querySelector('[data-countdown-days]');
+        var hoursEl = countdownPanel.querySelector('[data-countdown-hours]');
+        var minutesEl = countdownPanel.querySelector('[data-countdown-minutes]');
+        var secondsEl = countdownPanel.querySelector('[data-countdown-seconds]');
 
         var pad = function (value) {
           return String(Math.max(0, value)).padStart(2, '0');
@@ -509,7 +591,7 @@
           var now = new Date();
           var diffMs = targetDate.getTime() - now.getTime();
           if (diffMs <= 0) {
-            countdown.setAttribute('data-countdown-complete', 'true');
+            countdownPanel.setAttribute('data-countdown-complete', 'true');
             if (daysEl) { daysEl.textContent = '00'; }
             if (hoursEl) { hoursEl.textContent = '00'; }
             if (minutesEl) { minutesEl.textContent = '00'; }
@@ -523,7 +605,7 @@
           var minutes = Math.floor((totalSeconds % 3600) / 60);
           var seconds = totalSeconds % 60;
 
-          countdown.removeAttribute('data-countdown-complete');
+          countdownPanel.removeAttribute('data-countdown-complete');
           if (daysEl) { daysEl.textContent = pad(days); }
           if (hoursEl) { hoursEl.textContent = pad(hours); }
           if (minutesEl) { minutesEl.textContent = pad(minutes); }

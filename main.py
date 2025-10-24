@@ -266,57 +266,73 @@ def home():
         services=services,
     )
 
-@app.get("/learning")
-def learning():
+def _build_course_overview() -> Tuple[Optional[Dict[str, Any]], Dict[str, int], List[Dict[str, Any]], int]:
+    """Collect the latest course plus lightweight preview metrics."""
+
     course = _fetch_course()
-    course_vm: Optional[Dict[str, Any]] = None
-    course_metrics = {"modules": 0, "lessons": 0, "weeks": 0}
-    course_week_preview: List[Dict[str, Any]] = []
+    metrics: Dict[str, int] = {"modules": 0, "lessons": 0, "weeks": 0}
+    preview: List[Dict[str, Any]] = []
+    total_weeks = 0
 
-    if course:
-        structure = course.get("structure") or {}
-        weeks, modules, lessons = _summarize(structure)
-        title = course.get("title") or COURSE_TITLE
-        course_vm = {
-            "id": course["id"],
-            "title": title,
-            "slug": slugify(title),
-            "cover_url": COURSE_COVER_URL,
-            "level": "Advanced",
-            "category": "Real-Time AI Deployment",
-        }
-        course_metrics = {"modules": modules, "lessons": lessons, "weeks": len(weeks)}
-        course_week_preview = weeks[:3]
+    if not course:
+        return None, metrics, preview, total_weeks
 
-    bootcamp: Optional[Dict[str, Any]] = None
+    structure = course.get("structure") or {}
+    weeks, modules, lessons = _summarize(structure)
+    title = course.get("title") or COURSE_TITLE
+    vm = {
+        "id": course["id"],
+        "title": title,
+        "slug": slugify(title),
+        "cover_url": COURSE_COVER_URL,
+        "level": "Advanced",
+        "category": "Real-Time AI Deployment",
+    }
+    metrics = {"modules": modules, "lessons": lessons, "weeks": len(weeks)}
+    preview = weeks[:3]
+    total_weeks = len(weeks)
+    return vm, metrics, preview, total_weeks
+
+
+def _build_bootcamp_overview() -> Tuple[Optional[Dict[str, Any]], List[Any], List[Any]]:
+    """Safely import the bootcamp view model and trim preview data."""
+
     try:
         from bootcamp import _get_bootcamp_vm  # type: ignore
     except ImportError:
-        bootcamp = None
-    else:
-        try:
-            bootcamp = _get_bootcamp_vm()
-        except Exception:
-            log.exception("Failed to build bootcamp overview")
-            bootcamp = None
+        return None, [], []
 
-    bootcamp_features_preview: List[Any] = []
-    bootcamp_daily_preview: List[Any] = []
-    if bootcamp:
+    try:
+        bootcamp = _get_bootcamp_vm()
+    except Exception:
+        log.exception("Failed to build bootcamp overview")
+        return None, [], []
+
+    features_preview: List[Any] = []
+    daily_preview: List[Any] = []
+    if isinstance(bootcamp, dict):
         features = bootcamp.get("features")
         if isinstance(features, list):
-            bootcamp_features_preview = features[:3]
+            features_preview = features[:3]
         daily_flow = bootcamp.get("daily_flow")
         if isinstance(daily_flow, list):
-            bootcamp_daily_preview = daily_flow[:2]
+            daily_preview = daily_flow[:2]
+
+    return bootcamp, features_preview, daily_preview
+
+
+@app.get("/learning")
+def learning():
+    course_vm, course_metrics, course_week_preview, course_total_weeks = _build_course_overview()
+    bootcamp, bootcamp_features_preview, bootcamp_daily_preview = _build_bootcamp_overview()
 
     return render_template(
         "learning.html",
         course=course_vm,
         course_metrics=course_metrics,
         course_week_preview=course_week_preview,
-        course_total_weeks=course_metrics["weeks"],
-        course_has_more_weeks=course_metrics["weeks"] > len(course_week_preview),
+        course_total_weeks=course_total_weeks,
+        course_has_more_weeks=course_total_weeks > len(course_week_preview),
         bootcamp=bootcamp,
         bootcamp_features_preview=bootcamp_features_preview,
         bootcamp_daily_preview=bootcamp_daily_preview,

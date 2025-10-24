@@ -89,6 +89,10 @@ BOOTCAMP_REQUEST_ARCHIVE: Optional[Path] = Path(_archive_path) if _archive_path 
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
+DEFAULT_NEXT_EVENT = datetime(2025, 1, 3, 15, 0, tzinfo=timezone.utc)
+DEFAULT_NEXT_EVENT_DISPLAY = DEFAULT_NEXT_EVENT.strftime("%b %d, %Y")
+
+
 BOOTCAMP_INFO = {
     "slug": "ai-implementation-bootcamp",
     "code": BOOTCAMP_CODE,
@@ -242,6 +246,10 @@ def _get_bootcamp_vm() -> Dict[str, object]:
             next_event_iso = iso_value
             next_event_display = display_value or iso_value
             break
+
+    if not next_event_iso:
+        next_event_iso = DEFAULT_NEXT_EVENT.isoformat()
+        next_event_display = DEFAULT_NEXT_EVENT_DISPLAY
 
     vm["next_event_date_iso"] = next_event_iso
     vm["next_event_date_display"] = next_event_display

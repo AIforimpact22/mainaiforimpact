@@ -92,24 +92,11 @@ _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 BOOTCAMP_EVENT_TIMEZONE = timezone(timedelta(hours=3))
 
 
-def _format_event_datetime(dt: datetime) -> str:
-    """Format a datetime for display in the bootcamp timezone."""
+def _format_event_date(dt: datetime) -> str:
+    """Format the event date for display in the bootcamp timezone."""
 
     localized = dt.astimezone(BOOTCAMP_EVENT_TIMEZONE)
-    offset = localized.utcoffset() or timedelta(0)
-    total_minutes = int(offset.total_seconds() // 60)
-    if total_minutes == 0:
-        tz_label = "GMT"
-    else:
-        sign = "+" if total_minutes >= 0 else "-"
-        abs_minutes = abs(total_minutes)
-        hours, minutes = divmod(abs_minutes, 60)
-        if minutes:
-            tz_label = f"GMT{sign}{hours:02d}:{minutes:02d}"
-        else:
-            tz_label = f"GMT{sign}{hours}"
-
-    return f"{localized.strftime('%b %d, %Y · %I:%M %p')} {tz_label}"
+    return localized.strftime("%b %d, %Y")
 
 
 def _format_iso_datetime_for_display(value: str) -> str:
@@ -120,11 +107,11 @@ def _format_iso_datetime_for_display(value: str) -> str:
         return value
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=BOOTCAMP_EVENT_TIMEZONE)
-    return _format_event_datetime(parsed)
+    return _format_event_date(parsed)
 
 
 DEFAULT_NEXT_EVENT = datetime(2026, 1, 3, 9, 0, tzinfo=BOOTCAMP_EVENT_TIMEZONE)
-DEFAULT_NEXT_EVENT_DISPLAY = _format_event_datetime(DEFAULT_NEXT_EVENT)
+DEFAULT_NEXT_EVENT_DISPLAY = _format_event_date(DEFAULT_NEXT_EVENT)
 
 
 BOOTCAMP_INFO = {

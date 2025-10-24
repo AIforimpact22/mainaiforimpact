@@ -38,12 +38,34 @@
       max-width: 620px;
     }
     .numen6-countdown {
-      margin: 0;
-      font-size: clamp(16px, 2.3vw, 20px);
+      display: grid;
+      gap: clamp(8px, 1.8vw, 16px);
+      justify-items: center;
       color: var(--muted);
     }
-    .numen6-countdown strong {
+    .numen6-countdown-label {
+      margin: 0;
+      font-size: clamp(17px, 2.4vw, 22px);
+    }
+    .numen6-countdown-label strong {
       color: var(--accent);
+    }
+    .numen6-countdown-display {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(10px, 2vw, 18px) clamp(18px, 4vw, 36px);
+      border-radius: 999px;
+      background: rgba(15, 20, 36, 0.65);
+      box-shadow: inset 0 0 0 1px rgba(72, 163, 255, 0.35), 0 18px 50px rgba(8, 12, 24, 0.45);
+      font-size: clamp(32px, 7vw, 64px);
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum";
+      color: #e7f3ff;
+      text-shadow: 0 0 18px rgba(46, 184, 255, 0.45);
+      min-width: min(85vw, 480px);
     }
     @keyframes numen6-spin {
       from { transform: rotate(0deg); }
@@ -63,9 +85,10 @@
     <img class="numen6-logo" src="https://i.imgur.com/kegTDUJ.png" alt="Numen6 logo" width="200" height="200" loading="eager">
     <h1 id="numen6-title" class="numen6-title">The presence in your system.</h1>
     <p class="subhead numen6-lead">Numen6 watches your operation, explains what it sees, and proposes safe interventions—always with hard limits and human approval.</p>
-    <p class="numen6-countdown" aria-live="polite">
-      Preparing to launch the <strong>NUMEN6 Pilot</strong> — <span id="numen6-countdown">calculating…</span>
-    </p>
+    <div class="numen6-countdown" aria-live="polite">
+      <p class="numen6-countdown-label">Preparing to launch the <strong>NUMEN6 Pilot</strong></p>
+      <p class="numen6-countdown-display" id="numen6-countdown" role="timer">calculating…</p>
+    </div>
   </div>
 </section>
 <script>

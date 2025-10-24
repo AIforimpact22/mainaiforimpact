@@ -169,6 +169,10 @@
         <nav class="nav-actions" aria-label="Pages">
           <a class="nav-pill" href="{{ bp('/') }}">Home</a>
           <a class="nav-pill"
+             href="{{ bp('/numen6/') }}"
+             {% if request and request.path.startswith(bp('/numen6')) %}data-active="true" aria-current="page"{% endif %}
+          >NUMEN6</a>
+          <a class="nav-pill"
              href="{{ bp('/learning/') }}"
              {% if _learning_nav_active %}data-active="true" aria-current="page"{% endif %}
           >Learning</a>

@@ -364,6 +364,9 @@ app.register_blueprint(bootcamp_bp, url_prefix="/bootcamp")
 from price import price_bp
 app.register_blueprint(price_bp, url_prefix="/price")
 
+from numen6 import numen6_bp
+app.register_blueprint(numen6_bp, url_prefix="/numen6")
+
 from subscriptions import subscription_bp
 app.register_blueprint(subscription_bp)
 

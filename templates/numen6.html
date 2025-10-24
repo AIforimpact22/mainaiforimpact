@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}NUMEN6 Initiative | {{ BRAND_NAME }}{% endblock %}
+
+{% block head %}
+  {{ super() }}
+  <meta name="description" content="Discover NUMEN6, our rapid innovation lab turning mission-driven ideas into high-impact AI products.">
+  <style>
+    .numen6-hero{position:relative;margin-top:28px;border-radius:18px;overflow:hidden;border:1px solid #1a1f2e;background:radial-gradient(circle at 10% 20%, rgba(92,169,255,.18), transparent 55%),linear-gradient(140deg, rgba(15,19,36,.92), rgba(9,11,18,.92));padding: clamp(28px, 7vw, 72px);display:grid;gap:24px;grid-template-columns:repeat(2,minmax(0,1fr))}
+    .numen6-hero::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 78% 24%, rgba(92,169,255,.22), transparent 45%);pointer-events:none}
+    .numen6-hero > *{position:relative;z-index:1}
+    .numen6-hero-copy h1{margin:0;font-size:clamp(32px,5vw,54px);line-height:1.05;font-weight:900;letter-spacing:.2px}
+    .numen6-hero-copy p{margin:14px 0 0;color:#d6def2;font-size:clamp(16px,2vw,19px);max-width:520px}
+    .numen6-hero-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:22px}
+    .numen6-hero-figure{display:flex;align-items:flex-end;justify-content:flex-end}
+    .numen6-hero-card{background:rgba(9,13,22,.65);border:1px solid rgba(92,169,255,.35);border-radius:16px;padding:22px;box-shadow:0 18px 50px rgba(5,10,20,.35);max-width:320px}
+    .numen6-hero-card h2{margin:0;font-size:22px}
+    .numen6-hero-card ul{margin:14px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px;color:#bdc7e3;font-size:14px}
+
+    .numen6-pill{display:inline-flex;align-items:center;gap:10px;padding:10px 16px;border-radius:999px;background:rgba(92,169,255,.12);border:1px solid rgba(92,169,255,.45);color:var(--ink);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.22em}
+
+    .numen6-section{margin-top:42px}
+    .numen6-section .banner{display:flex;flex-direction:column;gap:10px;max-width:820px}
+    .numen6-section h2{margin:0;font-size:clamp(26px,4vw,38px);line-height:1.18}
+    .numen6-section p{margin:0;color:var(--muted);font-size:16px;line-height:1.7}
+
+    .numen6-grid{margin-top:26px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+    @media (max-width: 1100px){.numen6-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media (max-width: 720px){.numen6-grid{grid-template-columns:1fr}.numen6-hero{grid-template-columns:1fr}.numen6-hero-figure{justify-content:flex-start}}
+
+    .numen6-card{background:var(--card);border:1px solid #1a1f2e;border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:12px;box-shadow:0 14px 40px rgba(5,10,20,.24)}
+    .numen6-card h3{margin:0;font-size:20px;letter-spacing:.1px}
+    .numen6-card p{margin:0;color:var(--muted);line-height:1.6}
+    .numen6-card .tag{display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);font-size:12px;font-weight:700;color:#c6d3f1;letter-spacing:.18px;text-transform:uppercase}
+
+    .numen6-timeline{margin-top:26px;background:var(--card);border:1px solid #1a1f2e;border-radius:18px;padding:28px}
+    .numen6-timeline ol{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:18px}
+    .numen6-timeline li{display:grid;grid-template-columns:auto 1fr;gap:14px}
+    .numen6-timeline .dot{width:16px;height:16px;border-radius:50%;border:2px solid rgba(92,169,255,.75);background:rgba(92,169,255,.28);margin-top:6px}
+    .numen6-timeline h3{margin:0;font-size:18px}
+    .numen6-timeline p{margin:6px 0 0;color:var(--muted)}
+
+    .numen6-resources{margin-top:26px;display:flex;flex-wrap:wrap;gap:14px}
+    .numen6-resource{flex:1 1 220px;min-width:220px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:16px;color:var(--ink);display:flex;flex-direction:column;gap:8px}
+    .numen6-resource strong{font-size:16px}
+    .numen6-resource span{color:var(--muted);font-size:14px}
+  </style>
+{% endblock %}
+
+{% block content %}
+  <section class="numen6-hero" aria-labelledby="numen6-title">
+    <div class="numen6-hero-copy">
+      <span class="numen6-pill">NUMEN6 LAB</span>
+      <h1 id="numen6-title">Accelerating mission-led AI with NUMEN6</h1>
+      <p>NUMEN6 is our rapid innovation studio for social impact teams. We pair product strategists with technical founders to ship proof-of-value experiences in under six weeks.</p>
+      <div class="numen6-hero-actions" role="group" aria-label="NUMEN6 primary actions">
+        <a class="btn" href="{{ bp('/contact/') }}">Book a discovery call</a>
+        <a class="btn ghost" href="{{ bp('/learning/') }}">See how we train teams</a>
+      </div>
+    </div>
+    <div class="numen6-hero-figure" aria-hidden="true">
+      <article class="numen6-hero-card">
+        <h2>Lab scorecard</h2>
+        <ul>
+          <li><strong>6-week</strong> sprints from concept to pilot</li>
+          <li><strong>Dedicated</strong> design, data, and product pod</li>
+          <li><strong>Impact</strong> checkpoints aligned to your KPIs</li>
+        </ul>
+      </article>
+    </div>
+  </section>
+
+  <section class="numen6-section" aria-labelledby="numen6-why">
+    <div class="banner">
+      <h2 id="numen6-why">Why teams choose NUMEN6</h2>
+      <p>We help organisations validate AI ideas without derailing existing operations. Our playbook combines rigorous discovery, privacy-first data onboarding, and iterative product releases to keep stakeholders engaged.</p>
+    </div>
+    <div class="numen6-grid" role="list">
+      <article class="numen6-card" role="listitem">
+        <span class="tag">Strategy to sprint</span>
+        <h3>Co-design the opportunity</h3>
+        <p>Every engagement begins with a discovery workshop to capture user stories, operational constraints, and measurable impact targets.</p>
+      </article>
+      <article class="numen6-card" role="listitem">
+        <span class="tag">Design x data</span>
+        <h3>Prototype with confidence</h3>
+        <p>Designers and data scientists explore flows together, ensuring prototypes are informed by real datasets and frontline feedback.</p>
+      </article>
+      <article class="numen6-card" role="listitem">
+        <span class="tag">Change enablement</span>
+        <h3>Upskill your champions</h3>
+        <p>Training modules and playbooks equip your internal leads to run the solution after the sprint finishes.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="numen6-section" aria-labelledby="numen6-timeline">
+    <div class="banner">
+      <h2 id="numen6-timeline">Sprint timeline</h2>
+      <p>A transparent weekly cadence keeps your team close to the work.</p>
+    </div>
+    <div class="numen6-timeline">
+      <ol>
+        <li>
+          <span class="dot" aria-hidden="true"></span>
+          <div>
+            <h3>Week 1 &mdash; Alignment</h3>
+            <p>Kickoff workshop, success metrics, data readiness review, and initial prototype sketches.</p>
+          </div>
+        </li>
+        <li>
+          <span class="dot" aria-hidden="true"></span>
+          <div>
+            <h3>Week 2-3 &mdash; Build</h3>
+            <p>Rapid prototyping with design reviews, data integrations, and stakeholder demos.</p>
+          </div>
+        </li>
+        <li>
+          <span class="dot" aria-hidden="true"></span>
+          <div>
+            <h3>Week 4-5 &mdash; Pilot</h3>
+            <p>User testing with frontline teams, instrumentation, and iterative improvements.</p>
+          </div>
+        </li>
+        <li>
+          <span class="dot" aria-hidden="true"></span>
+          <div>
+            <h3>Week 6 &mdash; Launch</h3>
+            <p>Impact retro, enablement toolkit handover, and roadmap for the next build cycle.</p>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="numen6-section" aria-labelledby="numen6-resources">
+    <div class="banner">
+      <h2 id="numen6-resources">Resources you receive</h2>
+      <p>We package everything needed to scale the pilot across your organisation.</p>
+    </div>
+    <div class="numen6-resources" role="list">
+      <div class="numen6-resource" role="listitem">
+        <strong>Implementation blueprint</strong>
+        <span>Detailed architecture, data contracts, and deployment plan.</span>
+      </div>
+      <div class="numen6-resource" role="listitem">
+        <strong>Training pathways</strong>
+        <span>Role-based learning modules for operations, data, and leadership teams.</span>
+      </div>
+      <div class="numen6-resource" role="listitem">
+        <strong>Impact tracker</strong>
+        <span>Live dashboard template to monitor adoption, outcomes, and ROI.</span>
+      </div>
+    </div>
+  </section>
+{% endblock %}

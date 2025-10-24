@@ -3,94 +3,84 @@
 
 {% block head %}
 <style>
+  .pricing-hero .inner { min-height: 300px; }
   .countdown-hero .inner {
-    min-height: clamp(520px, 82vh, 640px);
+    min-height: clamp(420px, 65vh, 560px);
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: clamp(60px, 10vw, 120px) clamp(24px, 8vw, 80px);
-  }
-  .countdown-hero__content {
-    width: min(100%, 980px);
-    display: grid;
-    gap: clamp(20px, 4vw, 32px);
+    padding: clamp(48px, 6vw, 72px) clamp(20px, 5vw, 48px);
     text-align: center;
   }
-  .countdown-hero__intro {
+  .countdown-hero-content {
     display: grid;
-    gap: clamp(14px, 3vw, 22px);
+    gap: clamp(18px, 3vw, 28px);
+    width: 100%;
+  }
+  .countdown-hero-content h1 {
+    margin: 0;
+    font-size: clamp(42px, 7vw, 72px);
+  }
+  .countdown-hero-content .subhead {
+    margin: 0 auto;
+    max-width: 72ch;
+    font-size: clamp(18px, 2.6vw, 24px);
+    color: rgba(230, 236, 255, 0.88);
+  }
+  .countdown-panel {
+    display: grid;
+    gap: clamp(18px, 3vw, 28px);
+    padding: clamp(28px, 4vw, 40px);
+    border-radius: 24px;
+    background: rgba(8, 12, 22, 0.82);
+    border: 1px solid rgba(118, 180, 255, 0.42);
+    box-shadow: 0 22px 55px rgba(5, 12, 25, 0.45);
+  }
+  .countdown-panel-header {
+    display: grid;
+    gap: 6px;
     justify-items: center;
   }
-  .countdown-hero .badge-row {
-    justify-content: center;
-  }
-  .countdown-hero h1 {
-    margin: 0;
-    font-size: clamp(38px, 6vw, 68px);
-  }
-  .countdown-hero .subhead {
-    margin: 0;
-    max-width: 760px;
-    color: rgba(222, 230, 255, 0.9);
-    font-size: clamp(18px, 2.5vw, 22px);
-    line-height: 1.55;
-  }
-  .countdown-hero__panel {
-    display: grid;
-    gap: clamp(18px, 3vw, 26px);
-    padding: clamp(26px, 4vw, 36px);
-    border-radius: 26px;
-    background: rgba(8, 12, 22, 0.78);
-    border: 1px solid rgba(118, 180, 255, 0.35);
-    box-shadow: 0 28px 70px rgba(5, 12, 25, 0.45);
-    text-align: center;
-  }
-  .countdown-hero__meta {
-    display: grid;
-    gap: 10px;
-    justify-items: center;
-  }
-  .countdown-label {
-    font-size: clamp(12px, 1.6vw, 14px);
-    letter-spacing: .16em;
+  .countdown-heading {
+    font-size: 14px;
+    letter-spacing: .18em;
     text-transform: uppercase;
     font-weight: 800;
     color: #9dc9ff;
   }
-  .countdown-date {
-    font-size: clamp(20px, 3vw, 26px);
+  .countdown-due {
+    font-size: clamp(20px, 3vw, 28px);
     font-weight: 700;
     color: #f3f7ff;
   }
-  .countdown-support {
-    margin: 0;
-    font-size: clamp(15px, 2.4vw, 18px);
-    color: rgba(214, 225, 255, 0.86);
+  .countdown-description {
+    margin: 0 auto;
+    font-size: clamp(16px, 2.2vw, 19px);
+    max-width: 68ch;
+    color: rgba(188, 217, 255, 0.88);
   }
-  .countdown-hero__timer {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: clamp(16px, 3.5vw, 24px);
+  .countdown-grid {
+    display: grid;
+    gap: clamp(16px, 3vw, 24px);
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   }
   .countdown-unit {
     display: grid;
-    gap: clamp(6px, 1.8vw, 10px);
+    gap: 10px;
     justify-items: center;
-    padding: clamp(16px, 3vw, 24px);
-    border-radius: 20px;
-    background: rgba(118, 180, 255, 0.14);
-    border: 1px solid rgba(118, 180, 255, 0.24);
-    min-width: clamp(92px, 22vw, 150px);
+    padding: clamp(18px, 3vw, 24px);
+    border-radius: 18px;
+    background: rgba(118, 180, 255, 0.16);
+    border: 1px solid rgba(118, 180, 255, 0.36);
   }
   .countdown-value {
     font-weight: 900;
-    font-size: clamp(48px, 11vw, 92px);
-    line-height: 1;
+    font-size: clamp(48px, 12vw, 96px);
+    letter-spacing: .04em;
     color: #ffffff;
   }
   .countdown-unit-label {
-    font-size: clamp(12px, 2vw, 16px);
+    font-size: 12px;
     letter-spacing: .12em;
     text-transform: uppercase;
     color: rgba(188, 217, 255, 0.85);
@@ -99,47 +89,41 @@
     display: none;
     font-weight: 700;
     color: #8be6a5;
-    text-align: center;
-    font-size: clamp(16px, 2.4vw, 20px);
+    font-size: clamp(16px, 2.2vw, 19px);
   }
-  .countdown-hero__panel[data-countdown-complete="true"] .countdown-hero__timer {
+  .countdown-panel[data-countdown-complete="true"] .countdown-grid {
     display: none;
   }
-  .countdown-hero__panel[data-countdown-complete="true"] .countdown-complete {
+  .countdown-panel[data-countdown-complete="true"] .countdown-complete {
     display: block;
   }
-  .countdown-hero__cta {
+  .countdown-cta {
+    display: flex;
+    gap: 12px;
     justify-content: center;
-    gap: clamp(12px, 3vw, 20px);
+    flex-wrap: wrap;
   }
-  .countdown-hero__cta .btn {
-    min-width: 190px;
+  .countdown-cta .btn {
+    min-width: 180px;
   }
-  .countdown-hero__cta .btn.secondary {
+  .countdown-cta .btn.secondary {
     background: transparent;
-    border: 1px solid rgba(118, 180, 255, 0.4);
-    color: #e6ecff;
+    border: 1px solid rgba(118, 180, 255, 0.38);
+    color: #bcd9ff;
+  }
+  .countdown-cta .btn.secondary:hover {
+    color: #ffffff;
+    border-color: rgba(118, 180, 255, 0.6);
   }
   @media (max-width: 720px) {
     .countdown-hero .inner {
-      padding: 60px 18px 70px;
-      min-height: auto;
+      padding: clamp(36px, 10vw, 48px) 20px;
     }
-    .countdown-hero__content {
-      gap: 24px;
+    .countdown-panel {
+      padding: clamp(24px, 8vw, 32px);
     }
-    .countdown-hero__panel {
-      padding: 24px 20px;
-      border-radius: 22px;
-      gap: 20px;
-    }
-    .countdown-hero__cta {
-      flex-direction: column;
-      align-items: center;
-    }
-    .countdown-hero__cta .btn {
-      width: 100%;
-      max-width: 320px;
+    .countdown-value {
+      font-size: clamp(42px, 18vw, 72px);
     }
   }
   .badge-row { display:flex; flex-wrap:wrap; gap:8px; }
@@ -270,27 +254,25 @@
 
 {% block hero %}
 {% set cover_url = (bootcamp.cover_url if bootcamp and bootcamp.cover_url else COURSE_COVER_URL) %}
-<section class="cover-hero countdown-hero" aria-label="Bootcamp cover">
+<section class="cover-hero countdown-hero pricing-hero" aria-label="Bootcamp countdown hero">
   <div class="bg" style="background-image:url('{{ cover_url }}');"></div>
   <div class="overlay"></div>
   <div class="inner">
-    <div class="countdown-hero__content">
-      <div class="countdown-hero__intro">
-        <div class="badge-row">
-          <span class="badge">Bootcamp</span>
-          <span class="badge">{{ bootcamp.seat_cap }} seats per cohort</span>
-        </div>
-        <h1>{{ bootcamp.title }}</h1>
-        <p class="subhead">{{ bootcamp.subtitle }}</p>
+    <div class="countdown-hero-content">
+      <div class="badge-row">
+        <span class="badge">Bootcamp</span>
+        <span class="badge">{{ bootcamp.seat_cap }} seats per cohort</span>
       </div>
+      <h1>{{ bootcamp.title }}</h1>
+      <p class="subhead">{{ bootcamp.subtitle }}</p>
       {% if bootcamp.next_event_date_iso %}
-      <div class="countdown-hero__panel" data-countdown="{{ bootcamp.next_event_date_iso }}" aria-live="polite">
-        <div class="countdown-hero__meta">
-          <span class="countdown-label">Next cohort begins</span>
-          <span class="countdown-date">{{ bootcamp.next_event_date_display }}</span>
+      <div class="countdown-panel" data-countdown="{{ bootcamp.next_event_date_iso }}" aria-live="polite">
+        <div class="countdown-panel-header">
+          <div class="countdown-heading">Next cohort begins</div>
+          <div class="countdown-due">{{ bootcamp.next_event_date_display }}</div>
         </div>
-        <p class="countdown-support">Secure your seat before the cohort fills—we keep enrollment intentionally small.</p>
-        <div class="countdown-hero__timer">
+        <p class="countdown-description">Secure your seat to join a focused cohort shipping real AI solutions in four days.</p>
+        <div class="countdown-grid">
           <div class="countdown-unit">
             <span class="countdown-value" data-countdown-days>00</span>
             <span class="countdown-unit-label">Days</span>
@@ -308,11 +290,11 @@
             <span class="countdown-unit-label">Seconds</span>
           </div>
         </div>
-        <p class="countdown-complete" role="status">The next cohort has started! Catch the replay or join the following session.</p>
+        <div class="countdown-complete">The next cohort has started! Catch the replay or join the following session.</div>
       </div>
       {% endif %}
-      <div class="cta-row countdown-hero__cta">
-        <a class="btn" href="{{ bp('/register/?course=' ~ bootcamp.code) }}">Register for the Bootcamp</a>
+      <div class="countdown-cta">
+        <a class="btn" href="{{ bp('/register/?course=' ~ bootcamp.code) }}">Secure your seat</a>
         <button type="button" class="btn secondary" data-seat-pricing-open>View seat pricing</button>
       </div>
     </div>

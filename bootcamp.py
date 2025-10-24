@@ -123,7 +123,7 @@ def _format_iso_datetime_for_display(value: str) -> str:
     return _format_event_datetime(parsed)
 
 
-DEFAULT_NEXT_EVENT = datetime(2025, 1, 3, 9, 0, tzinfo=BOOTCAMP_EVENT_TIMEZONE)
+DEFAULT_NEXT_EVENT = datetime(2026, 1, 3, 9, 0, tzinfo=BOOTCAMP_EVENT_TIMEZONE)
 DEFAULT_NEXT_EVENT_DISPLAY = _format_event_datetime(DEFAULT_NEXT_EVENT)
 
 

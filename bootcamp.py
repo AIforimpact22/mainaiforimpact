@@ -228,7 +228,23 @@ def _get_bootcamp_vm() -> Dict[str, object]:
         if daily_flow:
             vm["daily_flow"] = daily_flow
     vm["testimonials"] = _fetch_bootcamp_testimonials()
-    vm["seat_prices"] = _fetch_bootcamp_seat_prices()
+    seat_prices = _fetch_bootcamp_seat_prices()
+    vm["seat_prices"] = seat_prices
+
+    next_event_display = ""
+    next_event_iso = ""
+    for cohort in seat_prices:
+        iso_raw = cohort.get("event_date_iso")
+        display_raw = cohort.get("event_date_display")
+        iso_value = str(iso_raw).strip() if iso_raw else ""
+        display_value = str(display_raw).strip() if display_raw else ""
+        if iso_value:
+            next_event_iso = iso_value
+            next_event_display = display_value or iso_value
+            break
+
+    vm["next_event_date_iso"] = next_event_iso
+    vm["next_event_date_display"] = next_event_display
     return vm
 
 

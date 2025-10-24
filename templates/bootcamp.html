@@ -160,6 +160,7 @@
 
   .cta-row { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:16px; }
   .btn.secondary { background:transparent; border:1px solid #2a3348; color:var(--ink); }
+  .countdown-hero .btn.secondary { border-color: rgba(118, 180, 255, 0.4); color: #e6ecff; }
 
   .section-card h2 { margin:0 0 6px 0; font-size: 20px; }
 
@@ -554,15 +555,15 @@
       });
     }
 
-    var countdown = document.querySelector('[data-countdown]');
-    if (countdown) {
-      var targetRaw = countdown.getAttribute('data-countdown');
+    var countdownPanel = document.querySelector('.countdown-hero__panel[data-countdown]') || document.querySelector('[data-countdown]');
+    if (countdownPanel) {
+      var targetRaw = countdownPanel.getAttribute('data-countdown');
       var targetDate = targetRaw ? new Date(targetRaw) : null;
       if (targetDate && !isNaN(targetDate.getTime())) {
-        var daysEl = countdown.querySelector('[data-countdown-days]');
-        var hoursEl = countdown.querySelector('[data-countdown-hours]');
-        var minutesEl = countdown.querySelector('[data-countdown-minutes]');
-        var secondsEl = countdown.querySelector('[data-countdown-seconds]');
+        var daysEl = countdownPanel.querySelector('[data-countdown-days]');
+        var hoursEl = countdownPanel.querySelector('[data-countdown-hours]');
+        var minutesEl = countdownPanel.querySelector('[data-countdown-minutes]');
+        var secondsEl = countdownPanel.querySelector('[data-countdown-seconds]');
 
         var pad = function (value) {
           return String(Math.max(0, value)).padStart(2, '0');
@@ -572,7 +573,7 @@
           var now = new Date();
           var diffMs = targetDate.getTime() - now.getTime();
           if (diffMs <= 0) {
-            countdown.setAttribute('data-countdown-complete', 'true');
+            countdownPanel.setAttribute('data-countdown-complete', 'true');
             if (daysEl) { daysEl.textContent = '00'; }
             if (hoursEl) { hoursEl.textContent = '00'; }
             if (minutesEl) { minutesEl.textContent = '00'; }
@@ -586,7 +587,7 @@
           var minutes = Math.floor((totalSeconds % 3600) / 60);
           var seconds = totalSeconds % 60;
 
-          countdown.removeAttribute('data-countdown-complete');
+          countdownPanel.removeAttribute('data-countdown-complete');
           if (daysEl) { daysEl.textContent = pad(days); }
           if (hoursEl) { hoursEl.textContent = pad(hours); }
           if (minutesEl) { minutesEl.textContent = pad(minutes); }

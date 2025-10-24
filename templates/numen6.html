@@ -1,69 +1,100 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Numen6 — The presence in your system.</title>
-  <meta name="description" content="Numen6 watches your operation, explains what it sees, and proposes safe interventions—always with hard limits and human approval." />
-  <link rel="icon" type="image/png" href="https://i.imgur.com/kegTDUJ.png" />
+{% extends "base.html" %}
+{% block title %}NUMEN6 — Ai For Impact{% endblock %}
+{% block body_class %}with-cover{% endblock %}
+
+{% block head %}
+  {{ super() }}
   <style>
-    :root {
-      --bg:#0B0E12; --text:#F3F6FA; --muted:#9CA6B3; --accent:#11D1F0;
+    .numen6-hero .bg {
+      background: radial-gradient(circle at 20% 20%, rgba(17, 209, 240, 0.12), transparent 46%),
+                  radial-gradient(circle at 82% 28%, rgba(92, 169, 255, 0.18), transparent 54%),
+                  radial-gradient(circle at 50% 100%, rgba(17, 209, 240, 0.12), transparent 50%),
+                  linear-gradient(135deg, #0a0f1c 0%, #0b0d18 40%, #090c16 100%);
     }
-    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-    .wrap{min-height:100svh;display:flex;align-items:center;justify-content:center;padding:32px}
-    .card{max-width:980px;text-align:center}
-    .logo{width:200px;height:200px;margin:0 auto 26px auto;display:block;object-fit:contain;animation:spin 80s linear infinite}
-    h1{font-size:44px;line-height:1.08;margin:0 0 16px 0}
-    p.lead{margin:0 0 18px 0;color:var(--muted);font-size:20px}
-    .countdown{margin-top:12px;font-size:18px;color:var(--muted)}
-    .countdown strong{color:var(--accent)}
-    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-    @media (max-width:600px){
-      .logo{width:160px;height:160px}
-      h1{font-size:36px}
-      p.lead{font-size:18px}
+    .numen6-hero .overlay {
+      background: linear-gradient(to bottom, rgba(9, 12, 22, 0.75) 0%, rgba(9, 12, 22, 0.4) 40%, rgba(9, 12, 22, 0.92) 100%);
+    }
+    .numen6-hero .inner {
+      align-items: center;
+      text-align: center;
+      gap: clamp(16px, 3vw, 28px);
+    }
+    .numen6-logo {
+      width: clamp(140px, 26vw, 210px);
+      height: clamp(140px, 26vw, 210px);
+      object-fit: contain;
+      border-radius: 18px;
+      border: none;
+      background: none;
+      box-shadow: none;
+      animation: numen6-spin 80s linear infinite;
+    }
+    .numen6-title {
+      margin: 0;
+      font-size: clamp(32px, 5.4vw, 56px);
+      line-height: 1.08;
+      letter-spacing: 0.2px;
+    }
+    .numen6-lead {
+      margin: 0;
+      max-width: 620px;
+    }
+    .numen6-countdown {
+      margin: 0;
+      font-size: clamp(16px, 2.3vw, 20px);
+      color: var(--muted);
+    }
+    .numen6-countdown strong {
+      color: var(--accent);
+    }
+    @keyframes numen6-spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
     }
     @media (prefers-reduced-motion: reduce) {
-      .logo{animation: none}
+      .numen6-logo { animation: none; }
     }
   </style>
-</head>
-<body>
-  <main class="wrap">
-    <section class="card">
-      <img class="logo" src="https://i.imgur.com/kegTDUJ.png" alt="Numen6 logo (slowly rotating)" />
-      <h1>The presence in your system.</h1>
-      <p class="lead">Numen6 watches your operation, explains what it sees, and proposes safe interventions—always with hard limits and human approval.</p>
-      <div class="countdown" aria-live="polite">
-        Preparing to launch the <strong>NUMEN6 Pilot</strong> — <span id="cd">calculating…</span>
-      </div>
-    </section>
-  </main>
+{% endblock %}
 
-  <script>
-    (function() {
-      // Target: Jan 1, 2026 00:00:00 local time
-      var target = new Date(2026, 0, 1, 0, 0, 0, 0).getTime();
-      var el = document.getElementById('cd');
-      function pad(n) { return (n<10?'0':'') + n; }
-      function tick() {
-        var now = Date.now();
-        var diff = Math.max(0, target - now);
-        var s = Math.floor(diff / 1000);
-        var days = Math.floor(s / 86400); s -= days*86400;
-        var hrs = Math.floor(s / 3600); s -= hrs*3600;
-        var mins = Math.floor(s / 60); s -= mins*60;
-        var secs = s;
-        el.textContent = days + ' days ' + pad(hrs) + ':' + pad(mins) + ':' + pad(secs);
-        if (diff <= 0) {
-          el.textContent = 'Launching now.';
-          clearInterval(iv);
-        }
+{% block hero %}
+<section class="cover-hero numen6-hero" aria-labelledby="numen6-title">
+  <div class="bg" aria-hidden="true"></div>
+  <div class="overlay" aria-hidden="true"></div>
+  <div class="inner">
+    <img class="numen6-logo" src="https://i.imgur.com/kegTDUJ.png" alt="Numen6 logo" width="200" height="200" loading="eager">
+    <h1 id="numen6-title" class="numen6-title">The presence in your system.</h1>
+    <p class="subhead numen6-lead">Numen6 watches your operation, explains what it sees, and proposes safe interventions—always with hard limits and human approval.</p>
+    <p class="numen6-countdown" aria-live="polite">
+      Preparing to launch the <strong>NUMEN6 Pilot</strong> — <span id="numen6-countdown">calculating…</span>
+    </p>
+  </div>
+</section>
+<script>
+  (function() {
+    var target = new Date(2026, 0, 1, 0, 0, 0, 0).getTime();
+    var el = document.getElementById('numen6-countdown');
+    if (!el) return;
+    function pad(n) { return (n < 10 ? '0' : '') + n; }
+    function tick() {
+      var now = Date.now();
+      var diff = Math.max(0, target - now);
+      var totalSeconds = Math.floor(diff / 1000);
+      var days = Math.floor(totalSeconds / 86400);
+      totalSeconds -= days * 86400;
+      var hours = Math.floor(totalSeconds / 3600);
+      totalSeconds -= hours * 3600;
+      var minutes = Math.floor(totalSeconds / 60);
+      var seconds = totalSeconds - minutes * 60;
+      el.textContent = days + ' days ' + pad(hours) + ':' + pad(minutes) + ':' + pad(seconds);
+      if (diff <= 0) {
+        el.textContent = 'Launching now.';
+        clearInterval(timer);
       }
-      tick();
-      var iv = setInterval(tick, 1000);
-    })();
-  </script>
-</body>
-</html>
+    }
+    tick();
+    var timer = setInterval(tick, 1000);
+  })();
+</script>
+{% endblock %}
+{% block content %}{% endblock %}

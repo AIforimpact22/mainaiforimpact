@@ -21,12 +21,6 @@
     margin: 0;
     font-size: clamp(42px, 7vw, 72px);
   }
-  .countdown-hero-content .subhead {
-    margin: 0 auto;
-    max-width: 72ch;
-    font-size: clamp(18px, 2.6vw, 24px);
-    color: rgba(230, 236, 255, 0.88);
-  }
   .countdown-panel {
     display: grid;
     gap: clamp(18px, 3vw, 28px);
@@ -52,12 +46,6 @@
     font-size: clamp(20px, 3vw, 28px);
     font-weight: 700;
     color: #f3f7ff;
-  }
-  .countdown-description {
-    margin: 0 auto;
-    font-size: clamp(16px, 2.2vw, 19px);
-    max-width: 68ch;
-    color: rgba(188, 217, 255, 0.88);
   }
   .countdown-grid {
     display: grid;
@@ -264,14 +252,12 @@
         <span class="badge">{{ bootcamp.seat_cap }} seats per cohort</span>
       </div>
       <h1>{{ bootcamp.title }}</h1>
-      <p class="subhead">{{ bootcamp.subtitle }}</p>
       {% if bootcamp.next_event_date_iso %}
       <div class="countdown-panel" data-countdown="{{ bootcamp.next_event_date_iso }}" aria-live="polite">
         <div class="countdown-panel-header">
           <div class="countdown-heading">Next cohort begins</div>
           <div class="countdown-due">{{ bootcamp.next_event_date_display }}</div>
         </div>
-        <p class="countdown-description">Secure your seat to join a focused cohort shipping real AI solutions in four days.</p>
         <div class="countdown-grid">
           <div class="countdown-unit">
             <span class="countdown-value" data-countdown-days>00</span>
@@ -284,10 +270,6 @@
           <div class="countdown-unit">
             <span class="countdown-value" data-countdown-minutes>00</span>
             <span class="countdown-unit-label">Minutes</span>
-          </div>
-          <div class="countdown-unit">
-            <span class="countdown-value" data-countdown-seconds>00</span>
-            <span class="countdown-unit-label">Seconds</span>
           </div>
         </div>
         <div class="countdown-complete">The next cohort has started! Catch the replay or join the following session.</div>
@@ -563,7 +545,6 @@
         var daysEl = countdownPanel.querySelector('[data-countdown-days]');
         var hoursEl = countdownPanel.querySelector('[data-countdown-hours]');
         var minutesEl = countdownPanel.querySelector('[data-countdown-minutes]');
-        var secondsEl = countdownPanel.querySelector('[data-countdown-seconds]');
 
         var pad = function (value) {
           return String(Math.max(0, value)).padStart(2, '0');
@@ -577,7 +558,6 @@
             if (daysEl) { daysEl.textContent = '00'; }
             if (hoursEl) { hoursEl.textContent = '00'; }
             if (minutesEl) { minutesEl.textContent = '00'; }
-            if (secondsEl) { secondsEl.textContent = '00'; }
             return;
           }
 
@@ -585,13 +565,11 @@
           var days = Math.floor(totalSeconds / 86400);
           var hours = Math.floor((totalSeconds % 86400) / 3600);
           var minutes = Math.floor((totalSeconds % 3600) / 60);
-          var seconds = totalSeconds % 60;
 
           countdownPanel.removeAttribute('data-countdown-complete');
           if (daysEl) { daysEl.textContent = pad(days); }
           if (hoursEl) { hoursEl.textContent = pad(hours); }
           if (minutesEl) { minutesEl.textContent = pad(minutes); }
-          if (secondsEl) { secondsEl.textContent = pad(seconds); }
         };
 
         updateCountdown();

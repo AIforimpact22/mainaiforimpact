@@ -1,4 +1,4 @@
-import os, json, re, logging
+import os, json, re, logging, copy
 from typing import Any, Dict, List, Optional, Tuple
 from flask import Flask, render_template, abort, Response
 from sqlalchemy import create_engine, text
@@ -259,6 +259,42 @@ def home():
         modules_count=modules,
         lessons_count=lessons,
         services=services,
+    )
+
+
+@app.get("/learning/")
+def learning():
+    course_data = _fetch_course()
+    course_vm: Optional[Dict[str, Any]] = None
+    course_summary: Dict[str, int] = {"modules": 0, "lessons": 0, "weeks": 0}
+    if course_data:
+        structure = course_data.get("structure") or {}
+        weeks, modules, lessons = _summarize(structure)
+        course_vm = {
+            "id": course_data["id"],
+            "title": COURSE_TITLE or course_data.get("title") or "Course",
+            "slug": slugify(course_data.get("title") or ""),
+            "blurb": "One on one tailored training sessions with live build support inside your organization.",
+        }
+        course_summary = {
+            "modules": modules,
+            "lessons": lessons,
+            "weeks": len(weeks),
+        }
+
+    from bootcamp import BOOTCAMP_INFO  # local import to avoid circular dependency
+
+    bootcamp_vm = copy.deepcopy(BOOTCAMP_INFO)
+    bootcamp_vm.setdefault(
+        "blurb",
+        "A two-day, hands-on cohort built to help teams ship AI products alongside production experts.",
+    )
+
+    return render_template(
+        "learning.html",
+        course=course_vm,
+        course_summary=course_summary,
+        bootcamp=bootcamp_vm,
     )
 
 @app.get("/course/<int:cid>-<slug>")

@@ -38,35 +38,84 @@
       margin: 0;
       max-width: 620px;
     }
-    .numen6-countdown {
+    .numen6-countdown-wrapper {
+      width: min(720px, 100%);
+      margin: 0 auto;
+    }
+    .numen6-countdown-panel {
       display: grid;
-      gap: clamp(8px, 1.8vw, 16px);
+      gap: clamp(18px, 3vw, 28px);
+      padding: clamp(26px, 5vw, 42px);
+      border-radius: 26px;
+      background: rgba(8, 12, 22, 0.86);
+      border: 1px solid rgba(118, 180, 255, 0.42);
+      box-shadow: 0 24px 55px rgba(5, 12, 25, 0.5);
+    }
+    .numen6-countdown-panel[data-countdown-complete="true"] .numen6-countdown-grid {
+      display: none;
+    }
+    .numen6-countdown-panel[data-countdown-complete="true"] .numen6-countdown-complete {
+      display: block;
+    }
+    .numen6-countdown-header {
+      display: grid;
+      gap: 8px;
       justify-items: center;
-      color: var(--muted);
     }
-    .numen6-countdown-label {
-      margin: 0;
-      font-size: clamp(17px, 2.4vw, 22px);
+    .numen6-countdown-heading {
+      font-size: 14px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-weight: 800;
+      color: #9dc9ff;
     }
-    .numen6-countdown-label strong {
-      color: var(--accent);
+    .numen6-countdown-due {
+      font-size: clamp(20px, 3vw, 28px);
+      font-weight: 700;
+      color: #f3f7ff;
     }
-    .numen6-countdown-display {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: clamp(10px, 2vw, 18px) clamp(18px, 4vw, 36px);
-      border-radius: 999px;
-      background: rgba(15, 20, 36, 0.65);
-      box-shadow: inset 0 0 0 1px rgba(72, 163, 255, 0.35), 0 18px 50px rgba(8, 12, 24, 0.45);
-      font-size: clamp(32px, 7vw, 64px);
-      font-weight: 600;
-      letter-spacing: 0.05em;
+    .numen6-countdown-grid {
+      display: grid;
+      gap: clamp(16px, 3vw, 24px);
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    }
+    .numen6-countdown-unit {
+      display: grid;
+      gap: 10px;
+      justify-items: center;
+      padding: clamp(18px, 3vw, 24px);
+      border-radius: 20px;
+      background: rgba(118, 180, 255, 0.16);
+      border: 1px solid rgba(118, 180, 255, 0.36);
+    }
+    .numen6-countdown-value {
+      font-weight: 900;
+      font-size: clamp(48px, 12vw, 96px);
+      letter-spacing: 0.04em;
+      color: #ffffff;
       font-variant-numeric: tabular-nums;
       font-feature-settings: "tnum";
-      color: #e7f3ff;
-      text-shadow: 0 0 18px rgba(46, 184, 255, 0.45);
-      min-width: min(85vw, 480px);
+    }
+    .numen6-countdown-unit-label {
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(188, 217, 255, 0.85);
+    }
+    .numen6-countdown-complete {
+      display: none;
+      font-weight: 700;
+      color: #8be6a5;
+      font-size: clamp(16px, 2.2vw, 19px);
+      text-align: center;
+    }
+    @media (max-width: 720px) {
+      .numen6-countdown-panel {
+        padding: clamp(22px, 9vw, 32px);
+      }
+      .numen6-countdown-value {
+        font-size: clamp(42px, 18vw, 72px);
+      }
     }
     @keyframes numen6-spin {
       from { transform: rotate(0deg); }
@@ -86,36 +135,81 @@
     <img class="numen6-logo" src="https://i.imgur.com/kegTDUJ.png" alt="Numen6 logo" width="200" height="200" loading="eager">
     <h1 id="numen6-title" class="numen6-title">The presence in your system.</h1>
     <p class="subhead numen6-lead">Numen6 watches your operation, explains what it sees, and proposes safe interventions—always with hard limits and human approval.</p>
-    <div class="numen6-countdown" aria-live="polite">
-      <p class="numen6-countdown-label">Preparing to launch the <strong>NUMEN6 Pilot</strong></p>
-      <p class="numen6-countdown-display" id="numen6-countdown" role="timer">calculating…</p>
+    <div class="numen6-countdown-wrapper">
+      <div class="numen6-countdown-panel" id="numen6-countdown" data-countdown="2026-01-01T00:00:00Z" aria-live="polite">
+        <div class="numen6-countdown-header">
+          <div class="numen6-countdown-heading">NUMEN6 pilot launches</div>
+          <div class="numen6-countdown-due">January 1, 2026</div>
+        </div>
+        <div class="numen6-countdown-grid" role="timer">
+          <div class="numen6-countdown-unit">
+            <span class="numen6-countdown-value" data-countdown-days>00</span>
+            <span class="numen6-countdown-unit-label">Days</span>
+          </div>
+          <div class="numen6-countdown-unit">
+            <span class="numen6-countdown-value" data-countdown-hours>00</span>
+            <span class="numen6-countdown-unit-label">Hours</span>
+          </div>
+          <div class="numen6-countdown-unit">
+            <span class="numen6-countdown-value" data-countdown-minutes>00</span>
+            <span class="numen6-countdown-unit-label">Minutes</span>
+          </div>
+          <div class="numen6-countdown-unit">
+            <span class="numen6-countdown-value" data-countdown-seconds>00</span>
+            <span class="numen6-countdown-unit-label">Seconds</span>
+          </div>
+        </div>
+        <div class="numen6-countdown-complete">The NUMEN6 pilot is live. Request access to join.</div>
+      </div>
     </div>
   </div>
 </section>
 <script>
-  (function() {
-    var target = new Date(2026, 0, 1, 0, 0, 0, 0).getTime();
-    var el = document.getElementById('numen6-countdown');
-    if (!el) return;
-    function pad(n) { return (n < 10 ? '0' : '') + n; }
-    function tick() {
-      var now = Date.now();
-      var diff = Math.max(0, target - now);
-      var totalSeconds = Math.floor(diff / 1000);
-      var days = Math.floor(totalSeconds / 86400);
-      totalSeconds -= days * 86400;
-      var hours = Math.floor(totalSeconds / 3600);
-      totalSeconds -= hours * 3600;
-      var minutes = Math.floor(totalSeconds / 60);
-      var seconds = totalSeconds - minutes * 60;
-      el.textContent = days + ' days ' + pad(hours) + ':' + pad(minutes) + ':' + pad(seconds);
-      if (diff <= 0) {
-        el.textContent = 'Launching now.';
-        clearInterval(timer);
+  (function () {
+    var panel = document.getElementById('numen6-countdown');
+    if (!panel) return;
+
+    var targetRaw = panel.getAttribute('data-countdown');
+    var targetDate = targetRaw ? new Date(targetRaw) : null;
+    if (!targetDate || isNaN(targetDate.getTime())) return;
+
+    var daysEl = panel.querySelector('[data-countdown-days]');
+    var hoursEl = panel.querySelector('[data-countdown-hours]');
+    var minutesEl = panel.querySelector('[data-countdown-minutes]');
+    var secondsEl = panel.querySelector('[data-countdown-seconds]');
+
+    var pad = function (value) {
+      return String(Math.max(0, value)).padStart(2, '0');
+    };
+
+    var updateCountdown = function () {
+      var now = new Date();
+      var diffMs = targetDate.getTime() - now.getTime();
+
+      if (diffMs <= 0) {
+        panel.setAttribute('data-countdown-complete', 'true');
+        if (daysEl) { daysEl.textContent = '00'; }
+        if (hoursEl) { hoursEl.textContent = '00'; }
+        if (minutesEl) { minutesEl.textContent = '00'; }
+        if (secondsEl) { secondsEl.textContent = '00'; }
+        return;
       }
-    }
-    tick();
-    var timer = setInterval(tick, 1000);
+
+      var totalSeconds = Math.floor(diffMs / 1000);
+      var days = Math.floor(totalSeconds / 86400);
+      var hours = Math.floor((totalSeconds % 86400) / 3600);
+      var minutes = Math.floor((totalSeconds % 3600) / 60);
+      var seconds = totalSeconds % 60;
+
+      panel.removeAttribute('data-countdown-complete');
+      if (daysEl) { daysEl.textContent = pad(days); }
+      if (hoursEl) { hoursEl.textContent = pad(hours); }
+      if (minutesEl) { minutesEl.textContent = pad(minutes); }
+      if (secondsEl) { secondsEl.textContent = pad(seconds); }
+    };
+
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
   })();
 </script>
 {% endblock %}

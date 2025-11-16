@@ -529,9 +529,21 @@ def _fetch_bootcamp_seat_prices() -> list[Dict[str, object]]:
 
     query = text(
         """
-        SELECT bootcamp_name, location, event_date, seat_tier, price_type, price,
-               currency, seats_total, seats_sold, notes
-        FROM public.bootcamp_seat_prices
+        SELECT bootcamp_name,
+               location,
+               event_date,
+               seat_tier,
+               price_type,
+               price,
+               currency,
+               seats_total,
+               seats_sold,
+               seats_remaining,
+               valid_from,
+               valid_to,
+               is_active,
+               notes
+        FROM public.bootcamp_seat_prices_view
         WHERE is_active = TRUE
         ORDER BY event_date NULLS LAST, location ASC, seat_tier ASC, price_type ASC
         """
@@ -545,6 +557,19 @@ def _fetch_bootcamp_seat_prices() -> list[Dict[str, object]]:
         return []
 
     grouped: Dict[tuple[str, object], Dict[str, object]] = {}
+
+    def _format_deadline(value: Any) -> str:
+        if not value:
+            return ""
+        if isinstance(value, datetime):
+            try:
+                return value.strftime("%b %d, %Y")
+            except Exception:
+                return str(value)
+        try:
+            return value.strftime("%b %d, %Y")  # type: ignore[attr-defined]
+        except Exception:
+            return str(value)
     for row in rows:
         location_raw = row.get("location") or ""
         location = str(location_raw).strip() or "To be announced"
@@ -585,16 +610,28 @@ def _fetch_bootcamp_seat_prices() -> list[Dict[str, object]]:
         price_type_raw = row.get("price_type") or "Regular"
         tier_name = str(tier_raw).replace("_", " ").title()
         price_type = str(price_type_raw).replace("_", " ").title()
+        tier_key = str(tier_raw).strip().lower()
+        price_type_key = str(price_type_raw).strip().lower()
+
+        valid_from = row.get("valid_from")
+        valid_to = row.get("valid_to")
 
         group["offers"].append(
             {
                 "seat_tier": tier_name,
+                "seat_tier_key": tier_key,
                 "price_type": price_type,
+                "price_type_key": price_type_key,
                 "price_display": _format_price(row.get("price"), row.get("currency") or ""),
+                "price": row.get("price"),
                 "currency": row.get("currency") or "",
                 "notes": row.get("notes") or "",
                 "seats_total": seats_total,
                 "seats_available": seats_available,
+                "valid_from": valid_from,
+                "valid_to": valid_to,
+                "valid_from_display": _format_deadline(valid_from),
+                "valid_to_display": _format_deadline(valid_to),
             }
         )
 

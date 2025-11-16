@@ -212,6 +212,22 @@ def healthz():
 
 @app.get("/")
 def home():
+    from bootcamp import (  # type: ignore[attr-defined]
+        BOOTCAMP_INFO,
+        _fetch_bootcamp_seat_prices,
+        summarize_bootcamp_price,
+    )
+
+    bootcamp_vm = copy.deepcopy(BOOTCAMP_INFO)
+    bootcamp_vm.setdefault(
+        "blurb",
+        "A two-day, hands-on cohort built to help teams ship AI products alongside production experts.",
+    )
+    seat_prices = _fetch_bootcamp_seat_prices()
+    if seat_prices:
+        bootcamp_vm["seat_prices"] = seat_prices
+        bootcamp_vm["price_summary"] = summarize_bootcamp_price(seat_prices)
+
     services = [
         {
             "name": "AI Bootcamp",
@@ -235,6 +251,7 @@ def home():
             modules_count=0,
             lessons_count=0,
             services=services,
+            bootcamp=bootcamp_vm,
         )
     structure = course.get("structure") or {}
     weeks, modules, lessons = _summarize(structure)
@@ -260,6 +277,7 @@ def home():
         modules_count=modules,
         lessons_count=lessons,
         services=services,
+        bootcamp=bootcamp_vm,
     )
 
 

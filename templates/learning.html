@@ -31,6 +31,13 @@
     .learning-features{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;color:var(--muted);font-size:14px}
     .learning-features li{display:flex;gap:10px}
     .learning-features li::before{content:"•";color:var(--accent);font-weight:900}
+    .learning-price-callout{border:1px solid rgba(92,169,255,.35);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px;background:rgba(8,12,22,.7)}
+    .learning-price-meta{margin:0;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#9dc9ff}
+    .learning-price-options{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+    .learning-price-options li{display:flex;justify-content:space-between;align-items:center;gap:12px;background:rgba(92,169,255,.08);border:1px solid rgba(92,169,255,.2);border-radius:12px;padding:10px 14px}
+    .learning-price-options .label{font-weight:700;color:#e6ecff}
+    .learning-price-options .deadline{font-size:12px;color:var(--muted);letter-spacing:.08em;font-weight:600}
+    .learning-price-note{margin:0;font-size:13px;color:#bcd9ff}
   </style>
 {% endblock %}
 
@@ -45,36 +52,6 @@
     </div>
 
     <div class="learning-grid">
-      <article class="learning-card" aria-labelledby="learning-course-title">
-        <header>
-          <span class="learning-badge">Course</span>
-          <h2 id="learning-course-title">{{ course.title if course else 'Tailored Course' }}</h2>
-          <p>{{ course.blurb if course else 'Self-guided modules with live build support for your organisation.' }}</p>
-        </header>
-
-        {% if course_summary.modules or course_summary.lessons or course_summary.weeks %}
-        <ul class="learning-stats" aria-label="Course highlights">
-          {% if course_summary.modules %}
-            <li><strong>{{ course_summary.modules }}</strong>modules</li>
-          {% endif %}
-          {% if course_summary.lessons %}
-            <li><strong>{{ course_summary.lessons }}</strong>lessons</li>
-          {% endif %}
-          {% if course_summary.weeks %}
-            <li><strong>{{ course_summary.weeks }}</strong>weeks of guided structure</li>
-          {% endif %}
-        </ul>
-        {% endif %}
-
-        <div class="learning-actions">
-          <a class="btn" href="{{ self.course_href() if course else bp('/') + '#curriculum' }}">View the course</a>
-          <ul class="learning-secondary" aria-label="Additional course links">
-            <li><a href="{{ bp('/price/') }}">View pricing</a></li>
-            <li><a href="{{ bp('/register/') }}">Register</a></li>
-          </ul>
-        </div>
-      </article>
-
       <article class="learning-card" aria-labelledby="learning-bootcamp-title">
         <header>
           <span class="learning-badge">Bootcamp</span>
@@ -139,6 +116,36 @@
           <ul class="learning-secondary" aria-label="Additional bootcamp links">
             <li><a href="{{ bp('/bootcamp/') }}#request">Request seats</a></li>
             <li><a href="{{ bp('/contact/') }}">Talk to us</a></li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="learning-card" aria-labelledby="learning-course-title">
+        <header>
+          <span class="learning-badge">Course</span>
+          <h2 id="learning-course-title">{{ course.title if course else 'Tailored Course' }}</h2>
+          <p>{{ course.blurb if course else 'Self-guided modules with live build support for your organisation.' }}</p>
+        </header>
+
+        {% if course_summary.modules or course_summary.lessons or course_summary.weeks %}
+        <ul class="learning-stats" aria-label="Course highlights">
+          {% if course_summary.modules %}
+            <li><strong>{{ course_summary.modules }}</strong>modules</li>
+          {% endif %}
+          {% if course_summary.lessons %}
+            <li><strong>{{ course_summary.lessons }}</strong>lessons</li>
+          {% endif %}
+          {% if course_summary.weeks %}
+            <li><strong>{{ course_summary.weeks }}</strong>weeks of guided structure</li>
+          {% endif %}
+        </ul>
+        {% endif %}
+
+        <div class="learning-actions">
+          <a class="btn" href="{{ self.course_href() if course else bp('/') + '#curriculum' }}">View the course</a>
+          <ul class="learning-secondary" aria-label="Additional course links">
+            <li><a href="{{ bp('/price/') }}">View pricing</a></li>
+            <li><a href="{{ bp('/register/') }}">Register</a></li>
           </ul>
         </div>
       </article>

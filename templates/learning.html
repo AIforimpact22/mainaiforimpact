@@ -82,8 +82,40 @@
           <p>{{ bootcamp.subtitle or bootcamp.blurb }}</p>
         </header>
 
+        {% set price_summary = bootcamp.price_summary %}
+        {% if price_summary %}
+        <div class="learning-price-callout" aria-label="Bootcamp pricing">
+          <p class="learning-price-meta">
+            Next cohort{% if price_summary.location %} · {{ price_summary.location }}{% endif %}
+            {% if price_summary.event_date_display %} · {{ price_summary.event_date_display }}{% endif %}
+            {% if price_summary.seat_tier %} · {{ price_summary.seat_tier }} seats{% endif %}
+          </p>
+          <ul class="learning-price-options">
+            {% if price_summary.early_bird %}
+            <li>
+              <span class="label">{{ price_summary.early_bird.label }}</span>
+              <strong>{{ price_summary.early_bird.price_display }}</strong>
+              {% if price_summary.early_bird.valid_to_display %}
+              <span class="deadline">until {{ price_summary.early_bird.valid_to_display }}</span>
+              {% endif %}
+            </li>
+            {% endif %}
+            {% if price_summary.regular %}
+            <li>
+              <span class="label">{{ price_summary.regular.label }}</span>
+              <strong>{{ price_summary.regular.price_display }}</strong>
+            </li>
+            {% endif %}
+          </ul>
+          {% set price_note = price_summary.early_bird.notes or price_summary.regular.notes %}
+          {% if price_note %}
+          <p class="learning-price-note">{{ price_note }}</p>
+          {% endif %}
+        </div>
+        {% endif %}
+
         <ul class="learning-stats" aria-label="Bootcamp highlights">
-          {% if bootcamp.price_eur %}
+          {% if not price_summary and bootcamp.price_eur %}
             <li><strong>€{{ bootcamp.price_eur }}</strong>per seat</li>
           {% endif %}
           {% if bootcamp.seat_cap %}

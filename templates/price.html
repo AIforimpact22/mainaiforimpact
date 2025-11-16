@@ -32,6 +32,16 @@
 
   /* Subtle divider */
   .hr { height:1px; background:#1a1f2e; margin: 18px 0; }
+
+  .bootcamp-price-callout { margin-top:22px; padding:18px; border-radius:16px; border:1px solid rgba(118,180,255,0.35); background:rgba(8,12,22,0.82); text-align:left; display:grid; gap:12px; }
+  .bootcamp-price-heading { font-size:16px; font-weight:800; }
+  .bootcamp-price-meta { font-size:13px; text-transform:uppercase; letter-spacing:.14em; color:#9dc9ff; margin:0; }
+  .bootcamp-price-options { list-style:none; margin:0; padding:0; display:grid; gap:12px; }
+  .bootcamp-price-options li { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; padding:12px; border-radius:12px; background:rgba(118,180,255,0.08); border:1px solid rgba(118,180,255,0.2); }
+  .bootcamp-price-label { display:flex; flex-direction:column; gap:6px; font-weight:700; color:#e6ecff; }
+  .bootcamp-price-label .deadline { font-size:12px; font-weight:600; color:var(--muted); letter-spacing:.08em; }
+  .bootcamp-price-options strong { font-size:20px; font-weight:900; }
+  .bootcamp-price-note { font-size:13px; color:#bcd9ff; margin:0; }
 </style>
 
 {# SEO: JSON-LD describing the course & offer #}
@@ -142,6 +152,49 @@
       <div class="cta-row">
         <a class="btn" href="{{ bp('/register') }}">Register now</a>
       </div>
+
+      {% if bootcamp_price_summary %}
+      <div class="bootcamp-price-callout" aria-label="Bootcamp pricing">
+        <div>
+          <div class="bootcamp-price-heading">{{ bootcamp.title }}</div>
+          <p class="bootcamp-price-meta">
+            Next cohort{% if bootcamp_price_summary.location %} · {{ bootcamp_price_summary.location }}{% endif %}
+            {% if bootcamp_price_summary.event_date_display %} · {{ bootcamp_price_summary.event_date_display }}{% endif %}
+            {% if bootcamp_price_summary.seat_tier %} · {{ bootcamp_price_summary.seat_tier }} seats{% endif %}
+          </p>
+        </div>
+
+        <ul class="bootcamp-price-options">
+          {% set early = bootcamp_price_summary.early_bird %}
+          {% if early %}
+          <li>
+            <div class="bootcamp-price-label">
+              <span>{{ early.label }}</span>
+              {% if early.valid_to_display %}<span class="deadline">until {{ early.valid_to_display }}</span>{% endif %}
+            </div>
+            <strong>{{ early.price_display }}</strong>
+          </li>
+          {% endif %}
+
+          {% set regular = bootcamp_price_summary.regular %}
+          {% if regular %}
+          <li>
+            <div class="bootcamp-price-label">
+              <span>{{ regular.label }}</span>
+            </div>
+            <strong>{{ regular.price_display }}</strong>
+          </li>
+          {% endif %}
+        </ul>
+
+        {% set bootcamp_price_note = early.notes if early and early.notes else (regular.notes if regular else '') %}
+        {% if bootcamp_price_note %}
+        <p class="bootcamp-price-note">{{ bootcamp_price_note }}</p>
+        {% endif %}
+
+        <a class="btn secondary" style="margin-top:4px;" href="{{ bp('/bootcamp/') }}">Explore the bootcamp</a>
+      </div>
+      {% endif %}
 
       <p class="price-note" style="margin-top:12px;">Have questions? <span id="priceEmail" data-b="Y29ubmVjdEBhaWZvcmltcGFjdC5uZXQ=" class="muted" style="border-bottom:1px dashed #2a3348; cursor:pointer;">connect [at] aiforimpact [dot] net</span></p>
     </aside>

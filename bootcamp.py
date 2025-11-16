@@ -12,7 +12,7 @@ from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
 from pathlib import Path
 from decimal import Decimal
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from flask import (
     Blueprint,
@@ -520,6 +520,69 @@ def _format_price(amount: Any, currency: str) -> str:
     if symbol:
         return f"{symbol}{formatted_amount}"
     return f"{currency_code} {formatted_amount}"
+
+
+def summarize_bootcamp_price(seat_prices: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """Return a condensed early/regular price summary for a cohort."""
+
+    if not seat_prices:
+        return None
+
+    preferred_tiers = ("standard", "general", "individual", "team")
+
+    def _sort_key(item: tuple[str, List[Dict[str, Any]]]) -> tuple[int, str]:
+        key, _offers = item
+        priority = 1
+        for tier in preferred_tiers:
+            if tier in key:
+                priority = 0
+                break
+        return (priority, key)
+
+    def _match_offer(offers: List[Dict[str, Any]], target: str) -> Optional[Dict[str, Any]]:
+        target = target.lower()
+        for offer in offers:
+            price_key = str(offer.get("price_type_key") or offer.get("price_type") or "").lower()
+            if target in price_key:
+                return offer
+        return None
+
+    def _serialize_offer(offer: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+        if not offer:
+            return None
+        return {
+            "label": offer.get("price_type") or "",
+            "price_display": offer.get("price_display") or "",
+            "notes": offer.get("notes") or "",
+            "valid_to_display": offer.get("valid_to_display") or "",
+        }
+
+    for cohort in seat_prices:
+        offers = cohort.get("offers") or []
+        if not offers:
+            continue
+
+        tier_groups: Dict[str, List[Dict[str, Any]]] = {}
+        for offer in offers:
+            tier_key = str(offer.get("seat_tier_key") or offer.get("seat_tier") or "").strip().lower() or "default"
+            tier_groups.setdefault(tier_key, []).append(offer)
+
+        for tier_key, tier_offers in sorted(tier_groups.items(), key=_sort_key):
+            early_offer = _match_offer(tier_offers, "early")
+            regular_offer = _match_offer(tier_offers, "regular")
+            if not early_offer and not regular_offer:
+                continue
+
+            tier_name = tier_offers[0].get("seat_tier") or "Seat"
+            return {
+                "location": cohort.get("location") or "",
+                "event_date_display": cohort.get("event_date_display") or "",
+                "seat_tier": tier_name,
+                "early_bird": _serialize_offer(early_offer),
+                "regular": _serialize_offer(regular_offer),
+            }
+
+    return None
 
 
 def _fetch_bootcamp_seat_prices() -> list[Dict[str, object]]:

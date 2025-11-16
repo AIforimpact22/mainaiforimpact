@@ -265,24 +265,6 @@ def home():
 
 @app.get("/learning/")
 def learning():
-    course_data = _fetch_course()
-    course_vm: Optional[Dict[str, Any]] = None
-    course_summary: Dict[str, int] = {"modules": 0, "lessons": 0, "weeks": 0}
-    if course_data:
-        structure = course_data.get("structure") or {}
-        weeks, modules, lessons = _summarize(structure)
-        course_vm = {
-            "id": course_data["id"],
-            "title": COURSE_TITLE or course_data.get("title") or "Course",
-            "slug": slugify(course_data.get("title") or ""),
-            "blurb": "One on one tailored training sessions with live build support inside your organization.",
-        }
-        course_summary = {
-            "modules": modules,
-            "lessons": lessons,
-            "weeks": len(weeks),
-        }
-
     from bootcamp import (
         BOOTCAMP_INFO,
         _fetch_bootcamp_seat_prices,
@@ -301,8 +283,6 @@ def learning():
 
     return render_template(
         "learning.html",
-        course=course_vm,
-        course_summary=course_summary,
         bootcamp=bootcamp_vm,
     )
 

@@ -1,4 +1,5 @@
 import os, json, re, logging
+from datetime import date, datetime
 from typing import Any, Dict, List, Optional, Tuple
 from flask import Flask, render_template, abort, Response
 from sqlalchemy import create_engine, text
@@ -140,6 +141,85 @@ def _fetch_course() -> Optional[Dict[str, Any]]:
         log.exception("DB error: %s", e)
         return None
 
+def _format_date(value: Any) -> str:
+    if isinstance(value, datetime):
+        return value.strftime("%b %d, %Y")
+    if isinstance(value, date):
+        return value.strftime("%b %d, %Y")
+    if value:
+        try:
+            parsed = datetime.fromisoformat(str(value))
+            return parsed.strftime("%b %d, %Y")
+        except ValueError:
+            return str(value)
+    return ""
+
+def _normalize_price_type(value: Optional[str]) -> str:
+    if not value:
+        return ""
+    value = value.strip().lower()
+    if value in {"regular", "standard", "list"}:
+        return "regular"
+    if "early" in value:
+        return "early_bird"
+    return value
+
+def _fetch_bootcamp_offerings() -> List[Dict[str, Any]]:
+    sql = text(
+        """
+        SELECT id, bootcamp_name, location, event_date, seat_tier,
+               price_type, price, currency, seats_total, seats_sold,
+               seats_remaining, valid_from, valid_to, is_active, notes
+        FROM public.bootcamp_seat_prices_view
+        WHERE is_active IS DISTINCT FROM FALSE
+        ORDER BY event_date NULLS LAST, seat_tier, price_type
+        """
+    )
+    try:
+        with ENGINE.begin() as conn:
+            rows = conn.execute(sql).mappings().all()
+    except SQLAlchemyError as exc:
+        log.exception("Failed to load bootcamp prices: %s", exc)
+        return []
+
+    grouped: Dict[tuple, Dict[str, Any]] = {}
+    for row in rows:
+        key = (row.get("bootcamp_name"), row.get("location"), row.get("event_date"), row.get("seat_tier"))
+        bucket = grouped.setdefault(
+            key,
+            {
+                "bootcamp_name": row.get("bootcamp_name") or "Bootcamp",
+                "location": row.get("location") or "TBA",
+                "event_date": row.get("event_date"),
+                "event_date_display": _format_date(row.get("event_date")),
+                "seat_tier": row.get("seat_tier") or "General",
+                "currency": row.get("currency") or "EUR",
+                "regular_price": None,
+                "early_bird_price": None,
+                "early_bird_deadline": None,
+                "early_bird_deadline_display": "",
+                "seats_total": row.get("seats_total"),
+                "seats_remaining": row.get("seats_remaining"),
+                "notes": row.get("notes"),
+            },
+        )
+
+        price_type = _normalize_price_type(row.get("price_type"))
+        if price_type == "regular":
+            bucket["regular_price"] = row.get("price")
+        elif price_type == "early_bird":
+            bucket["early_bird_price"] = row.get("price")
+            deadline = row.get("valid_to") or row.get("valid_from")
+            bucket["early_bird_deadline"] = deadline
+            bucket["early_bird_deadline_display"] = _format_date(deadline)
+
+    offerings = list(grouped.values())
+    offerings.sort(key=lambda item: (
+        item.get("event_date") or date.max,
+        item.get("seat_tier") or "",
+    ))
+    return offerings
+
 def _summarize(structure: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], int, int]:
     sections = structure.get("sections") or []
     ordered = sorted(sections, key=lambda s: (s.get("order") is None, s.get("order", 0)))
@@ -188,6 +268,19 @@ def home():
     }
     return render_template("index.html",
         course=vm, weeks=weeks, modules_count=modules, lessons_count=lessons)
+
+@app.get("/learning")
+def learning_page():
+    bootcamps = _fetch_bootcamp_offerings()
+    course = _fetch_course()
+    course_vm = None
+    if course:
+        course_vm = {
+            "id": course["id"],
+            "title": COURSE_TITLE or course["title"],
+            "slug": slugify(course["title"]),
+        }
+    return render_template("learning.html", course=course_vm, bootcamps=bootcamps)
 
 @app.get("/course/<int:cid>-<slug>")
 def course_detail(cid: int, slug: str):

@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Learning · {{ BRAND_NAME or 'Ai For Impact' }}{% endblock %}
+{% block head %}
+<style>
+  .learning-lede{max-width:760px;color:var(--muted);margin-top:6px}
+  .bootcamp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-top:18px}
+  .bootcamp-card{display:flex;flex-direction:column;gap:14px;padding:22px;border-radius:18px;background:var(--card);border:1px solid #1a1f2e;position:relative;overflow:hidden}
+  .bootcamp-name{margin:0;font-size:1.05rem;font-weight:800}
+  .bootcamp-meta{font-size:.9rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:10px}
+  .seat-tier{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:rgba(92,169,255,.12);border:1px solid rgba(92,169,255,.35);font-size:.8rem;font-weight:700}
+  .price-stack{border-top:1px solid #1a1f2e;padding-top:12px;display:flex;flex-direction:column;gap:10px}
+  .price-row{display:flex;justify-content:space-between;align-items:center}
+  .price-label{font-size:.9rem;color:var(--muted)}
+  .price-amount{font-size:1.8rem;font-weight:900}
+  .price-amount small{font-size:.6em;color:var(--muted);margin-left:6px}
+  .early-bird{padding:12px;border-radius:14px;border:1px dashed rgba(92,169,255,.45);background:rgba(92,169,255,.08)}
+  .early-bird .price-amount{font-size:1.4rem;color:#8fc5ff}
+  .early-deadline{font-size:.85rem;color:var(--muted);margin-top:4px}
+  .seat-status{display:flex;justify-content:space-between;align-items:center;font-size:.9rem;color:var(--muted)}
+  .seat-status strong{font-size:1rem;color:var(--ink)}
+  .card-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:auto}
+  .card-actions .btn{flex:1 1 150px;text-align:center}
+  .empty-card{padding:24px;border-radius:16px;border:1px dashed #1a1f2e;text-align:center;color:var(--muted)}
+</style>
+{% endblock %}
+
+{% macro format_amount(amount) -%}
+  {% if amount is not none %}
+    {{ '{:,.0f}'.format(amount) }}
+  {% else %}
+    &mdash;
+  {% endif %}
+{%- endmacro %}
+
+{% set currency_symbols = {'EUR':'€','USD':'$','GBP':'£','CAD':'$','AUD':'$'} %}
+
+{% block content %}
+<section class="section-card">
+  <div class="banner">
+    <h1>Learning bootcamps</h1>
+    <p class="learning-lede">Live, small-cohort bootcamps that pair hands-on sessions with the guided learning portal. Seats are limited, so pricing automatically reflects the regular rate and any early bird incentives from the latest database snapshot.</p>
+  </div>
+  <div class="body">
+    {% if bootcamps %}
+      <div class="bootcamp-grid">
+        {% for bootcamp in bootcamps %}
+          {% set currency = (bootcamp.currency or 'EUR').upper() %}
+          {% set symbol = currency_symbols.get(currency, currency) %}
+          <article class="bootcamp-card" aria-label="Bootcamp {{ loop.index }}">
+            <div>
+              <p class="bootcamp-name">{{ bootcamp.bootcamp_name }}</p>
+              <div class="bootcamp-meta">
+                {% if bootcamp.event_date_display %}<span>{{ bootcamp.event_date_display }}</span>{% endif %}
+                {% if bootcamp.location %}<span>{{ bootcamp.location }}</span>{% endif %}
+              </div>
+              <div style="margin-top:10px;">
+                <span class="seat-tier">{{ bootcamp.seat_tier }}</span>
+              </div>
+            </div>
+
+            <div class="price-stack">
+              <div class="price-row">
+                <div class="price-label">Regular price</div>
+                <div class="price-amount">
+                  <span aria-hidden="true">{{ symbol }}</span>{{ format_amount(bootcamp.regular_price) }}
+                  <small>{{ currency }}</small>
+                </div>
+              </div>
+              {% if bootcamp.early_bird_price %}
+                <div class="early-bird" role="note">
+                  <div class="price-row">
+                    <div class="price-label">Early bird</div>
+                    <div class="price-amount">
+                      <span aria-hidden="true">{{ symbol }}</span>{{ format_amount(bootcamp.early_bird_price) }}
+                      <small>{{ currency }}</small>
+                    </div>
+                  </div>
+                  {% if bootcamp.early_bird_deadline_display %}
+                    <div class="early-deadline">Valid until {{ bootcamp.early_bird_deadline_display }}</div>
+                  {% endif %}
+                </div>
+              {% endif %}
+            </div>
+
+            {% if bootcamp.seats_remaining is not none or bootcamp.seats_total is not none %}
+            <div class="seat-status">
+              {% if bootcamp.seats_remaining is not none %}
+                <span><strong>{{ bootcamp.seats_remaining }}</strong> seats remaining</span>
+              {% endif %}
+              {% if bootcamp.seats_total is not none %}
+                <span>{{ bootcamp.seats_total }} total</span>
+              {% endif %}
+            </div>
+            {% endif %}
+
+            {% if bootcamp.notes %}
+              <p class="muted" style="margin:0;">{{ bootcamp.notes }}</p>
+            {% endif %}
+
+            <div class="card-actions">
+              <a class="btn" href="{{ bp('/register') }}">Register</a>
+              <a class="btn ghost" href="{{ bp('/price') }}">View course</a>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-card">Bootcamp dates are being finalized. Check back soon or contact us for private sessions.</div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

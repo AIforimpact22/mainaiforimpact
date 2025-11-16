@@ -557,6 +557,21 @@ def summarize_bootcamp_price(seat_prices: List[Dict[str, Any]]) -> Optional[Dict
             "valid_to_display": offer.get("valid_to_display") or "",
         }
 
+    def _cohort_direct_early_offer(cohort: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        display_value = cohort.get("early_bird_price_display")
+        raw_value = cohort.get("early_bird_price")
+        if not display_value and raw_value is None:
+            return None
+        if not display_value:
+            display_value = _format_price(raw_value, cohort.get("currency") or "")
+        deadline_display = cohort.get("early_bird_deadline_display")
+        return {
+            "label": "Early bird",
+            "price_display": display_value or "",
+            "notes": cohort.get("early_bird_notes") or "",
+            "valid_to_display": deadline_display or "",
+        }
+
     for cohort in seat_prices:
         offers = cohort.get("offers") or []
         if not offers:
@@ -574,13 +589,24 @@ def summarize_bootcamp_price(seat_prices: List[Dict[str, Any]]) -> Optional[Dict
                 continue
 
             tier_name = tier_offers[0].get("seat_tier") or "Seat"
-            return {
+            early_serialized = _serialize_offer(early_offer)
+            direct_early = _cohort_direct_early_offer(cohort)
+            if not early_serialized and direct_early:
+                early_serialized = direct_early
+            elif early_serialized and direct_early and not early_serialized.get("price_display"):
+                early_serialized["price_display"] = direct_early.get("price_display") or ""
+                if not early_serialized.get("valid_to_display"):
+                    early_serialized["valid_to_display"] = direct_early.get("valid_to_display") or ""
+
+            summary = {
                 "location": cohort.get("location") or "",
                 "event_date_display": cohort.get("event_date_display") or "",
                 "seat_tier": tier_name,
-                "early_bird": _serialize_offer(early_offer),
+                "early_bird": early_serialized,
                 "regular": _serialize_offer(regular_offer),
             }
+
+            return summary
 
     return None
 
@@ -605,7 +631,9 @@ def _fetch_bootcamp_seat_prices() -> list[Dict[str, object]]:
                valid_from,
                valid_to,
                is_active,
-               notes
+               notes,
+               early_bird_price,
+               early_bird_deadline
         FROM public.bootcamp_seat_prices_view
         WHERE is_active = TRUE
         ORDER BY event_date NULLS LAST, location ASC, seat_tier ASC, price_type ASC
@@ -656,6 +684,7 @@ def _fetch_bootcamp_seat_prices() -> list[Dict[str, object]]:
                 "event_date": event_date,
                 "event_date_display": date_display,
                 "event_date_iso": iso_date,
+                "currency": row.get("currency") or "",
                 "offers": [],
             }
             grouped[group_key] = group
@@ -678,6 +707,15 @@ def _fetch_bootcamp_seat_prices() -> list[Dict[str, object]]:
 
         valid_from = row.get("valid_from")
         valid_to = row.get("valid_to")
+
+        early_price = row.get("early_bird_price")
+        early_deadline = row.get("early_bird_deadline")
+        if early_price is not None and not group.get("early_bird_price_display"):
+            group["early_bird_price"] = early_price
+            group["early_bird_price_display"] = _format_price(early_price, group.get("currency") or row.get("currency") or "")
+        if early_deadline and not group.get("early_bird_deadline_display"):
+            group["early_bird_deadline"] = early_deadline
+            group["early_bird_deadline_display"] = _format_deadline(early_deadline)
 
         group["offers"].append(
             {

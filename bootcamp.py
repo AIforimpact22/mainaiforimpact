@@ -572,6 +572,20 @@ def summarize_bootcamp_price(seat_prices: List[Dict[str, Any]]) -> Optional[Dict
             "valid_to_display": deadline_display or "",
         }
 
+    def _cohort_direct_regular_offer(cohort: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        display_value = cohort.get("regular_price_display")
+        raw_value = cohort.get("regular_price")
+        if not display_value and raw_value is None:
+            return None
+        if not display_value:
+            display_value = _format_price(raw_value, cohort.get("currency") or "")
+        return {
+            "label": "Regular",
+            "price_display": display_value or "",
+            "notes": cohort.get("regular_price_notes") or "",
+            "valid_to_display": "",
+        }
+
     for cohort in seat_prices:
         offers = cohort.get("offers") or []
         if not offers:
@@ -598,12 +612,17 @@ def summarize_bootcamp_price(seat_prices: List[Dict[str, Any]]) -> Optional[Dict
                 if not early_serialized.get("valid_to_display"):
                     early_serialized["valid_to_display"] = direct_early.get("valid_to_display") or ""
 
+            regular_serialized = _serialize_offer(regular_offer)
+            direct_regular = _cohort_direct_regular_offer(cohort)
+            if not regular_serialized and direct_regular:
+                regular_serialized = direct_regular
+            
             summary = {
                 "location": cohort.get("location") or "",
                 "event_date_display": cohort.get("event_date_display") or "",
                 "seat_tier": tier_name,
                 "early_bird": early_serialized,
-                "regular": _serialize_offer(regular_offer),
+                "regular": regular_serialized,
             }
 
             return summary
@@ -633,7 +652,9 @@ def _fetch_bootcamp_seat_prices() -> list[Dict[str, object]]:
                is_active,
                notes,
                early_bird_price,
-               early_bird_deadline
+               early_bird_expire_date,
+               regular_price,
+               individual_discount_price
         FROM public.bootcamp_seat_prices_view
         WHERE is_active = TRUE
         ORDER BY event_date NULLS LAST, location ASC, seat_tier ASC, price_type ASC
@@ -691,8 +712,8 @@ def _fetch_bootcamp_seat_prices() -> list[Dict[str, object]]:
 
         seats_total = row.get("seats_total")
         seats_sold = row.get("seats_sold") or 0
-        seats_available = None
-        if isinstance(seats_total, int):
+        seats_available = row.get("seats_remaining")
+        if seats_available is None and isinstance(seats_total, int):
             try:
                 seats_available = max(seats_total - int(seats_sold), 0)
             except Exception:
@@ -709,13 +730,23 @@ def _fetch_bootcamp_seat_prices() -> list[Dict[str, object]]:
         valid_to = row.get("valid_to")
 
         early_price = row.get("early_bird_price")
-        early_deadline = row.get("early_bird_deadline")
+        early_deadline = row.get("early_bird_expire_date") or row.get("early_bird_deadline")
         if early_price is not None and not group.get("early_bird_price_display"):
             group["early_bird_price"] = early_price
             group["early_bird_price_display"] = _format_price(early_price, group.get("currency") or row.get("currency") or "")
         if early_deadline and not group.get("early_bird_deadline_display"):
             group["early_bird_deadline"] = early_deadline
             group["early_bird_deadline_display"] = _format_deadline(early_deadline)
+
+        regular_price = row.get("regular_price")
+        if regular_price is not None and not group.get("regular_price_display"):
+            group["regular_price"] = regular_price
+            group["regular_price_display"] = _format_price(regular_price, group.get("currency") or row.get("currency") or "")
+
+        if "early" in price_type_key and not group.get("early_bird_notes"):
+            group["early_bird_notes"] = row.get("notes") or ""
+        if "regular" in price_type_key and not group.get("regular_price_notes"):
+            group["regular_price_notes"] = row.get("notes") or ""
 
         group["offers"].append(
             {

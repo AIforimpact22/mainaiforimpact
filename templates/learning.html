@@ -17,8 +17,9 @@
     .hero-price-callout{margin-top:6px;display:inline-flex;flex-direction:column;gap:4px;border-radius:18px;border:1px solid rgba(255,255,255,.3);background:rgba(5,9,20,.75);padding:16px 20px;box-shadow:0 15px 40px rgba(0,0,0,.35);max-width:320px}
     .hero-price-label{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#8ec5ff;font-weight:700}
     .hero-price-amount{font-size:clamp(32px,6vw,48px);font-weight:800;color:#fff;line-height:1}
-    .hero-price-deadline{font-size:14px;color:#c8dbff;font-weight:600}
+    .hero-price-deadline{font-size:14px;color:#c8dbff;font-weight:600;margin:0}
     .hero-price-deadline span{color:#fff;font-weight:800}
+    .hero-price-regular{margin:0;font-size:13px;color:#9ac2ff;font-weight:600}
     .learning-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
     @media (max-width: 1040px){.learning-grid{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}}
     @media (max-width: 720px){.learning-grid{grid-template-columns:1fr;gap:16px}}
@@ -55,14 +56,20 @@
     <div class="learning-copy">
       <h1 id="learning-title">Learning with {{ BRAND_NAME }}</h1>
       <p>Choose the format that matches your team's goals. Keep the deep-dive course for paced learning, or jump into the two-day bootcamp to accelerate adoption without losing the existing dedicated pages.</p>
-      {% if price_summary and price_summary.early_bird %}
-      <div class="hero-price-callout" aria-label="Early bird offer">
-        <span class="hero-price-label">Early bird</span>
-        <span class="hero-price-amount">{{ price_summary.early_bird.price_display }}</span>
-        {% if price_summary.early_bird.valid_to_display %}
-        <p class="hero-price-deadline">Secure your seat by <span>{{ price_summary.early_bird.valid_to_display }}</span></p>
+      {% if price_summary %}
+        {% set hero_offer = price_summary.early_bird or price_summary.regular %}
+        {% if hero_offer %}
+        <div class="hero-price-callout" aria-label="{{ hero_offer.label }} offer">
+          <span class="hero-price-label">{{ hero_offer.label }}</span>
+          <span class="hero-price-amount">{{ hero_offer.price_display }}</span>
+          {% if hero_offer.valid_to_display %}
+          <p class="hero-price-deadline">Secure your seat by <span>{{ hero_offer.valid_to_display }}</span></p>
+          {% endif %}
+          {% if price_summary.early_bird and price_summary.regular %}
+          <p class="hero-price-regular">Regular price {{ price_summary.regular.price_display }}</p>
+          {% endif %}
+        </div>
         {% endif %}
-      </div>
       {% endif %}
     </div>
 

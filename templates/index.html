@@ -34,6 +34,153 @@
     gap: 6px;
     font-weight: 600;
   }
+  #bootcamp-highlight {
+    margin-top: 26px;
+  }
+  .bootcamp-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 18px;
+  }
+  .bootcamp-card {
+    background: var(--surface-card, #10131b);
+    border: 1px solid rgba(35, 44, 70, 0.8);
+    border-radius: 20px;
+    padding: clamp(20px, 3vw, 28px);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    box-shadow: 0 18px 45px rgba(4, 9, 18, 0.32);
+  }
+  .bootcamp-card header {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .bootcamp-card h2 {
+    margin: 0;
+    font-size: 1.8rem;
+    line-height: 1.2;
+  }
+  .bootcamp-card p {
+    margin: 0;
+    color: var(--muted);
+  }
+  .bootcamp-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 11px;
+    font-weight: 800;
+    background: rgba(118, 180, 255, 0.18);
+    border: 1px solid rgba(118, 180, 255, 0.38);
+    color: #cde0ff;
+  }
+  .bootcamp-price-table {
+    display: grid;
+    gap: 6px;
+    padding: 14px;
+    border-radius: 16px;
+    background: rgba(118, 180, 255, 0.08);
+    border: 1px solid rgba(118, 180, 255, 0.2);
+  }
+  .bootcamp-price-table li {
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 15px;
+  }
+  .bootcamp-price-table .label {
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+    color: #9dc9ff;
+  }
+  .bootcamp-price-table strong {
+    font-size: 1.2rem;
+  }
+  .bootcamp-price-table .deadline {
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+  .bootcamp-stats,
+  .bootcamp-features {
+    display: grid;
+    gap: 8px;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+  .bootcamp-stats li {
+    display: inline-flex;
+    gap: 6px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .bootcamp-stats strong {
+    font-size: 1rem;
+    color: var(--ink);
+  }
+  .bootcamp-features li {
+    padding-left: 20px;
+    position: relative;
+  }
+  .bootcamp-features li::before {
+    content: "";
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    left: 0;
+    top: 8px;
+    background: var(--accent, #6bc7ff);
+  }
+  .bootcamp-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .bootcamp-secondary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    font-size: 14px;
+  }
+  .bootcamp-secondary a {
+    color: var(--muted);
+  }
+  .certificate-card {
+    position: relative;
+    overflow: hidden;
+  }
+  .certificate-card figure {
+    margin: 0;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 10px 30px rgba(5, 10, 20, 0.35);
+  }
+  .certificate-card img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  .certificate-note {
+    margin: 0;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .certificate-note strong {
+    color: var(--ink);
+  }
 </style>
 {% endblock %}
 
@@ -68,6 +215,100 @@
 {% endblock %}
 
 {% block content %}
+
+{% if bootcamp %}
+<section id="bootcamp-highlight" class="section-card" aria-labelledby="bootcamp-highlight-title">
+  <div class="banner">
+    <small>Bootcamp</small>
+    <h1 id="bootcamp-highlight-title">Level up with expert-led implementation</h1>
+    <p class="muted">Spotlight on our two-day, hands-on cohort and the certificate your team earns on completion.</p>
+  </div>
+  <div class="body">
+    <div class="bootcamp-grid">
+      <article class="bootcamp-card" aria-labelledby="home-bootcamp-title">
+        <header>
+          <span class="bootcamp-badge">AI Bootcamp</span>
+          <h2 id="home-bootcamp-title">{{ bootcamp.title }}</h2>
+          <p>{{ bootcamp.blurb or bootcamp.subtitle }}</p>
+        </header>
+
+        {% set price_summary = bootcamp.price_summary %}
+        {% if price_summary %}
+        <ul class="bootcamp-price-table" aria-label="Bootcamp pricing">
+          {% if price_summary.early_bird %}
+          <li>
+            <span class="label">{{ price_summary.early_bird.label }}</span>
+            <div>
+              <strong>{{ price_summary.early_bird.price_display }}</strong>
+              {% if price_summary.early_bird.valid_to_display %}
+              <div class="deadline">until {{ price_summary.early_bird.valid_to_display }}</div>
+              {% endif %}
+            </div>
+          </li>
+          {% endif %}
+          {% if price_summary.regular %}
+          <li>
+            <span class="label">{{ price_summary.regular.label }}</span>
+            <strong>{{ price_summary.regular.price_display }}</strong>
+          </li>
+          {% endif %}
+        </ul>
+        {% elif bootcamp.price_eur %}
+        <div class="bootcamp-price-table" aria-label="Bootcamp price">
+          <li>
+            <span class="label">Per seat</span>
+            <strong>€{{ bootcamp.price_eur }}</strong>
+          </li>
+        </div>
+        {% endif %}
+
+        <ul class="bootcamp-stats" aria-label="Bootcamp highlights">
+          {% if not price_summary and bootcamp.price_eur %}
+          <li><strong>€{{ bootcamp.price_eur }}</strong>per seat</li>
+          {% endif %}
+          {% if bootcamp.seat_cap %}
+          <li><strong>{{ bootcamp.seat_cap }}</strong>seat cohort</li>
+          {% endif %}
+          {% if bootcamp.daily_flow %}
+          <li><strong>{{ bootcamp.daily_flow|length }}</strong>day program</li>
+          {% endif %}
+        </ul>
+
+        {% if bootcamp.features %}
+        <ul class="bootcamp-features" aria-label="Bootcamp key takeaways">
+          {% for feature in bootcamp.features[:3] %}
+          <li>{{ feature }}</li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+
+        <div class="bootcamp-actions">
+          <a class="btn" href="{{ bp('/bootcamp/') }}">Explore the bootcamp</a>
+          <ul class="bootcamp-secondary" aria-label="Additional bootcamp links">
+            <li><a href="{{ bp('/bootcamp/') }}#request">Request seats</a></li>
+            <li><a href="{{ bp('/contact/') }}">Talk to us</a></li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="bootcamp-card certificate-card" aria-labelledby="home-cert-title">
+        <header>
+          <span class="bootcamp-badge">Certified Bootcamp</span>
+          <h2 id="home-cert-title">Showcase your completion</h2>
+          <p>Every attendee receives a signed certificate you can forward to leadership, attach to recaps, or share on LinkedIn.</p>
+        </header>
+        <figure>
+          <img src="https://raw.githubusercontent.com/hawkarabdulhaq/pythondemo/main/certificates/6.jpg" alt="Certificate preview from the Ai For Impact bootcamp" loading="lazy">
+        </figure>
+        <p class="certificate-note"><strong>Certificate example:</strong> the actual document includes your name, cohort, and signatures from our lead instructors.</p>
+        <div class="bootcamp-actions">
+          <a class="btn ghost" href="https://raw.githubusercontent.com/hawkarabdulhaq/pythondemo/main/certificates/6.jpg" target="_blank" rel="noopener">View the certificate</a>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+{% endif %}
 
 {% if services %}
 <section id="services" class="section-card" style="margin-top:26px;">

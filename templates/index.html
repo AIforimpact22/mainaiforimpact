@@ -66,20 +66,6 @@
     margin: 0;
     color: var(--muted);
   }
-  .bootcamp-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 12px;
-    border-radius: 999px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-size: 11px;
-    font-weight: 800;
-    background: rgba(118, 180, 255, 0.18);
-    border: 1px solid rgba(118, 180, 255, 0.38);
-    color: #cde0ff;
-  }
   .bootcamp-price-table {
     display: grid;
     gap: 6px;
@@ -227,7 +213,6 @@
     <div class="bootcamp-grid">
       <article class="bootcamp-card" aria-labelledby="home-bootcamp-title">
         <header>
-          <span class="bootcamp-badge">AI Bootcamp</span>
           <h2 id="home-bootcamp-title">{{ bootcamp.title }}</h2>
           <p>{{ bootcamp.blurb or bootcamp.subtitle }}</p>
         </header>
@@ -293,7 +278,6 @@
 
       <article class="bootcamp-card certificate-card" aria-labelledby="home-cert-title">
         <header>
-          <span class="bootcamp-badge">Certified Bootcamp</span>
           <h2 id="home-cert-title">Showcase your completion</h2>
           <p>Every attendee receives a signed certificate you can forward to leadership, attach to recaps, or share on LinkedIn.</p>
         </header>

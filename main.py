@@ -263,14 +263,6 @@ def home():
         "level": "Advanced",
         "category": "Real-Time AI Deployment",
     }
-    services = [
-        {
-            "name": vm["title"],
-            "summary": "One on one tailored training sessions with live build support inside your organization.",
-            "href": "#curriculum",
-            "cta": "View the curriculum",
-        }
-    ] + services
     return render_template("index.html",
         course=vm,
         weeks=weeks,

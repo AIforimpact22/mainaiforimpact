@@ -194,7 +194,6 @@
 
     <div class="anchor-row">
       <a href="#services">See our services ↓</a>
-      {% if course %}&nbsp;•&nbsp;<a href="#curriculum">Review the curriculum ↓</a>{% endif %}
     </div>
   </div>
 </section>
@@ -353,36 +352,7 @@
   </div>
 </section>
 
-{% if course %}
-<section id="curriculum" class="section-card" style="margin-top:26px;">
-  <div class="banner">
-    <small>Program</small>
-    <h1>Curriculum overview</h1>
-    <p class="muted">Modules inside the learning portal that support your 1-on-1 journey.</p>
-  </div>
 
-  <div class="body">
-    {% if weeks and weeks|length %}
-      <ol class="timeline">
-        {% for w in weeks %}
-          <li class="timeline-item">
-            <div class="dot"></div>
-            <div class="content">
-              <div class="week-title">{{ w.title }}</div>
-              <div class="muted small">{{ w.lessons_count }} sections</div>
-            </div>
-          </li>
-        {% endfor %}
-      </ol>
-    {% else %}
-      <div class="card">
-        <strong>Curriculum coming soon.</strong>
-        <p class="muted">We're updating the modules and will publish the full outline shortly.</p>
-      </div>
-    {% endif %}
-  </div>
-</section>
-{% endif %}
 
 {% endblock %}
 

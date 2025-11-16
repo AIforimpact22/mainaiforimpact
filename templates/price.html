@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+{% block title %}Price · {{ BRAND_NAME or 'Ai For Impact' }}{% endblock %}
+
+{% block head %}
+<style>
+  /* Page-local styles to keep things tidy */
+  .pricing-hero .inner { min-height: 280px; }
+  .pricing-wrap { display:grid; grid-template-columns: 1.2fr 0.8fr; gap:18px; }
+  @media (max-width: 900px) { .pricing-wrap { grid-template-columns: 1fr; } }
+
+  .price-card { text-align:center; }
+  .price-amount { font-weight: 900; font-size: clamp(36px, 6vw, 56px); line-height: 1; letter-spacing: .2px; }
+  .price-currency { font-size: .6em; opacity: .9; margin-right: 6px; }
+  .price-note { color: var(--muted); margin-top: 8px; font-size: 14px; }
+  .early-bird-note { margin-top: 14px; padding: 12px 14px; border-radius: 14px; border: 1px dashed #2a3348;
+                     background: rgba(93, 169, 255, 0.08); text-align: left; }
+  .early-bird-label { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; font-weight: 800; color: #8fc5ff; }
+  .early-bird-amount { font-size: 26px; font-weight: 800; margin-top: 6px; }
+  .early-bird-deadline { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+  .incl-list { display:grid; gap:10px; margin-top: 8px; }
+  .incl-item { display:flex; gap:10px; align-items:flex-start; }
+  .incl-bullet { width:22px; height:22px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
+                 background: rgba(92,169,255,.15); border:1px solid #2a3348; font-weight:800; font-size:12px; }
+  .incl-text { margin-top: 2px; }
+
+  .cta-row { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:16px; }
+  .btn.secondary { background:transparent; border:1px solid #2a3348; color:var(--ink); }
+
+  .section-card h2 { margin:0 0 6px 0; font-size: 20px; }
+
+  /* FAQ (native details) */
+  .faq { display:grid; gap:8px; }
+  .faq details { background:var(--card); border:1px solid #1a1f2e; border-radius:10px; padding:12px 14px; }
+  .faq summary { cursor:pointer; font-weight:700; }
+  .faq p { margin:8px 0 0; color:var(--muted); }
+
+  /* Subtle divider */
+  .hr { height:1px; background:#1a1f2e; margin: 18px 0; }
+</style>
+
+{# SEO: JSON-LD describing the course & offer #}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Course",
+  "name": "{{ course.title | e }}",
+  "description": "{{ course.subtitle | e }}",
+  "provider": {
+    "@type": "Organization",
+    "name": "{{ BRAND_NAME or 'Ai For Impact' }}",
+    "url": "{{ bp('/') }}"
+  },
+  "hasCourseInstance": {
+    "@type": "CourseInstance",
+    "courseMode": "One-to-one coaching",
+    "url": "{{ bp('/price') }}"
+  },
+  "offers": {
+    "@type": "Offer",
+    "price": "{{ course.price_eur }}",
+    "priceCurrency": "EUR",
+    "availability": "https://schema.org/InStock",
+    "url": "{{ bp('/price') }}"
+  }
+}
+</script>
+{% endblock %}
+
+{% block hero %}
+{% set cover_url = (course.cover_url if course and course.cover_url else COURSE_COVER_URL) %}
+<section class="cover-hero pricing-hero" aria-label="Pricing cover">
+  <div class="bg" style="background-image:url('{{ cover_url }}');"></div>
+  <div class="overlay"></div>
+  <div class="inner">
+    <div class="badge-row">
+      <span class="badge">Course Pricing</span>
+      <span class="badge">Transparent & Simple</span>
+    </div>
+    <h1>{{ course.title }}</h1>
+    <p class="subhead">{{ course.subtitle }}</p>
+  </div>
+</section>
+{% endblock %}
+
+{% block content %}
+
+<section class="section-card" style="margin-top:26px;">
+  <div class="pricing-wrap">
+    <!-- Left: What’s included -->
+    <div class="card">
+      <h2>What’s included</h2>
+      <div class="incl-list">
+        <div class="incl-item">
+          <div class="incl-bullet">1</div>
+          <div class="incl-text"><strong>Tailored 1‑on‑1 sessions</strong> focused on your context, constraints, and outcomes.</div>
+        </div>
+        <div class="incl-item">
+          <div class="incl-bullet">2</div>
+          <div class="incl-text"><strong>Guided learning portal</strong> that documents the workflow step‑by‑step—prompts, code, and checklists you can reuse.</div>
+        </div>
+        <div class="incl-item">
+          <div class="incl-bullet">3</div>
+          <div class="incl-text"><strong>Deployment support</strong> to package and ship what we build, with practical follow‑up.</div>
+        </div>
+      </div>
+
+      <div class="hr"></div>
+
+      <h2>Who this is for</h2>
+      <p class="muted">Builders, founders, analysts, and teams who want leverage from AI—paired with production‑minded workflows.</p>
+
+      <div class="hr"></div>
+
+      <h2>How it works</h2>
+      <ol class="timeline" style="margin-top:8px;">
+        <li class="timeline-item">
+          <div class="dot"></div>
+          <div class="content"><div class="week-title">Discovery & Objectives</div>
+            <div class="muted small">We assess your context and shape an actionable plan.</div></div>
+        </li>
+        <li class="timeline-item">
+          <div class="dot"></div>
+          <div class="content"><div class="week-title">1‑on‑1 Working Sessions</div>
+            <div class="muted small">Short, focused calls that move a real deliverable forward.</div></div>
+        </li>
+        <li class="timeline-item">
+          <div class="dot"></div>
+          <div class="content"><div class="week-title">Portal Guidance</div>
+            <div class="muted small">Your steps, prompts, and code are captured in the portal.</div></div>
+        </li>
+        <li class="timeline-item">
+          <div class="dot"></div>
+          <div class="content"><div class="week-title">Deployment & Follow‑up</div>
+            <div class="muted small">We package, deploy, and schedule check‑ins to refine.</div></div>
+        </li>
+      </ol>
+    </div>
+
+    <!-- Right: Price card -->
+    <aside class="card price-card" aria-label="Price summary">
+      <div class="price-amount">
+        <span class="price-currency" aria-hidden="true">{{ PRICE_SYMBOL }}</span>{{ "%d"|format(course.price_eur) }}
+      </div>
+      <div class="price-note">One-time course fee &middot; {{ course.currency }}</div>
+      {% if course.early_bird_price %}
+      <div class="early-bird-note" role="note">
+        <div class="early-bird-label">Early bird</div>
+        <div class="early-bird-amount">
+          {% if PRICE_SYMBOL %}
+            <span class="price-currency" aria-hidden="true">{{ PRICE_SYMBOL }}</span>
+          {% endif %}
+          {{ "%d"|format(course.early_bird_price) }}
+          <span class="muted" style="font-size:14px;">{{ course.currency }}</span>
+        </div>
+        {% if course.early_bird_deadline_display or course.early_bird_deadline %}
+          <div class="early-bird-deadline">
+            Available until {{ course.early_bird_deadline_display or course.early_bird_deadline }}
+          </div>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <div class="cta-row">
+        <a class="btn" href="{{ bp('/register') }}">Register now</a>
+      </div>
+
+      <p class="price-note" style="margin-top:12px;">Have questions? <span id="priceEmail" data-b="Y29ubmVjdEBhaWZvcmltcGFjdC5uZXQ=" class="muted" style="border-bottom:1px dashed #2a3348; cursor:pointer;">connect [at] aiforimpact [dot] net</span></p>
+    </aside>
+  </div>
+</section>
+
+<section class="section-card" style="margin-top:18px;">
+  <div class="banner">
+    <h2>FAQs</h2>
+    <p class="muted">A few quick answers. For anything else, just email us.</p>
+  </div>
+  <div class="body faq">
+    <details>
+      <summary>Can we tailor the content to our stack or team?</summary>
+      <p>Yes. Sessions are customized to your goals and environment so the outputs are directly usable.</p>
+    </details>
+    <details>
+      <summary>What do I need to get started?</summary>
+      <p>A clear objective is enough. We’ll help choose the right tools and set up a workable path.</p>
+    </details>
+    <details>
+      <summary>How are sessions scheduled?</summary>
+      <p>We’ll agree a cadence that fits your schedule; we keep calls short and focused.</p>
+    </details>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block body_end %}
+<script>
+  // Reveal a clickable email only in the browser (simple anti-scrape)
+  (function(){
+    var el = document.getElementById('priceEmail');
+    if(!el) return;
+    el.addEventListener('click', function(){
+      try {
+        var addr = atob(el.getAttribute('data-b'));
+        window.location.href = 'mailto:' + addr;
+      } catch(e) {}
+    });
+  })();
+</script>
+{% endblock %}

@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}Ai For Impact{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root{
+      --bg:#0b0d12; --card:#111420; --ink:#fafbff; --muted:#9aa3b2; --accent:#5ca9ff;
+      --logo-size: 80px; --nav-h: 68px;
+      --container-w: 1200px;
+    }
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Apple Color Emoji, Segoe UI Emoji;}
+    a{color:var(--accent);text-decoration:none}
+    .container{max-width:var(--container-w);margin:0 auto;padding: clamp(16px, 2.2vw, 28px);}
+
+    /* ---------- Header ---------- */
+    header.site-nav{border-bottom:1px solid #1a1f2e}
+    .nav-row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:var(--nav-h);padding:6px 0}
+    .brand-wrap{display:flex;align-items:center;gap:12px;min-width:0}
+    .brand-link{display:flex;align-items:center;gap:12px;color:var(--ink);white-space:nowrap;overflow:hidden}
+    .brand-logo{width:var(--logo-size);height:var(--logo-size);object-fit:contain;border-radius:6px;border:1px solid #2a3348;background:#0f1320;padding:2px;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+    .brand-text{font-weight:800;letter-spacing:.2px;font-size:18px;color:var(--ink);overflow:hidden;text-overflow:ellipsis}
+
+    /* Pill nav */
+    .nav-actions{display:flex;align-items:center;gap:10px;overflow-x:auto;white-space:nowrap;scrollbar-width:none;-ms-overflow-style:none;position:relative;z-index:30}
+    .nav-actions::-webkit-scrollbar{display:none}
+    .nav-pill{display:inline-flex;align-items:center;justify-content:center;padding:12px 16px;border-radius:999px;
+      background:rgba(0,0,0,.50);color:#fff;border:1px solid rgba(255,255,255,.22);font-weight:800;font-size:14px;line-height:1;letter-spacing:.15px;
+      box-shadow:0 1px 2px rgba(0,0,0,.12);transition:background .18s ease,border-color .18s ease,transform .08s ease}
+    .nav-pill:hover{background:rgba(0,0,0,.62);border-color:rgba(255,255,255,.34);transform:translateY(-1px)}
+    .nav-pill:active{transform:translateY(0)}
+    .nav-pill:focus-visible{outline:2px solid #fff;outline-offset:2px}
+    .nav-pill[data-active="true"]{background:rgba(0,0,0,.75);border-color:#fff}
+
+    /* ---------- Basics ---------- */
+    .card{background:var(--card);border:1px solid #1a1f2e;border-radius:14px;padding:24px}
+    .muted{color:var(--muted)}
+    .btn{display:inline-block;padding:10px 16px;background:var(--accent);color:#051327;font-weight:700;border-radius:8px}
+    .btn.ghost{background:transparent;border:1px solid #2a3348;color:var(--ink)}
+
+    /* ---------- Cover hero ---------- */
+    .cover-hero{position:relative;border-radius:16px;overflow:hidden;border:1px solid #1a1f2e;margin-top:18px}
+    .cover-hero .bg{position:absolute;inset:0;background-position:center;background-size:cover;filter:brightness(.82) contrast(1.02)}
+    .cover-hero .overlay{position:absolute;inset:0;background:
+      linear-gradient(to bottom, rgba(11,13,18,.62) 0%, rgba(11,13,18,0) 22%),
+      linear-gradient(to bottom, rgba(11,13,18,0) 45%, rgba(11,13,18,.58) 70%, rgba(11,13,18,.92) 100%);
+      pointer-events:none}
+    .cover-hero .inner{position:relative;display:flex;flex-direction:column;justify-content:flex-end;
+      min-height: clamp(420px, 60vh, 640px);
+      padding: clamp(24px, 6vw, 64px);
+      padding-top: calc(var(--nav-h) + clamp(12px, 4vw, 40px));
+      gap: 14px}
+    .cover-hero h1{margin:0;font-size:clamp(26px,4.6vw,48px);line-height:1.08;font-weight:900;letter-spacing:.2px}
+    .subhead{margin:0;font-size:clamp(15px,2.2vw,18px);color:#eaf1ff;opacity:.94}
+
+    /* Overlay header only when requested */
+    body.with-cover header.site-nav{position:absolute;top:0;left:0;right:0;border-bottom:0;background:linear-gradient(to bottom, rgba(11,13,18,.55), rgba(11,13,18,0));z-index:20}
+    body.with-cover .cover-hero{margin-top:0}
+    body.with-cover header.site-nav .brand-text{color:#fff}
+    body.with-cover header.site-nav .brand-logo{border-color:rgba(255,255,255,.28);background:rgba(8,12,22,.6)}
+
+    /* ---------- Sections ---------- */
+    .section-card .banner{margin-bottom:8px}
+    .section-card .body{margin-top:10px}
+
+    .steps-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+    @media (max-width: 860px){.steps-grid{grid-template-columns:1fr}}
+    .step-card{background:var(--card);border:1px solid #1a1f2e;border-radius:12px;padding:18px}
+    .step-head{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+    .step-num{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:rgba(92,169,255,.15);border:1px solid #2a3348;font-weight:800}
+    .step-title{font-weight:800}
+    .step-text{color:var(--muted);margin:6px 0 0}
+
+    .timeline{list-style:none;margin:0;padding:0}
+    .timeline-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px dashed #1a1f2e}
+    .timeline-item .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);position:relative;top:8px}
+    .week-title{font-weight:700}
+
+    /* Partners */
+    .partners-grid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;align-items:center}
+    @media (max-width: 860px){.partners-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    .partner-card{background:var(--card);border:1px solid #1a1f2e;border-radius:12px;padding:18px;display:flex;align-items:center;justify-content:center;min-height:84px}
+    .partner-card a{display:inline-flex;align-items:center;justify-content:center;width:100%;height:100%}
+    .partner-card img{max-width:100%;max-height:48px;object-fit:contain;image-rendering:-webkit-optimize-contrast;filter:saturate(.2) brightness(.95);opacity:.95;transition:filter .2s ease,opacity .2s ease,transform .2s ease}
+    .partner-card a:hover img{filter:none;opacity:1;transform:translateY(-1px)}
+    #partners .banner{text-align:center}
+    #partners .banner h1{font-size:clamp(28px,4.6vw,42px);line-height:1.1}
+
+    /* ---------- Course tabs (appear on Course/Price/Register) ---------- */
+    .tabs-wrap{border-bottom:1px solid #1a1f2e;background:rgba(0,0,0,.25)}
+    .tabs-bar{max-width:var(--container-w);margin:0 auto;padding: clamp(8px, 1.8vw, 14px);
+      display:flex;align-items:center;gap:10px;overflow-x:auto;white-space:nowrap;scrollbar-width:none;-ms-overflow-style:none}
+    .tabs-bar::-webkit-scrollbar{display:none}
+    .tab-pill{display:inline-flex;align-items:center;justify-content:center;padding:10px 14px;border-radius:999px;
+      background:rgba(0,0,0,.40);color:#fff;border:1px solid rgba(255,255,255,.18);font-weight:800;font-size:14px;line-height:1;letter-spacing:.15px}
+    .tab-pill:hover{background:rgba(0,0,0,.58);border-color:rgba(255,255,255,.3)}
+    .tab-pill[aria-current="page"]{background:rgba(0,0,0,.75);border-color:#fff}
+
+    /* Footer */
+    footer.site-footer{border-top:1px solid #1a1f2e;margin-top:32px}
+    footer.site-footer .container{padding-top:22px;padding-bottom:22px}
+    .footer-layout{display:flex;flex-direction:column;gap:22px;align-items:center;text-align:center}
+    .footer-copy{flex:none;min-width:0;max-width:620px;width:100%}
+    .footer-text{color:var(--muted);font-size:14px;line-height:1.6;margin:0 auto}
+    .footer-text strong{color:var(--ink)}
+    .footer-text .no-js-email{white-space:nowrap;font-weight:700;color:var(--ink)}
+    .footer-text .js-email{display:none;white-space:nowrap}
+    .footer-text a{color:var(--ink);border-bottom:1px dashed #2a3348}
+
+    .has-js .footer-text .no-js-email{display:none}
+    .has-js .footer-text .js-email{display:inline}
+
+    .subscribe-card{flex:none;width:100%;max-width:480px;min-width:0;background:var(--card);border:1px solid #1a1f2e;border-radius:14px;padding:18px;box-shadow:0 12px 40px rgba(5,10,20,.25)}
+    .subscribe-card h2{margin:0 0 10px;font-size:18px}
+    .subscribe-card p{margin:0 0 16px;color:var(--muted);font-size:14px}
+    .subscribe-form{display:flex;flex-direction:column;gap:12px}
+    .subscribe-row{display:flex;gap:8px;flex-wrap:wrap}
+    .subscribe-row input[type="email"]{flex:1 1 auto;min-width:200px;background:#090b12;border:1px solid #23283a;border-radius:9px;padding:12px 14px;color:var(--ink);font-size:15px}
+    .subscribe-row input[type="email"]:focus{outline:2px solid rgba(92,169,255,.6);outline-offset:1px}
+    .subscribe-button{background:var(--accent);color:#051327;font-weight:700;border:none;border-radius:9px;padding:12px 18px;cursor:pointer;transition:transform .1s ease,box-shadow .2s ease}
+    .subscribe-button:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(92,169,255,.35)}
+    .subscribe-button:disabled{opacity:.6;cursor:progress;transform:none;box-shadow:none}
+    .subscribe-consent{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--muted)}
+    .subscribe-consent input{margin-top:3px}
+    .subscribe-feedback{font-size:13px;margin:0;min-height:18px}
+    .subscribe-feedback[hidden]{display:none}
+    .subscribe-feedback.is-error{color:#ff8383}
+    .subscribe-feedback.is-success{color:#8be087}
+
+    /* Small-screen adjustments */
+    @media (max-width: 720px){
+      :root{--logo-size:64px;--nav-h:64px}
+      .nav-pill{padding:11px 14px}
+    }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <header class="site-nav" role="navigation" aria-label="Primary">
+    <div class="container">
+      <div class="nav-row">
+        <div class="brand-wrap">
+          <a class="brand-link" href="{{ bp('/') }}">
+            <img class="brand-logo" src="{{ BRAND_LOGO_URL }}" alt="{{ BRAND_NAME }} logo" width="80" height="80" decoding="async" loading="eager" fetchpriority="high">
+            <span class="brand-text">{{ BRAND_NAME or 'Ai For Impact' }}</span>
+          </a>
+        </div>
+
+        {# Helper: compute whether we're in the Course area #}
+        {% set _course_area_active =
+            request and (
+              request.path.startswith(bp('/course/')) or
+              request.path.startswith(bp('/price')) or
+              request.path.startswith(bp('/register'))
+            )
+        %}
+        {% set _learning_nav_active =
+            request and (
+              request.path.startswith(bp('/learning')) or
+              request.path.startswith(bp('/course/')) or
+              request.path.startswith(bp('/price')) or
+              request.path.startswith(bp('/register')) or
+              request.path.startswith(bp('/bootcamp'))
+            )
+        %}
+
+        <nav class="nav-actions" aria-label="Pages">
+          <a class="nav-pill" href="{{ bp('/') }}">Home</a>
+          <a class="nav-pill"
+             href="{{ bp('/numen6/') }}"
+             {% if request and request.path.startswith(bp('/numen6')) %}data-active="true" aria-current="page"{% endif %}
+          >NUMEN6</a>
+          <a class="nav-pill"
+             href="{{ bp('/learning/') }}"
+             {% if _learning_nav_active %}data-active="true" aria-current="page"{% endif %}
+          >Learning</a>
+          <a class="nav-pill"
+             href="{{ bp('/blog/') }}"
+             {% if request and request.path.startswith(bp('/blog')) %}data-active="true" aria-current="page"{% endif %}
+          >Blog</a>
+          <a class="nav-pill" href="{{ bp('/renovation') }}">Data Renovation</a>
+          <a class="nav-pill" href="{{ bp('/about/') }}">About</a>
+          <a class="nav-pill" href="{{ bp('/contact/') }}">Contact</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  {# Secondary tabs appear on Course / Price / Register #}
+  {% if _course_area_active %}
+  <div class="tabs-wrap" role="navigation" aria-label="Course tabs">
+    <div class="tabs-bar">
+      <a class="tab-pill"
+         href="{{ self.course_href() }}"
+         {% if request.path.startswith(bp('/course/')) %}aria-current="page"{% endif %}
+      >Course</a>
+
+      <a class="tab-pill"
+         href="{{ bp('/price/') }}"
+         {% if request.path.startswith(bp('/price')) %}aria-current="page"{% endif %}
+      >Price</a>
+
+      <a class="tab-pill"
+         href="{{ bp('/register/') }}"
+         {% if request.path.startswith(bp('/register')) %}aria-current="page"{% endif %}
+      >Register</a>
+
+      <a class="tab-pill"
+         href="https://learn-j7jy.onrender.com/"
+         target="_blank" rel="noopener"
+      >Learn ↗</a>
+    </div>
+  </div>
+  {% endif %}
+
+  {% block hero %}{% endblock %}
+
+  <main class="container">
+    {% block content %}
+      {# Inline Contact page (no child template needed) #}
+      {% if request and request.path.startswith(bp('/contact')) %}
+        <section class="section-card" style="margin-top:26px;" aria-labelledby="contact-title">
+          <div class="banner">
+            <h1 id="contact-title">Contact</h1>
+          </div>
+          <div class="body">
+            <div class="card">
+              <p style="margin:0 0 4px"><strong>Email</strong></p>
+              <p style="margin:0">
+                <a href="mailto:connect@aiforimpact.net">connect@aiforimpact.net</a>
+              </p>
+            </div>
+
+            <div class="card" style="margin-top:16px">
+              <p style="margin:0 0 8px"><strong>Registered entity</strong></p>
+              <p class="muted" style="margin:0 0 14px">The course is operated under the following company.</p>
+              <p style="margin:0 0 8px"><strong>Climate Resilience Fundraising Platform B.V.</strong></p>
+              <address>
+                Fluwelen Burgwal 58<br>
+                The Hague<br>
+                The Netherlands<br>
+                2511CJ
+              </address>
+              <p style="margin-top:10px">
+                <a href="tel:+36707895714">+36707895714</a>
+              </p>
+            </div>
+          </div>
+        </section>
+      {% endif %}
+    {% endblock %}
+  </main>
+
+  <footer class="site-footer" role="contentinfo" aria-label="Site footer">
+    <div class="container footer-layout">
+      <div class="footer-copy">
+        <p class="footer-text">
+          <strong>Contact us for more information</strong>
+          &nbsp;—&nbsp;
+          <span class="no-js-email">connect&nbsp;[at]&nbsp;aiforimpact&nbsp;[dot]&nbsp;net</span>
+          <span class="js-email" data-b="Y29ubmVjdEBhaWZvcmltcGFjdC5uZXQ=" aria-hidden="true"></span>
+        </p>
+      </div>
+
+      {% set subscribe_error = request.args.get('subscribe_error') %}
+      {% set subscribe_message = request.args.get('subscribe_message') %}
+      <form class="subscribe-card subscribe-form" method="post" action="{{ bp('/subscribe/') }}" data-subscription-form novalidate>
+        <h2>Subscribe for updates</h2>
+        <p>Be the first to hear about new cohorts, resources, and AI deployment tactics.</p>
+        <div class="subscribe-row">
+          <input type="email" name="email" autocomplete="email" placeholder="you@example.com" required aria-label="Email address">
+          <input type="hidden" name="plan_code" value="newsletter">
+          <button type="submit" class="subscribe-button">Subscribe</button>
+        </div>
+        <label class="subscribe-consent">
+          <input type="checkbox" name="consent_marketing" value="true">
+          <span>I agree to receive occasional marketing emails about Ai For Impact offerings.</span>
+        </label>
+        <p class="subscribe-feedback{% if subscribe_error %} is-error{% endif %}"
+           data-subscription-feedback
+           role="status"
+           {% if not subscribe_message %}hidden{% endif %}>{{ subscribe_message or '' }}</p>
+      </form>
+    </div>
+  </footer>
+
+  {% block body_end %}{% endblock %}
+
+  <script>
+    (function(){
+      var forms = document.querySelectorAll('[data-subscription-form]');
+      if (!forms.length) return;
+
+      var subscriptionNotice = (function(){
+        try {
+          var url = new URL(window.location.href);
+          return {
+            url: url,
+            error: url.searchParams.get('subscribe_error'),
+            message: url.searchParams.get('subscribe_message')
+          };
+        } catch (err) {
+          return null;
+        }
+      })();
+
+      forms.forEach(function(form){
+        var feedback = form.querySelector('[data-subscription-feedback]');
+        var button = form.querySelector('button[type="submit"]');
+
+        function setFeedback(message, kind){
+          if (!feedback) return;
+          feedback.textContent = message || '';
+          feedback.hidden = !message;
+          feedback.classList.remove('is-error', 'is-success');
+          if (kind) feedback.classList.add(kind);
+        }
+
+        if (subscriptionNotice && subscriptionNotice.message) {
+          setFeedback(
+            subscriptionNotice.message,
+            subscriptionNotice.error ? 'is-error' : 'is-success'
+          );
+        }
+
+        form.addEventListener('submit', function(evt){
+          evt.preventDefault();
+          setFeedback('', null);
+
+          var emailInput = form.querySelector('input[name="email"]');
+          if (!emailInput || !emailInput.value || (emailInput.validity && !emailInput.validity.valid)){
+            setFeedback('Enter a valid email to subscribe.', 'is-error');
+            return;
+          }
+
+          var payload = {
+            email: emailInput.value.trim(),
+            plan_code: (form.querySelector('input[name="plan_code"]') || {}).value || 'newsletter'
+          };
+
+          var consentBox = form.querySelector('input[name="consent_marketing"]');
+          if (consentBox) payload.consent_marketing = consentBox.checked;
+
+          if (button) button.disabled = true;
+
+          var action = form.getAttribute('action') || "{{ bp('/subscribe/') }}";
+
+          var fallbackMsg = 'Something went wrong. Please try again later.';
+
+          fetch(action, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify(payload)
+          }).then(function(resp){
+            if (!resp.ok) throw resp;
+            return resp.json();
+          }).then(function(data){
+            if (!data || data.ok !== true) {
+              var detail = data && (data.message || data.error);
+              setFeedback(detail || fallbackMsg, 'is-error');
+              return;
+            }
+            setFeedback('Thanks! Please check your inbox for confirmation.', 'is-success');
+            form.reset();
+          }).catch(function(err){
+            if (err && typeof err.json === 'function') {
+              err.json().then(function(data){
+                var detail = data && (data.message || data.error);
+                setFeedback(detail || fallbackMsg, 'is-error');
+              }).catch(function(){ setFeedback(fallbackMsg, 'is-error'); });
+            } else {
+              setFeedback(fallbackMsg, 'is-error');
+            }
+          }).finally(function(){
+            if (button) button.disabled = false;
+          });
+        });
+      });
+
+      if (subscriptionNotice && subscriptionNotice.message && subscriptionNotice.url) {
+        try {
+          subscriptionNotice.url.searchParams.delete('subscribe_error');
+          subscriptionNotice.url.searchParams.delete('subscribe_message');
+          window.history.replaceState(null, '', subscriptionNotice.url.toString());
+        } catch (err) {}
+      }
+    })();
+  </script>
+
+  <!-- Progressive email reveal + active pill highlighting -->
+  <script>
+    (function () {
+      try {
+        document.documentElement.classList.add('has-js');
+
+        // Reveal email safely
+        var target = document.querySelector('.js-email');
+        if (target) {
+          var addr = atob(target.getAttribute('data-b')); // "connect@aiforimpact.net"
+          var a = document.createElement('a');
+          a.href = 'mailto:' + addr;
+          a.rel = 'nofollow';
+          a.textContent = addr;
+          target.replaceWith(a);
+        }
+
+        // Active nav pill: compare current path to link href (BASE_PATH-aware)
+        var base = "{{ BASE_PATH }}".replace(/\/+$/, '');
+        function cleanPath(p){
+          var out = (p || '').replace(/[#?].*$/, '').replace(/\/+$/, '');
+          if (base && out.indexOf(base) === 0) out = out.slice(base.length) || '/';
+          if (!out) out = '/';
+          return out;
+        }
+        var here = cleanPath(location.pathname);
+
+        var pills = document.querySelectorAll('.nav-actions .nav-pill');
+        pills.forEach(function (el) {
+          try {
+            var href = cleanPath(el.getAttribute('href') || '');
+            if (!href || /^https?:\/\//i.test(href)) return;
+            var active = (href === '/') ? (here === '/') : here.startsWith(href);
+            // Special rule: treat related pages as part of the Learning hub
+            if (el.textContent.trim() === 'Learning') {
+              var learningPaths = [
+                cleanPath("{{ bp('/learning') }}"),
+                cleanPath("{{ bp('/course') }}"),
+                cleanPath("{{ bp('/price') }}"),
+                cleanPath("{{ bp('/register') }}"),
+                cleanPath("{{ bp('/bootcamp') }}")
+              ];
+              for (var i = 0; i < learningPaths.length; i++) {
+                var segment = learningPaths[i];
+                if (segment && here.startsWith(segment)) {
+                  active = true;
+                  break;
+                }
+              }
+            }
+            if (active) { el.dataset.active = "true"; el.setAttribute('aria-current','page'); }
+          } catch(e){}
+        });
+      } catch (e) { /* no-op */ }
+    })();
+  </script>
+
+  <script>window.BASE_PATH = "{{ BASE_PATH }}";</script>
+
+  {# --- Hidden, inert definition of the course_href block to avoid visible output --- #}
+  <template hidden>
+    {% block course_href -%}
+      {% set _bp_course = bp('/course/') %}
+      {% if course is defined and course and course.id is defined and course.slug is defined and course.id and course.slug -%}
+        {{ bp('/course/' ~ course.id ~ '-' ~ course.slug) }}
+      {%- elif request and request.path and request.path.startswith(_bp_course) -%}
+        {{ request.path }}
+      {%- else -%}
+        {{ bp('/') }}#curriculum
+      {%- endif %}
+    {%- endblock %}
+  </template>
+</body>
+</html>

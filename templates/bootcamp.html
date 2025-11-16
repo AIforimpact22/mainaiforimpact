@@ -1,0 +1,647 @@
+{% extends "base.html" %}
+{% block title %}Bootcamp · {{ BRAND_NAME or 'Ai For Impact' }}{% endblock %}
+
+{% block head %}
+<style>
+  .pricing-hero .inner { min-height: 300px; }
+  .countdown-hero .inner {
+    min-height: clamp(420px, 65vh, 560px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(48px, 6vw, 72px) clamp(20px, 5vw, 48px);
+    text-align: center;
+  }
+  .countdown-hero-content {
+    display: grid;
+    gap: clamp(18px, 3vw, 28px);
+    width: 100%;
+  }
+  .countdown-hero-content h1 {
+    margin: 0;
+    font-size: clamp(42px, 7vw, 72px);
+  }
+  .countdown-panel {
+    display: grid;
+    gap: clamp(18px, 3vw, 28px);
+    padding: clamp(28px, 4vw, 40px);
+    border-radius: 24px;
+    background: rgba(8, 12, 22, 0.82);
+    border: 1px solid rgba(118, 180, 255, 0.42);
+    box-shadow: 0 22px 55px rgba(5, 12, 25, 0.45);
+  }
+  .countdown-panel-header {
+    display: grid;
+    gap: 6px;
+    justify-items: center;
+  }
+  .countdown-heading {
+    font-size: 14px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    font-weight: 800;
+    color: #9dc9ff;
+  }
+  .countdown-due {
+    font-size: clamp(20px, 3vw, 28px);
+    font-weight: 700;
+    color: #f3f7ff;
+  }
+  .countdown-grid {
+    display: grid;
+    gap: clamp(16px, 3vw, 24px);
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  }
+  .countdown-unit {
+    display: grid;
+    gap: 10px;
+    justify-items: center;
+    padding: clamp(18px, 3vw, 24px);
+    border-radius: 18px;
+    background: rgba(118, 180, 255, 0.16);
+    border: 1px solid rgba(118, 180, 255, 0.36);
+  }
+  .countdown-value {
+    font-weight: 900;
+    font-size: clamp(48px, 12vw, 96px);
+    letter-spacing: .04em;
+    color: #ffffff;
+  }
+  .countdown-unit-label {
+    font-size: 12px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: rgba(188, 217, 255, 0.85);
+  }
+  .countdown-complete {
+    display: none;
+    font-weight: 700;
+    color: #8be6a5;
+    font-size: clamp(16px, 2.2vw, 19px);
+  }
+  .countdown-panel[data-countdown-complete="true"] .countdown-grid {
+    display: none;
+  }
+  .countdown-panel[data-countdown-complete="true"] .countdown-complete {
+    display: block;
+  }
+  .countdown-cta {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .countdown-cta .btn {
+    min-width: 180px;
+  }
+  .countdown-cta .btn.secondary {
+    background: transparent;
+    border: 1px solid rgba(118, 180, 255, 0.38);
+    color: #bcd9ff;
+  }
+  .countdown-cta .btn.secondary:hover {
+    color: #ffffff;
+    border-color: rgba(118, 180, 255, 0.6);
+  }
+  @media (max-width: 720px) {
+    .countdown-hero .inner {
+      padding: clamp(36px, 10vw, 48px) 20px;
+    }
+    .countdown-panel {
+      padding: clamp(24px, 8vw, 32px);
+    }
+    .countdown-value {
+      font-size: clamp(42px, 18vw, 72px);
+    }
+  }
+  .badge-row { display:flex; flex-wrap:wrap; gap:8px; }
+  .badge { display:inline-flex; align-items:center; justify-content:center; padding:6px 12px; border-radius:999px; background:rgba(118,180,255,0.18); border:1px solid rgba(118,180,255,0.32); font-weight:800; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:#bcd9ff; }
+  .pricing-wrap { display:grid; grid-template-columns: 1.2fr 0.8fr; gap:18px; }
+  @media (max-width: 900px) { .pricing-wrap { grid-template-columns: 1fr; } }
+
+  .price-card { text-align:center; }
+  .price-amount { font-weight: 900; font-size: clamp(38px, 6vw, 58px); line-height: 1; letter-spacing: .2px; }
+  .price-currency { font-size: .6em; opacity: .9; margin-right: 6px; }
+  .price-note { color: var(--muted); margin-top: 8px; font-size: 14px; }
+  .price-toggle { width:100%; margin-top:12px; }
+  .price-toggle button { width:100%; appearance:none; border:none; border-radius:12px; padding:12px 16px; font-weight:800; cursor:pointer; background:rgba(118,180,255,0.18); color:#bcd9ff; border:1px solid rgba(118,180,255,0.38); transition:background .2s ease, transform .2s ease; }
+  .price-toggle button:hover { background:rgba(118,180,255,0.28); transform:translateY(-1px); }
+  .price-toggle button[aria-expanded="true"] { background:rgba(118,180,255,0.35); color:#0e172b; }
+  .seat-pricing-panel { margin-top:16px; text-align:left; display:grid; gap:16px; }
+  .seat-pricing-item { border:1px solid rgba(118,180,255,0.28); border-radius:14px; padding:14px 16px; background:rgba(8,12,22,0.78); }
+  .seat-pricing-header { display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; font-weight:800; font-size:15px; margin-bottom:10px; }
+  .seat-pricing-header .seat-location { text-transform:uppercase; letter-spacing:.08em; color:#9dc9ff; }
+  .seat-pricing-header .seat-date { color:#e6ecff; }
+  .seat-offer-list { display:grid; gap:12px; }
+  .seat-offer { display:grid; gap:6px; padding:12px; border-radius:12px; background:rgba(118,180,255,0.08); border:1px solid rgba(118,180,255,0.16); }
+  .seat-offer-title { display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; font-weight:700; }
+  .seat-offer-price { font-size:18px; font-weight:800; color:#f7f9ff; }
+  .seat-offer-meta { font-size:13px; color:var(--muted); }
+  .seat-offer-notes { font-size:13px; color:#bcd9ff; margin-top:6px; }
+  .seat-pricing-empty { font-size:14px; color:var(--muted); text-align:center; margin-top:12px; }
+
+  .incl-list { display:grid; gap:10px; margin-top: 10px; }
+  .incl-item { display:flex; gap:10px; align-items:flex-start; }
+  .incl-bullet { width:22px; height:22px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
+                 background: rgba(92,169,255,.15); border:1px solid #2a3348; font-weight:800; font-size:12px; }
+  .incl-text { margin-top: 2px; }
+
+  .cta-row { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:16px; }
+  .btn.secondary { background:transparent; border:1px solid #2a3348; color:var(--ink); }
+  .countdown-hero .btn.secondary { border-color: rgba(118, 180, 255, 0.4); color: #e6ecff; }
+
+  .section-card h2 { margin:0 0 6px 0; font-size: 20px; }
+
+  .hr { height:1px; background:#1a1f2e; margin: 18px 0; }
+
+  .faq { display:grid; gap:8px; }
+  .faq details { background:var(--card); border:1px solid #1a1f2e; border-radius:10px; padding:12px 14px; }
+  .faq summary { cursor:pointer; font-weight:700; }
+  .faq p { margin:8px 0 0; color:var(--muted); }
+
+  .timeline .week-title { font-weight:800; }
+
+  .request-card form { display:grid; gap:12px; margin-top:14px; text-align:left; }
+  .request-card label { font-weight:700; font-size:14px; display:block; margin-bottom:6px; }
+  .request-card input,
+  .request-card textarea { width:100%; padding:10px 12px; border-radius:10px; border:1px solid #2a3348; background:#0f1320; color:#e6ecff; font-size:14px; }
+  .request-card textarea { min-height:100px; resize:vertical; }
+  .request-card button { appearance:none; border:none; border-radius:10px; padding:10px 16px; font-weight:800; cursor:pointer; background:var(--accent); color:#051327; }
+  .request-card button:hover { filter:brightness(1.08); }
+  .request-card .note { font-size:13px; color:var(--muted); }
+  .request-card .alert { border-radius:10px; padding:12px 14px; font-size:14px; }
+  .request-card .alert.error { background:#2a1414; border:1px solid #4a2020; color:#f1a5a5; }
+  .request-card .alert.success { background:#10241a; border:1px solid #1f4833; color:#8be6a5; }
+
+  .experience-section { margin-top:30px; }
+  .experience-section .banner { text-align:center; margin-bottom:18px; }
+  .experience-row { display:grid; gap:16px; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+  .experience-item { background:rgba(16,20,33,0.72); border:1px solid #1a1f2e; border-radius:18px; padding:22px 18px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:12px; min-height:180px; }
+  .experience-icon { width:60px; height:60px; border-radius:16px; display:flex; align-items:center; justify-content:center; color:#e6ecff; }
+  .experience-title { font-weight:800; font-size:16px; }
+  .experience-copy { margin:0; font-size:14px; color:var(--muted); }
+  .experience-icon.learn { background:linear-gradient(135deg, rgba(118,180,255,0.2), rgba(118,180,255,0.05)); border:1px solid rgba(118,180,255,0.3); color:#9dc9ff; }
+  .experience-icon.build { background:linear-gradient(135deg, rgba(139,233,197,0.22), rgba(139,233,197,0.05)); border:1px solid rgba(139,233,197,0.32); color:#9ceac9; }
+  .experience-icon.ship { background:linear-gradient(135deg, rgba(255,179,122,0.22), rgba(255,179,122,0.05)); border:1px solid rgba(255,179,122,0.32); color:#ffc79a; }
+  .experience-icon.certificate { background:linear-gradient(135deg, rgba(255,218,122,0.22), rgba(255,218,122,0.05)); border:1px solid rgba(255,218,122,0.32); color:#ffe08b; }
+  .experience-icon.resources { background:linear-gradient(135deg, rgba(213,178,255,0.22), rgba(213,178,255,0.05)); border:1px solid rgba(213,178,255,0.32); color:#e2c2ff; }
+  .experience-icon svg { width:28px; height:28px; }
+
+  .testimony-section .banner { text-align:center; margin-bottom:18px; }
+  .testimony-grid { display:grid; gap:20px; grid-template-columns:minmax(0, 1fr); }
+  .testimony-card { position:relative; overflow:hidden; border-radius:20px; border:1px solid rgba(46,72,120,0.55); padding:26px 28px; display:flex; flex-direction:column; gap:18px; isolation:isolate; background:rgba(10,14,24,0.78); box-shadow:0 18px 45px rgba(5,12,25,0.35); transition:border-color .3s ease, transform .3s ease; }
+  .testimony-card::before { content:""; position:absolute; inset:0; z-index:-2; background-image:linear-gradient(155deg, rgba(5,11,23,0.96) 0%, rgba(5,14,32,0.82) 46%, rgba(6,17,38,0.7) 100%), var(--certificate-image, linear-gradient(160deg, rgba(16,21,34,0.9), rgba(16,21,34,0.9))); background-size:cover; background-position:center; filter:saturate(0.85); transition:transform .6s ease; }
+  .testimony-card::after { content:""; position:absolute; inset:1px; border-radius:18px; background:radial-gradient(120% 120% at 0% 0%, rgba(118,180,255,0.25) 0%, rgba(118,180,255,0) 55%), radial-gradient(140% 140% at 100% 100%, rgba(139,233,197,0.18) 0%, rgba(139,233,197,0) 55%); mix-blend-mode:screen; opacity:0.75; z-index:-1; }
+  .testimony-card:hover { border-color:rgba(118,180,255,0.75); transform:translateY(-3px); }
+  .testimony-card:hover::before { transform:scale(1.05); }
+  .testimony-header { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; position:relative; z-index:1; }
+  .testimony-meta { display:flex; flex-direction:column; gap:6px; }
+  .testimony-badge { display:inline-flex; align-items:center; gap:6px; padding:5px 10px; border-radius:999px; background:rgba(118,180,255,0.18); border:1px solid rgba(118,180,255,0.38); color:#bcd9ff; text-transform:uppercase; letter-spacing:.08em; font-size:11px; font-weight:800; }
+  .testimony-badge svg { width:14px; height:14px; }
+  .testimony-name { font-weight:800; font-size:18px; color:#f7f9ff; }
+  .testimony-credential { font-size:14px; color:rgba(222,230,255,0.72); }
+  .testimony-date { font-size:13px; color:rgba(222,230,255,0.6); }
+  .testimony-link { position:relative; z-index:1; display:inline-flex; align-items:center; gap:6px; font-weight:700; font-size:13px; color:#0e172b; background:rgba(139,233,197,0.88); border-radius:999px; padding:8px 14px; border:1px solid rgba(139,233,197,0.8); text-decoration:none; box-shadow:0 10px 25px rgba(12,59,43,0.35); transition:transform .3s ease, box-shadow .3s ease; white-space:nowrap; }
+  .testimony-link svg { width:14px; height:14px; }
+  .testimony-link:hover { transform:translateY(-1px); box-shadow:0 14px 32px rgba(12,59,43,0.38); }
+  .testimony-quote { position:relative; z-index:1; margin:0; font-size:16px; line-height:1.65; color:#f3f7ff; max-width:100%; }
+  .testimony-quote > * { max-width:none !important; }
+  .testimony-quote::before { content:"\201C"; position:absolute; left:-10px; top:-18px; font-size:60px; color:rgba(118,180,255,0.35); font-family:serif; }
+  .testimony-quote p { margin:0; }
+  .testimony-quote p + p { margin-top:12px; }
+</style>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Course",
+  "name": "{{ bootcamp.title | e }}",
+  "description": "{{ bootcamp.subtitle | e }}",
+  "provider": {
+    "@type": "Organization",
+    "name": "{{ BRAND_NAME or 'Ai For Impact' }}",
+    "url": "{{ bp('/') }}"
+  },
+  "hasCourseInstance": {
+    "@type": "CourseInstance",
+    "courseMode": "Bootcamp cohort",
+    "courseWorkload": "4 days intensive",
+    "maximumAttendeeCapacity": {{ bootcamp.seat_cap }},
+    "url": "{{ bp('/bootcamp') }}"
+  },
+  "offers": {
+    "@type": "Offer",
+    "price": "{{ bootcamp.price_eur }}",
+    "priceCurrency": "EUR",
+    "availability": "https://schema.org/LimitedAvailability",
+    "url": "{{ bp('/bootcamp') }}"
+  }
+}
+</script>
+{% endblock %}
+
+{% block hero %}
+{% set cover_url = (bootcamp.cover_url if bootcamp and bootcamp.cover_url else COURSE_COVER_URL) %}
+<section class="cover-hero countdown-hero pricing-hero" aria-label="Bootcamp countdown hero">
+  <div class="bg" style="background-image:url('{{ cover_url }}');"></div>
+  <div class="overlay"></div>
+  <div class="inner">
+    <div class="countdown-hero-content">
+      <div class="badge-row">
+        <span class="badge">Bootcamp</span>
+        <span class="badge">{{ bootcamp.seat_cap }} seats per cohort</span>
+      </div>
+      <h1>{{ bootcamp.title }}</h1>
+      {% if bootcamp.next_event_date_iso %}
+      <div class="countdown-panel" data-countdown="{{ bootcamp.next_event_date_iso }}" aria-live="polite">
+        <div class="countdown-panel-header">
+          <div class="countdown-heading">Next cohort begins</div>
+          <div class="countdown-due">{{ bootcamp.next_event_date_display }}</div>
+        </div>
+        <div class="countdown-grid">
+          <div class="countdown-unit">
+            <span class="countdown-value" data-countdown-days>00</span>
+            <span class="countdown-unit-label">Days</span>
+          </div>
+          <div class="countdown-unit">
+            <span class="countdown-value" data-countdown-hours>00</span>
+            <span class="countdown-unit-label">Hours</span>
+          </div>
+          <div class="countdown-unit">
+            <span class="countdown-value" data-countdown-minutes>00</span>
+            <span class="countdown-unit-label">Minutes</span>
+          </div>
+          <div class="countdown-unit">
+            <span class="countdown-value" data-countdown-seconds>00</span>
+            <span class="countdown-unit-label">Seconds</span>
+          </div>
+        </div>
+        <div class="countdown-complete">The next cohort has started! Catch the replay or join the following session.</div>
+      </div>
+      {% endif %}
+      <div class="countdown-cta">
+        <a class="btn" href="{{ bp('/register/?course=' ~ bootcamp.code) }}">Secure your seat</a>
+        <button type="button" class="btn secondary" data-seat-pricing-open>View seat pricing</button>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block content %}
+<section class="section-card experience-section" aria-label="Bootcamp experience highlights">
+  <div class="banner">
+    <h2>The experience pillars</h2>
+    <p class="muted">Every cohort moves through five moments designed to compound progress.</p>
+  </div>
+  <div class="experience-row">
+    <div class="experience-item">
+      <div class="experience-icon learn" aria-hidden="true">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4.5 5.25A2.25 2.25 0 0 1 6.75 3h6.5A2.75 2.75 0 0 1 16 5.75v12.64a.75.75 0 0 1-1.127.65L12 17.77l-2.873 1.27A.75.75 0 0 1 8 18.39V6.5H6.75a.25.25 0 0 0-.25.25v12a.75.75 0 0 1-1.5 0z" fill="currentColor"/>
+          <path d="M18 6h1.25A.75.75 0 0 1 20 6.75v11.5a.75.75 0 0 1-1.195.6L18 17.84z" fill="currentColor" opacity=".6"/>
+        </svg>
+      </div>
+      <div class="experience-title">Learn</div>
+      <p class="experience-copy">Live expert sessions demystify the latest AI capabilities.</p>
+    </div>
+    <div class="experience-item">
+      <div class="experience-icon build" aria-hidden="true">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4 12.5 12 8l8 4.5-8 4.5z" fill="currentColor"/>
+          <path d="M4 12.5v5l8 4.5v-5z" fill="currentColor" opacity=".65"/>
+          <path d="M20 12.5v5l-8 4.5v-5z" fill="currentColor" opacity=".45"/>
+        </svg>
+      </div>
+      <div class="experience-title">Build</div>
+      <p class="experience-copy">Hands-on labs translate concepts into working prototypes.</p>
+    </div>
+    <div class="experience-item">
+      <div class="experience-icon ship" aria-hidden="true">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2c2.761 0 5 3.477 5 7.765 0 1.55-.224 3.163-.645 4.61a1.2 1.2 0 0 1-.74.81L12 16.5l-3.615-1.315a1.2 1.2 0 0 1-.74-.81A21.44 21.44 0 0 1 7 9.765C7 5.477 9.239 2 12 2Z" fill="currentColor"/>
+          <path d="M9 17.25 12 18.5l3-1.25V20l-3 2-3-2z" fill="currentColor" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="experience-title">Ship</div>
+      <p class="experience-copy">Sprint reviews ensure teams launch something real by day four.</p>
+    </div>
+    <div class="experience-item">
+      <div class="experience-icon certificate" aria-hidden="true">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M7 4.5A2.5 2.5 0 0 1 9.5 2h5A2.5 2.5 0 0 1 17 4.5v8a2.5 2.5 0 0 1-2.5 2.5h-5A2.5 2.5 0 0 1 7 12.5z" fill="currentColor"/>
+          <path d="M10 14.5v5.11l2-1.11 2 1.11V14.5z" fill="currentColor" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="experience-title">Certificate</div>
+      <p class="experience-copy">Earn a credential that signals applied AI fluency to stakeholders.</p>
+    </div>
+    <div class="experience-item">
+      <div class="experience-icon resources" aria-hidden="true">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M6.5 4A2.5 2.5 0 0 1 9 1.5h8A2.5 2.5 0 0 1 19.5 4v11A2.5 2.5 0 0 1 17 17.5H9a2.5 2.5 0 0 1-2.5-2.5z" fill="currentColor"/>
+          <path d="M4.5 7A2.5 2.5 0 0 1 7 4.5h8A2.5 2.5 0 0 1 17.5 7v11A2.5 2.5 0 0 1 15 20.5H7a2.5 2.5 0 0 1-2.5-2.5z" fill="currentColor" opacity=".65"/>
+        </svg>
+      </div>
+      <div class="experience-title">Resources</div>
+      <p class="experience-copy">Take-home playbooks, templates, and prompts keep momentum going.</p>
+    </div>
+  </div>
+</section>
+<section class="section-card" style="margin-top:26px;">
+  <div class="pricing-wrap">
+    <div class="card">
+      <h2>What you’ll experience</h2>
+      <p class="muted">Theory, practice, and shipping real work in a tight-knit cohort.</p>
+      <div class="incl-list">
+        {% for feature in bootcamp.features %}
+        <div class="incl-item">
+          <div class="incl-bullet">{{ loop.index }}</div>
+          <div class="incl-text">{{ feature }}</div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="hr"></div>
+
+      <h2>Curriculum modules</h2>
+      <p class="muted">Cutting-edge AI capabilities are woven through every module.</p>
+      <div class="incl-list">
+        {% for module in bootcamp.modules %}
+        <div class="incl-item">
+          <div class="incl-bullet">{{ loop.index }}</div>
+          <div class="incl-text">
+            <strong>{{ module.title }}</strong>
+            {% if module.description %}
+            <div class="muted small">{{ module.description }}</div>
+            {% endif %}
+            {% if module.lessons_count is not none %}
+            <div class="muted small">{{ module.lessons_count }} {{ 'sections' if module.lessons_count != 1 else 'section' }}</div>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="hr"></div>
+
+      <h2>Daily flow</h2>
+      <ol class="timeline" style="margin-top:8px;">
+        {% for day in bootcamp.daily_flow %}
+        <li class="timeline-item">
+          <div class="dot"></div>
+          <div class="content">
+            <div class="week-title">{{ day.title }}</div>
+            <div class="muted small">{{ day.description }}</div>
+          </div>
+        </li>
+        {% endfor %}
+      </ol>
+    </div>
+
+    <aside class="card price-card" aria-label="Bootcamp price summary">
+      <div class="price-toggle">
+        <button type="button" data-seat-pricing-toggle aria-expanded="false" aria-controls="seat-pricing-panel">
+          View seat pricing
+        </button>
+      </div>
+
+      <div id="seat-pricing-panel" class="seat-pricing-panel" hidden>
+        {% if bootcamp.seat_prices %}
+          {% for cohort in bootcamp.seat_prices %}
+            <div class="seat-pricing-item">
+              <div class="seat-pricing-header">
+                <div class="seat-location">{{ cohort.location }}</div>
+                <div class="seat-date">{% if cohort.event_date_display %}{{ cohort.event_date_display }}{% else %}Date TBA{% endif %}</div>
+              </div>
+              <div class="seat-offer-list">
+                {% for offer in cohort.offers %}
+                  <div class="seat-offer">
+                    <div class="seat-offer-title">
+                      <div>{{ offer.seat_tier }}</div>
+                      <div>{{ offer.price_type }}</div>
+                    </div>
+                    <div class="seat-offer-price">{{ offer.price_display }}</div>
+                    {% if offer.notes %}
+                      <div class="seat-offer-notes">{{ offer.notes }}</div>
+                    {% endif %}
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="seat-pricing-empty">Pricing details will be announced soon. Contact us for a custom quote.</div>
+        {% endif %}
+      </div>
+
+      <div class="price-note" style="margin-top:12px;">Per learner · {{ bootcamp.currency }}</div>
+      <div class="price-note">Cohort capped at {{ bootcamp.seat_cap }} seats.</div>
+
+      <div class="cta-row">
+        <a class="btn" href="{{ bp('/register/?course=' ~ bootcamp.code) }}">Register for the Bootcamp</a>
+        <a class="btn secondary" href="mailto:connect@aiforimpact.net?subject=Bootcamp%20question">Ask a question</a>
+      </div>
+
+      <p class="price-note" style="margin-top:12px;">Group bundles available for teams—contact us for a tailored invoice.</p>
+
+      <div class="card request-card" style="margin-top:18px;">
+        <h2 style="margin-top:0;">Request a private cohort</h2>
+        <p class="muted" style="margin-top:6px;">Need dates for your team? Share a few details and we'll follow up with a tailored proposal.</p>
+
+        {% if request_success %}
+          <div class="alert success" role="status">✅ Thanks! We've received your cohort request. Expect a reply from connect@aiforimpact.net shortly.</div>
+        {% elif request_errors and request_errors|length %}
+          <div class="alert error" role="alert">
+            <strong>Please review:</strong>
+            <ul style="margin:8px 0 0 18px; padding:0;">
+              {% for err in request_errors %}<li>{{ err }}</li>{% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+
+        <form method="post" action="{{ url_for('bootcamp.request_cohort_quote') }}" novalidate>
+          <div>
+            <label for="company_name">Company *</label>
+            <input id="company_name" name="company_name" type="text" required placeholder="Your company" value="{{ request_form.company_name if request_form and request_form.company_name is defined else '' }}">
+          </div>
+          <div>
+            <label for="contact_name">Primary contact *</label>
+            <input id="contact_name" name="contact_name" type="text" required placeholder="Full name" value="{{ request_form.contact_name if request_form and request_form.contact_name is defined else '' }}">
+          </div>
+          <div>
+            <label for="contact_email">Work email *</label>
+            <input id="contact_email" name="contact_email" type="email" required placeholder="you@company.com" value="{{ request_form.contact_email if request_form and request_form.contact_email is defined else '' }}">
+          </div>
+          <div>
+            <label for="team_size">Team size</label>
+            <input id="team_size" name="team_size" type="text" inputmode="numeric" placeholder="e.g. 12" value="{{ request_form.team_size if request_form and request_form.team_size is defined else '' }}">
+          </div>
+          <div>
+            <div class="grid cols-2">
+              <div>
+                <label for="timeline_start">Preferred start date</label>
+                <input id="timeline_start" name="timeline_start" type="date" value="{{ request_form.timeline_start if request_form and request_form.timeline_start is defined else '' }}">
+              </div>
+              <div>
+                <label for="timeline_end">Preferred end date</label>
+                <input id="timeline_end" name="timeline_end" type="date" value="{{ request_form.timeline_end if request_form and request_form.timeline_end is defined else '' }}">
+              </div>
+            </div>
+            <p class="muted" style="margin-top:6px;">Optional — choose the date range that works best for your team.</p>
+          </div>
+          <div>
+            <label for="goals">Training goals</label>
+            <textarea id="goals" name="goals" placeholder="What should your team be able to do after the bootcamp?">{{ request_form.goals if request_form and request_form.goals is defined else '' }}</textarea>
+          </div>
+          <div>
+            <label for="notes">Additional notes</label>
+            <textarea id="notes" name="notes" placeholder="Purchase order requirements, budget notes, etc.">{{ request_form.notes if request_form and request_form.notes is defined else '' }}</textarea>
+          </div>
+          <div>
+            <button type="submit">Send request</button>
+            <div class="note">We reply within one business day from connect@aiforimpact.net.</div>
+          </div>
+        </form>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var toggle = document.querySelector('[data-seat-pricing-toggle]');
+    var panel = document.getElementById('seat-pricing-panel');
+
+    if (toggle && panel) {
+      var setExpanded = function (expanded) {
+        toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        if (expanded) {
+          panel.removeAttribute('hidden');
+        } else {
+          panel.setAttribute('hidden', '');
+        }
+      };
+
+      toggle.addEventListener('click', function () {
+        var expanded = toggle.getAttribute('aria-expanded') === 'true';
+        setExpanded(!expanded);
+      });
+
+      document.querySelectorAll('[data-seat-pricing-open]').forEach(function (opener) {
+        opener.addEventListener('click', function () {
+          var alreadyOpen = toggle.getAttribute('aria-expanded') === 'true';
+          if (!alreadyOpen) {
+            setExpanded(true);
+          }
+          if (typeof panel.scrollIntoView === 'function') {
+            panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        });
+      });
+    }
+
+    var countdownPanel = document.querySelector('.countdown-hero__panel[data-countdown]') || document.querySelector('[data-countdown]');
+    if (countdownPanel) {
+      var targetRaw = countdownPanel.getAttribute('data-countdown');
+      var targetDate = targetRaw ? new Date(targetRaw) : null;
+      if (targetDate && !isNaN(targetDate.getTime())) {
+        var daysEl = countdownPanel.querySelector('[data-countdown-days]');
+        var hoursEl = countdownPanel.querySelector('[data-countdown-hours]');
+        var minutesEl = countdownPanel.querySelector('[data-countdown-minutes]');
+        var secondsEl = countdownPanel.querySelector('[data-countdown-seconds]');
+
+        var pad = function (value) {
+          return String(Math.max(0, value)).padStart(2, '0');
+        };
+
+        var updateCountdown = function () {
+          var now = new Date();
+          var diffMs = targetDate.getTime() - now.getTime();
+          if (diffMs <= 0) {
+            countdownPanel.setAttribute('data-countdown-complete', 'true');
+            if (daysEl) { daysEl.textContent = '00'; }
+            if (hoursEl) { hoursEl.textContent = '00'; }
+            if (minutesEl) { minutesEl.textContent = '00'; }
+            if (secondsEl) { secondsEl.textContent = '00'; }
+            return;
+          }
+
+          var totalSeconds = Math.floor(diffMs / 1000);
+          var days = Math.floor(totalSeconds / 86400);
+          var hours = Math.floor((totalSeconds % 86400) / 3600);
+          var minutes = Math.floor((totalSeconds % 3600) / 60);
+          var seconds = totalSeconds % 60;
+
+          countdownPanel.removeAttribute('data-countdown-complete');
+          if (daysEl) { daysEl.textContent = pad(days); }
+          if (hoursEl) { hoursEl.textContent = pad(hours); }
+          if (minutesEl) { minutesEl.textContent = pad(minutes); }
+          if (secondsEl) { secondsEl.textContent = pad(seconds); }
+        };
+
+        updateCountdown();
+        setInterval(updateCountdown, 1000);
+      }
+    }
+  });
+</script>
+
+{% if bootcamp.testimonials %}
+<section class="section-card testimony-section" aria-label="Bootcamp testimonials" style="margin-top:18px;">
+  <div class="banner">
+    <h2>Stories from recent graduates</h2>
+    <p class="muted">Real feedback from learners who earned their certificate.</p>
+  </div>
+  <div class="testimony-grid">
+    {% for item in bootcamp.testimonials %}
+    <article class="testimony-card"{% if item.certificate_url %} style="--certificate-image: url('{{ item.certificate_url }}');"{% endif %}>
+      <div class="testimony-header">
+        <div class="testimony-meta">
+          <span class="testimony-badge">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M12 4 3 8.5l9 4.5 9-4.5z" fill="currentColor"/>
+              <path d="M6 10.42V15a1 1 0 0 0 .608.917L12 18l5.392-2.083A1 1 0 0 0 18 15v-4.58l-6 2.845z" fill="currentColor" opacity=".55"/>
+            </svg>
+            Bootcamp graduate
+          </span>
+          <div class="testimony-name">{{ item.full_name }}</div>
+          {% if item.credential %}
+          <div class="testimony-credential">{{ item.credential }}</div>
+          {% endif %}
+          {% if item.completed %}
+          <div class="testimony-date">Completed {{ item.completed }}</div>
+          {% endif %}
+        </div>
+        {% if item.certificate_url %}
+        <a class="testimony-link" href="{{ item.certificate_url }}" target="_blank" rel="noopener">
+          <span>View certificate</span>
+          <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M5.5 3.25a.75.75 0 0 1 .75-.75h5a.75.75 0 0 1 .75.75v5a.75.75 0 1 1-1.5 0V4.81L5.28 10.03a.75.75 0 1 1-1.06-1.06L9.44 3.75H6.25a.75.75 0 0 1-.75-.75Z" fill="currentColor"/>
+            <path d="M4.5 6.25a.75.75 0 0 0-1.5 0v6.5c0 .966.784 1.75 1.75 1.75h6.5a.75.75 0 0 0 0-1.5h-6.5a.25.25 0 0 1-.25-.25z" fill="currentColor" opacity=".65"/>
+          </svg>
+        </a>
+        {% endif %}
+      </div>
+      <div class="testimony-quote">{{ item.testimony|safe }}</div>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section class="section-card" style="margin-top:18px;">
+  <div class="banner">
+    <h2>Bootcamp FAQs</h2>
+    <p class="muted">Everything you need to know before you reserve a seat.</p>
+  </div>
+  <div class="body faq">
+    {% for item in bootcamp.faqs %}
+    <details>
+      <summary>{{ item.q }}</summary>
+      <p>{{ item.a }}</p>
+    </details>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

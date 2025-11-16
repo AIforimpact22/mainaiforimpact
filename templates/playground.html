@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Playground — Ai For Impact{% endblock %}
+
+{% block hero %}
+<section class="cover-hero" aria-label="Playground">
+  <div class="bg" style="background-image:url('{{ COURSE_COVER_URL }}');"></div>
+  <div class="overlay"></div>
+  <div class="inner">
+    <div class="badge-row">
+      <span class="badge">Hands-on</span>
+      <span class="badge">Rapid prototyping</span>
+    </div>
+    <h1>Playground</h1>
+    <p class="subhead">Pick a tool to turn a single prompt into something useful—fast.</p>
+  </div>
+</section>
+{% endblock %}
+
+{% block content %}
+<section class="section-card" style="margin-top:26px;">
+  <div class="banner">
+    <h1>Choose a tool</h1>
+    <p class="muted">Both pages live under <code>/play</code> for consistency.</p>
+  </div>
+
+  <div class="body">
+    <div class="steps-grid">
+      <a class="step-card" href="{{ bp('/play/workflow') }}" style="text-decoration:none;">
+        <div class="step-head">
+          <div class="step-num">A</div>
+          <div class="step-title">Prompt → Radial Workflow</div>
+        </div>
+        <p class="step-text">Turn a single prompt into a connected, radial workflow to scope tasks and dependencies.</p>
+      </a>
+
+      <a class="step-card" href="{{ bp('/play/promptui') }}" style="text-decoration:none;">
+        <div class="step-head">
+          <div class="step-num">B</div>
+          <div class="step-title">Prompt → UI</div>
+        </div>
+        <p class="step-text">Convert a prompt into a clean, stable UI preview with KPIs, charts, and tables.</p>
+      </a>
+    </div>
+  </div>
+</section>
+{% endblock %}

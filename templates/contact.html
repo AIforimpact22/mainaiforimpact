@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% block title %}Contact — Ai For Impact{% endblock %}
+
+{% block head %}
+  {{ super() }}
+  <style>
+    .contact-grid{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+    .contact-form{display:flex;flex-direction:column;gap:16px;margin-top:14px}
+    .contact-form .form-field{display:flex;flex-direction:column;gap:6px}
+    .contact-form label{font-weight:700;font-size:15px;color:var(--ink)}
+    .contact-form input,
+    .contact-form textarea{background:#090b12;border:1px solid #23283a;border-radius:9px;padding:12px 14px;color:var(--ink);font-size:15px;min-width:0}
+    .contact-form input:focus,
+    .contact-form textarea:focus{outline:2px solid rgba(92,169,255,.6);outline-offset:1px}
+    .contact-form textarea{resize:vertical;min-height:140px}
+    .contact-form .char-count{font-size:13px;color:var(--muted)}
+    .contact-form button{align-self:flex-start}
+    .form-feedback{font-size:14px;margin:0}
+    .form-feedback.is-success{color:#8be087}
+    .form-feedback.is-error{color:#ff8383}
+    .color-challenge{display:flex;flex-direction:column;gap:10px}
+    .color-challenge legend{font-weight:700;font-size:15px;color:var(--ink)}
+    .color-options{display:flex;flex-wrap:wrap;gap:10px}
+    .color-choice{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid #23283a;border-radius:10px;background:#0d1020;color:var(--ink);cursor:pointer;transition:transform .15s ease,border-color .15s ease}
+    .color-choice:hover{transform:translateY(-1px);border-color:rgba(92,169,255,.6)}
+    .color-choice input{margin:0}
+    .color-choice:focus-within{outline:2px solid rgba(92,169,255,.6);outline-offset:2px}
+    .color-swatch{width:18px;height:18px;border-radius:50%;border:1px solid rgba(255,255,255,.4);background:var(--swatch-color);display:inline-block}
+    .color-name{font-size:14px}
+  </style>
+{% endblock %}
+
+{% block content %}
+<section class="section-card" style="margin-top:26px;" aria-labelledby="contact-title">
+  <div class="banner">
+    <h1 id="contact-title">Contact</h1>
+    <p class="muted">We’d love to hear from you.</p>
+  </div>
+
+  <div class="body contact-grid">
+    <div class="card">
+      <h2 style="margin-top:0">How we can help</h2>
+      <p class="muted">
+        Most messages we receive cover new partnerships, media interviews, course support,
+        or speaking opportunities, so choose the option that best matches your request. We aim to
+        respond within the following timeframes:
+      </p>
+      <ul class="muted">
+        <li><strong>Course support</strong> — within 1 business day.</li>
+        <li><strong>Partnerships &amp; collaborations</strong> — within 2 business days.</li>
+        <li><strong>Media &amp; speaking</strong> — within 3 business days.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2 style="margin-top:0">Email</h2>
+      <p>
+        <a href="mailto:{{ contact_recipient }}" rel="nofollow">{{ contact_recipient }}</a>
+      </p>
+    </div>
+    <div class="card">
+      <h2 style="margin-top:0">Send us a direct note</h2>
+      <p class="muted">Share up to {{ message_limit }} characters and we’ll route it straight to our support team.</p>
+      {% set success_message = "Thank you! Your message is on its way to " ~ contact_recipient ~ "." %}
+      {% set generic_error = "Something went wrong. Please try again later." %}
+      <form id="direct-contact-form"
+            class="contact-form"
+            action="{{ bp('/contact/submit') }}"
+            method="post"
+            novalidate
+            data-contact-form
+            data-success-message="{{ success_message }}"
+            data-generic-error="{{ generic_error }}">
+        <div class="form-field">
+          <label for="direct-contact-name">Your name</label>
+          <input type="text" id="direct-contact-name" name="name" maxlength="120" autocomplete="name" placeholder="Jane Doe">
+        </div>
+        <div class="form-field">
+          <label for="direct-contact-email">Email</label>
+          <input type="email" id="direct-contact-email" name="email" required autocomplete="email" placeholder="you@example.com">
+        </div>
+        <div class="form-field">
+          <label for="direct-contact-message">How can we help?</label>
+          <textarea id="direct-contact-message" name="message" maxlength="{{ message_limit }}" required placeholder="Write your message ({{ message_limit }} characters max)"></textarea>
+          <div class="char-count" data-remaining aria-live="polite">{{ message_limit }} characters remaining</div>
+        </div>
+        <fieldset class="form-field color-challenge">
+          <legend>{{ challenge_prompt }}</legend>
+          <div class="color-options" role="group" aria-label="{{ challenge_prompt }}">
+            {% for option in challenge_options %}
+            <label class="color-choice">
+              <input type="radio" name="challenge_selection" value="{{ option.value }}" required>
+              <span class="color-swatch" style="--swatch-color: {{ option.color }}" aria-hidden="true"></span>
+              <span class="color-name">{{ option.label }}</span>
+            </label>
+            {% endfor %}
+          </div>
+          <input type="hidden" name="challenge_answer" value="{{ challenge_answer }}">
+        </fieldset>
+        <button type="submit" class="btn" data-submit>Send message</button>
+        <p id="direct-contact-feedback"
+           class="form-feedback muted{% if contact_success %} is-success{% elif contact_status == 'error' %} is-error{% endif %}"
+           role="status"
+           {% if not contact_status %}hidden{% endif %}>
+          {% if contact_success %}
+            {{ success_message }}
+          {% elif contact_status == 'error' %}
+            {{ contact_error or generic_error }}
+          {% endif %}
+        </p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<section class="section-card" style="margin-top:26px;" aria-labelledby="entity-title">
+  <div class="banner">
+    <h1 id="entity-title">Registered entity</h1>
+    <p class="muted">The course is operated under the following company.</p>
+  </div>
+
+  <div class="body">
+    <address class="card" style="font-style:normal">
+      <strong>Climate Resilience Fundraising Platform B.V.</strong><br>
+      Fluwelen Burgwal 58<br>
+      The Hague<br>
+      The Netherlands<br>
+      2511CJ<br>
+      <a href="tel:+36707895714">+36 70 789 5714</a>
+    </address>
+  </div>
+</section>
+
+<script>
+  (function(){
+    const form = document.querySelector('[data-contact-form]');
+    if (!form) return;
+
+    const messageField = form.querySelector("textarea[name='message']");
+    const counter = form.querySelector('[data-remaining]');
+    const feedback = document.getElementById('direct-contact-feedback');
+    const submitButton = form.querySelector('[data-submit]');
+    const limit = messageField ? parseInt(messageField.getAttribute('maxlength'), 10) || {{ message_limit }} : {{ message_limit }};
+    const successCopy = form.getAttribute('data-success-message') || 'Thank you! Your message has been sent.';
+    const fallbackError = form.getAttribute('data-generic-error') || 'Something went wrong. Please try again later.';
+
+    function setFeedback(message, kind){
+      if (!feedback) return;
+      feedback.textContent = message || '';
+      feedback.hidden = !message;
+      feedback.classList.remove('is-success', 'is-error');
+      feedback.classList.add('muted');
+      if (kind === 'success'){
+        feedback.classList.add('is-success');
+        feedback.classList.remove('is-error');
+      } else if (kind === 'error'){
+        feedback.classList.add('is-error');
+        feedback.classList.remove('is-success');
+      }
+    }
+
+    function updateCounter(){
+      if (!messageField || !counter) return;
+      const used = messageField.value.length;
+      const remaining = Math.max(limit - used, 0);
+      counter.textContent = `${remaining} characters remaining`;
+    }
+
+    updateCounter();
+    form.addEventListener('input', updateCounter);
+
+    form.addEventListener('submit', function(event){
+      event.preventDefault();
+      if (!form.reportValidity()){
+        setFeedback('Please complete the required fields before sending.', 'error');
+        return;
+      }
+
+      const formData = new FormData(form);
+      if (messageField && messageField.value.length > limit){
+        setFeedback(`Message must be ${limit} characters or fewer.`, 'error');
+        return;
+      }
+
+      if (submitButton) submitButton.disabled = true;
+      setFeedback('Sending…', null);
+
+      fetch(form.getAttribute('action'), {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json'
+        },
+        body: formData
+      }).then(async function(response){
+        const payload = await response.json().catch(function(){ return null; });
+        if (response.ok && payload && payload.success){
+          form.reset();
+          updateCounter();
+          setFeedback(payload.message || successCopy, 'success');
+        } else {
+          const errorMessage = payload && payload.errors && payload.errors.length
+            ? payload.errors[0]
+            : fallbackError;
+          setFeedback(errorMessage, 'error');
+        }
+      }).catch(function(){
+        setFeedback(fallbackError, 'error');
+      }).finally(function(){
+        if (submitButton) submitButton.disabled = false;
+      });
+    });
+  })();
+</script>
+{% endblock %}

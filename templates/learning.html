@@ -20,9 +20,8 @@
     .hero-price-deadline{font-size:14px;color:#c8dbff;font-weight:600;margin:0}
     .hero-price-deadline span{color:#fff;font-weight:800}
     .hero-price-regular{margin:0;font-size:13px;color:#9ac2ff;font-weight:600}
-    .learning-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
-    @media (max-width: 1040px){.learning-grid{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}}
-    @media (max-width: 720px){.learning-grid{grid-template-columns:1fr;gap:16px}}
+    .learning-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;max-width:820px}
+    @media (max-width: 720px){.learning-grid{gap:16px}}
     .learning-card{background:var(--card);border:1px solid #1a1f2e;border-radius:18px;padding:26px;display:flex;flex-direction:column;gap:18px;box-shadow:0 18px 50px rgba(5,10,20,.25)}
     .learning-card header{display:flex;flex-direction:column;gap:10px}
     .learning-card h2{margin:0;font-size:26px;line-height:1.2}
@@ -55,7 +54,7 @@
   <div class="inner container">
     <div class="learning-copy">
       <h1 id="learning-title">Learning with {{ BRAND_NAME }}</h1>
-      <p>Choose the format that matches your team's goals. Keep the deep-dive course for paced learning, or jump into the two-day bootcamp to accelerate adoption without losing the existing dedicated pages.</p>
+      <p>Jump into the two-day bootcamp to accelerate adoption with production experts and leave with reusable workflows, recordings, and templates.</p>
       {% if price_summary %}
         {% set hero_offer = price_summary.early_bird or price_summary.regular %}
         {% if hero_offer %}
@@ -137,36 +136,6 @@
           <ul class="learning-secondary" aria-label="Additional bootcamp links">
             <li><a href="{{ bp('/bootcamp/') }}#request">Request seats</a></li>
             <li><a href="{{ bp('/contact/') }}">Talk to us</a></li>
-          </ul>
-        </div>
-      </article>
-
-      <article class="learning-card" aria-labelledby="learning-course-title">
-        <header>
-          <span class="learning-badge">Course</span>
-          <h2 id="learning-course-title">{{ course.title if course else 'Tailored Course' }}</h2>
-          <p>{{ course.blurb if course else 'Self-guided modules with live build support for your organisation.' }}</p>
-        </header>
-
-        {% if course_summary.modules or course_summary.lessons or course_summary.weeks %}
-        <ul class="learning-stats" aria-label="Course highlights">
-          {% if course_summary.modules %}
-            <li><strong>{{ course_summary.modules }}</strong>modules</li>
-          {% endif %}
-          {% if course_summary.lessons %}
-            <li><strong>{{ course_summary.lessons }}</strong>lessons</li>
-          {% endif %}
-          {% if course_summary.weeks %}
-            <li><strong>{{ course_summary.weeks }}</strong>weeks of guided structure</li>
-          {% endif %}
-        </ul>
-        {% endif %}
-
-        <div class="learning-actions">
-          <a class="btn" href="{{ self.course_href() if course else bp('/') + '#curriculum' }}">View the course</a>
-          <ul class="learning-secondary" aria-label="Additional course links">
-            <li><a href="{{ bp('/price/') }}">View pricing</a></li>
-            <li><a href="{{ bp('/register/') }}">Register</a></li>
           </ul>
         </div>
       </article>

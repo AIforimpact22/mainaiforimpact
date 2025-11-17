@@ -255,6 +255,7 @@ def _get_bootcamp_vm() -> Dict[str, object]:
     vm["testimonials"] = _fetch_bootcamp_testimonials()
     seat_prices = _fetch_bootcamp_seat_prices()
     vm["seat_prices"] = seat_prices
+    vm["price_summary"] = summarize_bootcamp_price(seat_prices) if seat_prices else None
 
     next_event_display = ""
     next_event_iso = ""

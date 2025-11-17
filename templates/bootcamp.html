@@ -21,6 +21,12 @@
     margin: 0;
     font-size: clamp(42px, 7vw, 72px);
   }
+  .countdown-panels {
+    display: grid;
+    gap: clamp(18px, 3vw, 28px);
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    width: 100%;
+  }
   .countdown-panel {
     display: grid;
     gap: clamp(18px, 3vw, 28px);
@@ -85,6 +91,30 @@
   .countdown-panel[data-countdown-complete="true"] .countdown-complete {
     display: block;
   }
+  .countdown-price-card {
+    display: grid;
+    gap: 8px;
+    padding: clamp(24px, 4vw, 36px);
+    border-radius: 24px;
+    background: rgba(9, 15, 28, 0.82);
+    border: 1px solid rgba(139, 233, 197, 0.4);
+    box-shadow: 0 22px 55px rgba(5, 12, 25, 0.35);
+    text-align: center;
+  }
+  .countdown-price-amount {
+    font-weight: 900;
+    font-size: clamp(36px, 6vw, 58px);
+    letter-spacing: .02em;
+    color: #ffffff;
+  }
+  .countdown-price-deadline {
+    font-weight: 600;
+    color: #9decc7;
+  }
+  .countdown-price-note {
+    font-size: 13px;
+    color: rgba(188, 217, 255, 0.85);
+  }
   .countdown-cta {
     display: flex;
     gap: 12px;
@@ -106,6 +136,9 @@
   @media (max-width: 720px) {
     .countdown-hero .inner {
       padding: clamp(36px, 10vw, 48px) 20px;
+    }
+    .countdown-panels {
+      grid-template-columns: 1fr;
     }
     .countdown-panel {
       padding: clamp(24px, 8vw, 32px);
@@ -252,31 +285,49 @@
         <span class="badge">{{ bootcamp.seat_cap }} seats per cohort</span>
       </div>
       <h1>{{ bootcamp.title }}</h1>
-      {% if bootcamp.next_event_date_iso %}
-      <div class="countdown-panel" data-countdown="{{ bootcamp.next_event_date_iso }}" aria-live="polite">
-        <div class="countdown-panel-header">
-          <div class="countdown-heading">Next cohort begins</div>
-          <div class="countdown-due">{{ bootcamp.next_event_date_display }}</div>
+      {% set price_summary = bootcamp.price_summary %}
+      {% if bootcamp.next_event_date_iso or (price_summary and price_summary.early_bird) %}
+      <div class="countdown-panels">
+        {% if bootcamp.next_event_date_iso %}
+        <div class="countdown-panel" data-countdown="{{ bootcamp.next_event_date_iso }}" aria-live="polite">
+          <div class="countdown-panel-header">
+            <div class="countdown-heading">Next cohort begins</div>
+            <div class="countdown-due">{{ bootcamp.next_event_date_display }}</div>
+          </div>
+          <div class="countdown-grid">
+            <div class="countdown-unit">
+              <span class="countdown-value" data-countdown-days>00</span>
+              <span class="countdown-unit-label">Days</span>
+            </div>
+            <div class="countdown-unit">
+              <span class="countdown-value" data-countdown-hours>00</span>
+              <span class="countdown-unit-label">Hours</span>
+            </div>
+            <div class="countdown-unit">
+              <span class="countdown-value" data-countdown-minutes>00</span>
+              <span class="countdown-unit-label">Minutes</span>
+            </div>
+            <div class="countdown-unit">
+              <span class="countdown-value" data-countdown-seconds>00</span>
+              <span class="countdown-unit-label">Seconds</span>
+            </div>
+          </div>
+          <div class="countdown-complete">The next cohort has started! Catch the replay or join the following session.</div>
         </div>
-        <div class="countdown-grid">
-          <div class="countdown-unit">
-            <span class="countdown-value" data-countdown-days>00</span>
-            <span class="countdown-unit-label">Days</span>
-          </div>
-          <div class="countdown-unit">
-            <span class="countdown-value" data-countdown-hours>00</span>
-            <span class="countdown-unit-label">Hours</span>
-          </div>
-          <div class="countdown-unit">
-            <span class="countdown-value" data-countdown-minutes>00</span>
-            <span class="countdown-unit-label">Minutes</span>
-          </div>
-          <div class="countdown-unit">
-            <span class="countdown-value" data-countdown-seconds>00</span>
-            <span class="countdown-unit-label">Seconds</span>
-          </div>
+        {% endif %}
+        {% if price_summary and price_summary.early_bird %}
+        {% set early_offer = price_summary.early_bird %}
+        <div class="countdown-price-card" aria-label="Early bird pricing">
+          <div class="countdown-heading">{{ early_offer.label or 'Early bird' }}</div>
+          <div class="countdown-price-amount">{{ early_offer.price_display }}</div>
+          {% if early_offer.valid_to_display %}
+          <div class="countdown-price-deadline">Available until {{ early_offer.valid_to_display }}</div>
+          {% endif %}
+          {% if early_offer.notes %}
+          <div class="countdown-price-note">{{ early_offer.notes }}</div>
+          {% endif %}
         </div>
-        <div class="countdown-complete">The next cohort has started! Catch the replay or join the following session.</div>
+        {% endif %}
       </div>
       {% endif %}
       <div class="countdown-cta">

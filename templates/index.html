@@ -7,6 +7,43 @@
   /* Home page hero tuning */
   .photo-hero .bg { filter: brightness(0.86) contrast(1.05) saturate(1.06); }
   .photo-hero .inner { min-height: clamp(460px, 62vh, 700px); }
+  .hero-price-card {
+    margin-top: 18px;
+    display: inline-flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 18px 22px;
+    border-radius: 18px;
+    background: rgba(9, 16, 32, 0.82);
+    border: 1px solid rgba(111, 200, 255, 0.4);
+    box-shadow: 0 14px 30px rgba(3, 7, 15, 0.45);
+    backdrop-filter: blur(12px);
+  }
+  .hero-price-card small {
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #9dc9ff;
+    font-weight: 600;
+  }
+  .hero-price-card strong {
+    font-size: clamp(1.8rem, 3vw, 2.6rem);
+    line-height: 1.1;
+  }
+  .hero-price-card .hero-price-deadline {
+    font-size: 0.95rem;
+    color: var(--muted);
+    margin-left: 12px;
+    white-space: nowrap;
+  }
+  .hero-price-card .hero-price-footer {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .hero-price-card .hero-price-footer a {
+    font-weight: 600;
+  }
   #services .services-grid {
     display: grid;
     gap: 18px;
@@ -195,6 +232,29 @@
     <div class="anchor-row">
       <a href="#services">See our services ↓</a>
     </div>
+
+    {% set hero_price = bootcamp.price_summary if bootcamp else None %}
+    {% if hero_price and hero_price.early_bird %}
+    <div class="hero-price-card" role="region" aria-label="Early bird pricing">
+      <small>Early bird · {{ hero_price.seat_tier or 'Seat' }}</small>
+      <div>
+        <strong>{{ hero_price.early_bird.price_display }}</strong>
+        {% if hero_price.early_bird.valid_to_display %}
+        <span class="hero-price-deadline">until {{ hero_price.early_bird.valid_to_display }}</span>
+        {% endif %}
+      </div>
+      <div class="hero-price-footer">
+        {% if hero_price.event_date_display or hero_price.location %}
+        <span>
+          {% if hero_price.event_date_display %}{{ hero_price.event_date_display }}{% endif %}
+          {% if hero_price.event_date_display and hero_price.location %} · {% endif %}
+          {% if hero_price.location %}{{ hero_price.location }}{% endif %}
+        </span>
+        {% endif %}
+        <a href="{{ bp('/bootcamp/') }}#request">Request seats →</a>
+      </div>
+    </div>
+    {% endif %}
   </div>
 </section>
 {% endblock %}

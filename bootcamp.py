@@ -126,23 +126,6 @@ BOOTCAMP_INFO = {
     "currency": "EUR",
     "seat_cap": BOOTCAMP_SEAT_CAP,
     "cover_url": "https://i.imgur.com/Amgeg9j.jpeg",
-    "price_summary": {
-        "seat_tier": "Team seat",
-        "location": "Hybrid or Remote",
-        "event_date_display": DEFAULT_NEXT_EVENT_DISPLAY,
-        "early_bird": {
-            "label": "Early bird",
-            "price_display": "$199.00",
-            "notes": "Limited seats",
-            "valid_to_display": "Dec 20, 2025",
-        },
-        "regular": {
-            "label": "Regular",
-            "price_display": "$299.00",
-            "notes": "",
-            "valid_to_display": "",
-        },
-    },
     "features": [
         "2 immersive days that blend morning theory with afternoon build labs.",
         "Hands-on practice with real tooling so you leave with working assets.",

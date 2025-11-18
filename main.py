@@ -1,5 +1,6 @@
-import os, json, re, logging, copy
+import os, json, re, logging, copy, csv
 from typing import Any, Dict, List, Optional, Tuple
+from pathlib import Path
 from flask import Flask, render_template, abort, Response
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import URL
@@ -23,6 +24,8 @@ BRAND_LOGO_URL = os.getenv("BRAND_LOGO_URL", "https://i.imgur.com/STm5VaG.png")
 COURSE_TITLE = os.getenv("COURSE_TITLE", "One on one Tailored Training Session")
 COURSE_COVER_URL = os.getenv("COURSE_COVER_URL", "https://i.imgur.com/iIMdWOn.jpeg")
 BASE_PATH = os.getenv("BASE_PATH", "")
+DATA_DIR = Path(__file__).resolve().parent / "data"
+MISSIONS_CSV = DATA_DIR / "mission.csv"
 
 # -------------- DB connection --------------
 def _is_dsn(s: str) -> bool:
@@ -153,6 +156,31 @@ def _summarize(structure: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], int, in
     return weeks, len(ordered), total
 
 
+def _load_missions() -> List[Dict[str, str]]:
+    missions: List[Dict[str, str]] = []
+    if not MISSIONS_CSV.exists():
+        log.warning("Mission CSV missing at %s", MISSIONS_CSV)
+        return missions
+    try:
+        with open(MISSIONS_CSV, newline="", encoding="utf-8") as fh:
+            reader = csv.DictReader(fh)
+            for row in reader:
+                if not row:
+                    continue
+                missions.append(
+                    {
+                        "mission_title": (row.get("Mission Title") or "").strip(),
+                        "app_name": (row.get("App Name") or "").strip(),
+                        "subtitle": (row.get("Subtitle") or "").strip(),
+                        "goal": (row.get("Goal") or "").strip(),
+                        "image_url": (row.get("Image URL") or "").strip(),
+                    }
+                )
+    except Exception as exc:
+        log.exception("Failed to read missions CSV: %s", exc)
+    return missions
+
+
 def _fetch_certificates(limit: int = 50) -> List[Dict[str, Any]]:
     sql = text(
         """
@@ -243,6 +271,7 @@ def home():
         },
     ]
     course = _fetch_course()
+    missions = _load_missions()
     if not course:
         return render_template(
             "index.html",
@@ -252,6 +281,7 @@ def home():
             lessons_count=0,
             services=services,
             bootcamp=bootcamp_vm,
+            missions=missions,
         )
     structure = course.get("structure") or {}
     weeks, modules, lessons = _summarize(structure)
@@ -270,6 +300,7 @@ def home():
         lessons_count=lessons,
         services=services,
         bootcamp=bootcamp_vm,
+        missions=missions,
     )
 
 

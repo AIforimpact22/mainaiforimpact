@@ -140,6 +140,54 @@
   .certificate-note strong {
     color: var(--ink);
   }
+  .missions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: clamp(18px, 3vw, 28px);
+  }
+  .mission-card {
+    background: var(--surface-card, #0f1420);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 20px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    box-shadow: 0 20px 40px rgba(5, 11, 23, 0.4);
+  }
+  .mission-card figure {
+    margin: 0;
+    aspect-ratio: 16 / 9;
+    background: rgba(255, 255, 255, 0.02);
+  }
+  .mission-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .mission-card .mission-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .mission-card h3 {
+    margin: 0;
+    font-size: 1.15rem;
+  }
+  .mission-card .mission-app {
+    margin: 0;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #7fb7ff;
+  }
+  .mission-card p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
 </style>
 {% endblock %}
 
@@ -258,6 +306,34 @@
           <a class="btn ghost" href="https://raw.githubusercontent.com/hawkarabdulhaq/pythondemo/main/certificates/6.jpg" target="_blank" rel="noopener">View the certificate</a>
         </div>
       </article>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% if missions %}
+<section id="missions" class="section-card" aria-labelledby="missions-title">
+  <div class="banner">
+    <small>Mission-based learning</small>
+    <h1 id="missions-title">Mission based learning</h1>
+    <p class="muted">Learners choose a dedicated mission that aligns with their expectations and outcomes.</p>
+  </div>
+  <div class="body">
+    <div class="missions-grid">
+      {% for mission in missions %}
+      <article class="mission-card" aria-label="Mission: {{ mission.mission_title }}">
+        {% if mission.image_url %}
+        <figure>
+          <img src="{{ mission.image_url }}" alt="{{ mission.mission_title }} preview" loading="lazy" decoding="async">
+        </figure>
+        {% endif %}
+        <div class="mission-body">
+          <p class="mission-app">{{ mission.app_name }}</p>
+          <h3>{{ mission.mission_title }}</h3>
+          <p>{{ mission.subtitle or mission.goal }}</p>
+        </div>
+      </article>
+      {% endfor %}
     </div>
   </div>
 </section>

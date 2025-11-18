@@ -188,6 +188,29 @@
     color: var(--muted);
     font-size: 0.95rem;
   }
+  #audience, #how-it-works {
+    margin-top: 26px;
+  }
+  .audience-card {
+    background: var(--surface-card, #0f1420);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: clamp(20px, 3vw, 32px);
+    box-shadow: 0 20px 40px rgba(5, 11, 23, 0.4);
+  }
+  .audience-card p {
+    margin: 0;
+    font-size: clamp(1rem, 2vw, 1.1rem);
+    line-height: 1.6;
+    color: var(--ink);
+  }
+  #how-it-works .banner h1 {
+    margin-bottom: 0;
+  }
+  #how-it-works .step-card {
+    background: var(--surface-card, #10131b);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
 </style>
 {% endblock %}
 
@@ -204,6 +227,53 @@
 {% endblock %}
 
 {% block content %}
+
+<section id="audience" class="section-card" aria-labelledby="audience-title">
+  <div class="banner">
+    <small>Who this is for</small>
+    <h1 id="audience-title">Learners who want to ship a real AI project, not just attend a webinar</h1>
+  </div>
+  <div class="body">
+    <div class="audience-card">
+      <p>
+        We surround every mission with expert reviews, live build support, and infrastructure so motivated professionals can
+        launch something real instead of collecting another slide deck.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section id="how-it-works" class="section-card" aria-labelledby="how-title">
+  <div class="banner">
+    <small>How it works</small>
+    <h1 id="how-title">Mission-based sprints designed to produce working AI</h1>
+  </div>
+  <div class="body">
+    <div class="steps-grid" role="list">
+      <article class="step-card" role="listitem">
+        <div class="step-head">
+          <span class="step-num" aria-hidden="true">1</span>
+          <div class="step-title">Pick your mission</div>
+        </div>
+        <p class="step-text">Choose one of five AI projects that matches your role and goals.</p>
+      </article>
+      <article class="step-card" role="listitem">
+        <div class="step-head">
+          <span class="step-num" aria-hidden="true">2</span>
+          <div class="step-title">Build in two focused days</div>
+        </div>
+        <p class="step-text">Learn in the morning, ship in the afternoon with expert support.</p>
+      </article>
+      <article class="step-card" role="listitem">
+        <div class="step-head">
+          <span class="step-num" aria-hidden="true">3</span>
+          <div class="step-title">Take it back to your team</div>
+        </div>
+        <p class="step-text">Get a verifiable certificate and a working AI system hosted online.</p>
+      </article>
+    </div>
+  </div>
+</section>
 
 {% if bootcamp %}
 <section id="bootcamp-highlight" class="section-card" aria-labelledby="bootcamp-highlight-title">

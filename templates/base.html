@@ -19,9 +19,11 @@
     header.site-nav{border-bottom:1px solid #1a1f2e}
     .nav-row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:var(--nav-h);padding:6px 0}
     .brand-wrap{display:flex;align-items:center;gap:12px;min-width:0}
-    .brand-link{display:flex;align-items:center;gap:12px;color:var(--ink);white-space:nowrap;overflow:hidden}
+    .brand-link{display:flex;align-items:flex-start;gap:12px;color:var(--ink);white-space:nowrap;overflow:hidden}
     .brand-logo{width:var(--logo-size);height:var(--logo-size);object-fit:contain;border-radius:6px;border:1px solid #2a3348;background:#0f1320;padding:2px;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+    .brand-copy{display:flex;flex-direction:column;gap:2px;min-width:0}
     .brand-text{font-weight:800;letter-spacing:.2px;font-size:18px;color:var(--ink);overflow:hidden;text-overflow:ellipsis}
+    .brand-definition{margin:0;font-size:12px;color:var(--muted);line-height:1.4;white-space:normal;max-width:260px}
 
     /* Pill nav */
     .nav-actions{display:flex;align-items:center;gap:10px;overflow-x:auto;white-space:nowrap;scrollbar-width:none;-ms-overflow-style:none;position:relative;z-index:30}
@@ -144,7 +146,10 @@
         <div class="brand-wrap">
           <a class="brand-link" href="{{ bp('/') }}">
             <img class="brand-logo" src="{{ BRAND_LOGO_URL }}" alt="{{ BRAND_NAME }} logo" width="80" height="80" decoding="async" loading="eager" fetchpriority="high">
-            <span class="brand-text">{{ BRAND_NAME or 'Ai For Impact' }}</span>
+            <div class="brand-copy">
+              <span class="brand-text">{{ BRAND_NAME or 'Ai For Impact' }}</span>
+              <p class="brand-definition">We specialize in LLM automation, data workflows, and deployment.</p>
+            </div>
           </a>
         </div>
 

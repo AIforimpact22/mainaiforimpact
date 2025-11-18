@@ -7,33 +7,6 @@
   /* Home page hero tuning */
   .photo-hero .bg { filter: brightness(0.86) contrast(1.05) saturate(1.06); }
   .photo-hero .inner { min-height: clamp(460px, 62vh, 700px); }
-  #services .services-grid {
-    display: grid;
-    gap: 18px;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  }
-  #services .service-card {
-    background: var(--surface-card, #111315);
-    border-radius: 18px;
-    padding: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    box-shadow: 0 22px 40px rgba(5, 9, 13, 0.18);
-  }
-  #services .service-card h2 {
-    margin: 0;
-    font-size: 1.4rem;
-  }
-  #services .service-card p {
-    margin: 0;
-  }
-  #services .service-card a {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-weight: 600;
-  }
   #bootcamp-highlight {
     margin-top: 26px;
   }
@@ -192,9 +165,6 @@
     </div>
     {% endif %}
 
-    <div class="anchor-row">
-      <a href="#services">See our services ↓</a>
-    </div>
   </div>
 </section>
 {% endblock %}
@@ -288,28 +258,6 @@
           <a class="btn ghost" href="https://raw.githubusercontent.com/hawkarabdulhaq/pythondemo/main/certificates/6.jpg" target="_blank" rel="noopener">View the certificate</a>
         </div>
       </article>
-    </div>
-  </div>
-</section>
-{% endif %}
-
-{% if services %}
-<section id="services" class="section-card" style="margin-top:26px;">
-  <div class="banner">
-    <small>Solutions</small>
-    <h1>Choose the engagement that fits</h1>
-    <p class="muted">From individual enablement to organization-wide delivery, we match the path to the outcomes you need.</p>
-  </div>
-
-  <div class="body">
-    <div class="services-grid">
-      {% for service in services %}
-      <article class="service-card">
-        <h2>{{ service.name }}</h2>
-        <p class="muted">{{ service.summary }}</p>
-        <a href="{{ service.href }}">{{ service.cta }} →</a>
-      </article>
-      {% endfor %}
     </div>
   </div>
 </section>

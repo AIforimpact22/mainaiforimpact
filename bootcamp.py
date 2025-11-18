@@ -278,6 +278,7 @@ def _get_bootcamp_vm() -> Dict[str, object]:
 
     vm["next_event_date_iso"] = next_event_iso
     vm["next_event_date_display"] = next_event_display
+    vm["certificate_gallery"] = _fetch_certificate_gallery()
     return vm
 
 
@@ -447,6 +448,51 @@ def _fetch_bootcamp_testimonials(limit: int = 6) -> list[dict[str, str]]:
         )
 
     return testimonials
+
+
+def _fetch_certificate_gallery(limit: int = 12) -> list[dict[str, str]]:
+    engine = _resolve_db_engine()
+    if engine is None:
+        return []
+
+    query = text(
+        """
+        SELECT id, full_name, credential, certificate_url, date_of_completion
+        FROM training_certificates
+        WHERE certificate_url IS NOT NULL AND btrim(certificate_url) <> ''
+        ORDER BY date_of_completion DESC NULLS LAST, id DESC
+        LIMIT :limit
+        """
+    )
+
+    try:
+        with engine.begin() as conn:
+            rows = conn.execute(query, {"limit": limit}).mappings().all()
+    except SQLAlchemyError:
+        log.exception("Failed to fetch certificate gallery from backend")
+        return []
+
+    gallery: list[dict[str, str]] = []
+    for row in rows:
+        certificate_url_raw = row.get("certificate_url")
+        certificate_url = str(certificate_url_raw).strip() if certificate_url_raw else ""
+        if not certificate_url:
+            continue
+
+        full_name_raw = row.get("full_name")
+        credential_raw = row.get("credential")
+        completed_raw = row.get("date_of_completion")
+
+        gallery.append(
+            {
+                "certificate_url": certificate_url,
+                "full_name": str(full_name_raw).strip() if full_name_raw else "Bootcamp graduate",
+                "credential": str(credential_raw).strip() if credential_raw else "",
+                "completed": _format_certificate_date(completed_raw),
+            }
+        )
+
+    return gallery
 
 
 def _join_titles(titles: list[str]) -> str:

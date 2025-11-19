@@ -161,15 +161,6 @@
               request.path.startswith(bp('/register'))
             )
         %}
-        {% set _learning_nav_active =
-            request and (
-              request.path.startswith(bp('/learning')) or
-              request.path.startswith(bp('/course/')) or
-              request.path.startswith(bp('/price')) or
-              request.path.startswith(bp('/register')) or
-              request.path.startswith(bp('/bootcamp'))
-            )
-        %}
 
         <nav class="nav-actions" aria-label="Pages">
           <a class="nav-pill" href="{{ bp('/') }}">Home</a>
@@ -178,9 +169,9 @@
              {% if request and request.path.startswith(bp('/numen6')) %}data-active="true" aria-current="page"{% endif %}
           >NUMEN6</a>
           <a class="nav-pill"
-             href="{{ bp('/learning/') }}"
-             {% if _learning_nav_active %}data-active="true" aria-current="page"{% endif %}
-          >Learning</a>
+             href="{{ bp('/bootcamp/') }}"
+             {% if request and request.path.startswith(bp('/bootcamp')) %}data-active="true" aria-current="page"{% endif %}
+          >Bootcamp</a>
           <a class="nav-pill"
              href="{{ bp('/blog/') }}"
              {% if request and request.path.startswith(bp('/blog')) %}data-active="true" aria-current="page"{% endif %}
@@ -431,23 +422,6 @@
             var href = cleanPath(el.getAttribute('href') || '');
             if (!href || /^https?:\/\//i.test(href)) return;
             var active = (href === '/') ? (here === '/') : here.startsWith(href);
-            // Special rule: treat related pages as part of the Learning hub
-            if (el.textContent.trim() === 'Learning') {
-              var learningPaths = [
-                cleanPath("{{ bp('/learning') }}"),
-                cleanPath("{{ bp('/course') }}"),
-                cleanPath("{{ bp('/price') }}"),
-                cleanPath("{{ bp('/register') }}"),
-                cleanPath("{{ bp('/bootcamp') }}")
-              ];
-              for (var i = 0; i < learningPaths.length; i++) {
-                var segment = learningPaths[i];
-                if (segment && here.startsWith(segment)) {
-                  active = true;
-                  break;
-                }
-              }
-            }
             if (active) { el.dataset.active = "true"; el.setAttribute('aria-current','page'); }
           } catch(e){}
         });

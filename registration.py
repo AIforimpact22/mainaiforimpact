@@ -11,17 +11,7 @@ from email.message import EmailMessage
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
-from flask import (
-    Blueprint,
-    flash,
-    g,
-    jsonify,
-    redirect,
-    render_template,
-    request,
-    session,
-    url_for,
-)
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
 
 from course_settings import (
     BOOTCAMP_CODE,
@@ -29,7 +19,6 @@ from course_settings import (
     BOOTCAMP_PUBLIC_REGISTRATION,
     BOOTCAMP_SEAT_CAP,
 )
-from bootcamp import _fetch_bootcamp_seat_prices  # type: ignore[attr-defined]
 from sqlalchemy import create_engine, MetaData, Table, inspect, select, func
 from sqlalchemy.engine import URL
 from sqlalchemy.sql import text
@@ -303,100 +292,10 @@ def _clip(x, n=500):
     x = _s(x)
     return x[:n] if x and len(x) > n else x
 
-
-def _bootcamp_pricing_from_db() -> Dict[str, object] | None:
-    seat_prices = _fetch_bootcamp_seat_prices()
-    if not seat_prices:
-        return None
-
-    now = datetime.now(timezone.utc)
-
-    def _normalize_dt(value):
-        if not isinstance(value, datetime):
-            return None
-        if value.tzinfo is None:
-            return value.replace(tzinfo=timezone.utc)
-        return value
-
-    def _is_offer_active(offer: Dict[str, object]) -> bool:
-        valid_from = _normalize_dt(offer.get("valid_from"))
-        valid_to = _normalize_dt(offer.get("valid_to"))
-        if valid_from and now < valid_from:
-            return False
-        if valid_to and now > valid_to:
-            return False
-        return True
-
-    def _offer_sort_key(offer: Dict[str, object]):
-        key = str(offer.get("price_type_key") or offer.get("price_type") or "").lower()
-        return (
-            0 if "early" in key else 1,
-            0 if offer.get("price") is not None else 1,
-        )
-
-    cohort = seat_prices[0]
-    offers: List[Dict[str, object]] = list(cohort.get("offers") or [])
-    active_offers = [o for o in offers if _is_offer_active(o)]
-    offers_to_use = active_offers or offers
-    offers_to_use.sort(key=_offer_sort_key)
-
-    chosen_offer = None
-    for offer in offers_to_use:
-        if offer.get("price") is not None:
-            chosen_offer = offer
-            break
-
-    price_value = cohort.get("regular_price") or cohort.get("early_bird_price")
-    seat_cap = BOOTCAMP_SEAT_CAP
-    price_display = None
-
-    if chosen_offer:
-        if chosen_offer.get("price") is not None:
-            price_value = chosen_offer.get("price")
-        price_display = chosen_offer.get("price_display") or price_display
-        try:
-            seat_cap_candidate = int(chosen_offer.get("seats_total")) if chosen_offer.get("seats_total") else None
-        except (TypeError, ValueError):
-            seat_cap_candidate = None
-        if seat_cap_candidate:
-            seat_cap = seat_cap_candidate
-
-    if price_value is None:
-        return None
-
-    if price_display is None:
-        price_display = f"€{int(price_value)}"
-
-    note = f"4-day cohort · {seat_cap} seats · {price_display} per learner"
-
-    return {
-        "price_eur": int(price_value),
-        "seat_cap": seat_cap,
-        "note": note,
-    }
-
-
-def _courses_with_pricing() -> List[Dict[str, object]]:
-    if hasattr(g, "_course_cache"):
-        return g._course_cache  # type: ignore[attr-defined]
-
-    bootcamp_pricing = _bootcamp_pricing_from_db()
-    courses: List[Dict[str, object]] = []
-    for c in COURSES:
-        course = dict(c)
-        if course.get("code") == BOOTCAMP_CODE and bootcamp_pricing:
-            course["price_eur"] = bootcamp_pricing.get("price_eur", course.get("price_eur"))
-            course["seat_cap"] = bootcamp_pricing.get("seat_cap", course.get("seat_cap"))
-            course["note"] = bootcamp_pricing.get("note", course.get("note"))
-        courses.append(course)
-
-    g._course_cache = courses  # type: ignore[attr-defined]
-    return courses
-
 def _course_by_code(code: str | None) -> Dict[str, Any] | None:
     if not code:
         return None
-    for c in _courses_with_pricing():
+    for c in COURSES:
         if c.get("code") == code:
             return c
     return None
@@ -446,7 +345,7 @@ def page():
         errors=[],
         submitted=submitted,
         referrals=REFERRAL_CHOICES,
-        courses=_courses_with_pricing(),
+        courses=COURSES,
         job_roles=JOB_ROLES,
         base_price_eur=base_price,
         promo_price_eur=PROMO_PRICE_EUR,
@@ -569,7 +468,7 @@ def submit():
             errors=errors,
             submitted=False,
             referrals=REFERRAL_CHOICES,
-            courses=_courses_with_pricing(),
+            courses=COURSES,
             job_roles=JOB_ROLES,
             base_price_eur=base_price_for_summary,
             promo_price_eur=PROMO_PRICE_EUR,

@@ -338,6 +338,20 @@ def _slug(s: str | None) -> str | None:
     s = re.sub(r"[^a-z0-9_]+", "", s)
     return re.sub(r"_+", "_", s).strip("_") or None
 
+
+def _currency_symbol(code: str | None) -> str | None:
+    if not code:
+        return None
+
+    code = code.strip().upper()
+    symbols = {
+        "EUR": "€",
+        "USD": "$",
+        "GBP": "£",
+        "INR": "₹",
+    }
+    return symbols.get(code, code)
+
 def _load_enum_labels(name: str) -> List[str]:
     try:
         with engine.connect() as conn:

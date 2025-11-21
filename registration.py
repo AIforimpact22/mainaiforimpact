@@ -19,7 +19,20 @@ from course_settings import (
     BOOTCAMP_PUBLIC_REGISTRATION,
     BOOTCAMP_SEAT_CAP,
 )
-from sqlalchemy import create_engine, MetaData, Table, inspect, select, func
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    Integer,
+    MetaData,
+    String,
+    Table,
+    Text,
+    create_engine,
+    func,
+    inspect,
+    select,
+)
 from sqlalchemy.engine import URL
 from sqlalchemy.sql import text
 
@@ -178,6 +191,7 @@ def _is_dsn(s: str) -> bool:
 
 # Your DSN (fallback if envs not set)
 _HARDCODED_DSN = "postgresql+psycopg2://postgres:Garnet87@127.0.0.1:5432/aiforimpact"
+_SQLITE_FALLBACK_URL = "sqlite:///local_registrations.db"
 
 def _sqlalchemy_url() -> str | URL:
     # 1) DATABASE_URL wins
@@ -209,37 +223,110 @@ def _sqlalchemy_url() -> str | URL:
     # 4) Final fallback: your hardcoded DSN (ensures it just works)
     return _HARDCODED_DSN
 
-engine = create_engine(_sqlalchemy_url(), pool_pre_ping=True, pool_recycle=1800, future=True)
-metadata = MetaData()
 
-# Robust, dialect-aware reflection for 'registrations'
-TARGET_SCHEMA = os.getenv("DB_SCHEMA", "public")
-insp = inspect(engine)
-dialect = engine.dialect.name  # 'postgresql', 'sqlite', etc.
+def _create_engine_with_fallback():
+    url = _sqlalchemy_url()
+    try:
+        eng = create_engine(url, pool_pre_ping=True, pool_recycle=1800, future=True)
+        with eng.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        return eng
+    except Exception:
+        logger.exception("Primary database unavailable; falling back to SQLite at %s", _SQLITE_FALLBACK_URL)
+        return create_engine(_SQLITE_FALLBACK_URL, future=True)
 
-if dialect == "postgresql":
-    tables_public = set(insp.get_table_names(schema=TARGET_SCHEMA))
-    tables_default = set(insp.get_table_names())
-    if "registrations" in tables_public:
-        _resolved_schema = TARGET_SCHEMA
-    elif "registrations" in tables_default:
-        _resolved_schema = None
-    else:
-        raise RuntimeError(
-            "Table 'registrations' not found in Postgres.\n"
-            f"  Checked schema '{TARGET_SCHEMA}': {sorted(tables_public)}\n"
-            f"  Default search_path tables: {sorted(tables_default)}\n"
-            "Ensure you're pointing at the correct DB and schema (set DB_SCHEMA if needed)."
-        )
-else:
-    # We don't expect SQLite anymore, but keep a safe branch
-    names = set(insp.get_table_names())
-    if "registrations" in names:
-        _resolved_schema = None
-    else:
-        raise RuntimeError(f"Table 'registrations' not found. Visible tables: {sorted(names)}")
 
-registrations = Table("registrations", metadata, schema=_resolved_schema, autoload_with=engine)
+def _build_sqlite_registration_table(meta: MetaData) -> Table:
+    return Table(
+        "registrations",
+        meta,
+        Column("id", Integer, primary_key=True, autoincrement=True),
+        Column("user_email", String(255), nullable=False),
+        Column("first_name", String(120)),
+        Column("middle_name", String(120)),
+        Column("last_name", String(120)),
+        Column("age", Integer),
+        Column("gender", String(50)),
+        Column("gender_other_note", Text),
+        Column("phone", String(120)),
+        Column("address_line1", Text),
+        Column("address_line2", Text),
+        Column("city", String(120)),
+        Column("state", String(120)),
+        Column("postal_code", String(120)),
+        Column("country", String(120)),
+        Column("job_title", String(255)),
+        Column("company", String(255)),
+        Column("ai_current_involvement", Text),
+        Column("ai_goals_wish_to_achieve", Text),
+        Column("ai_datasets_available", Text),
+        Column("referral_source", String(120)),
+        Column("referral_details", Text),
+        Column("reason_choose_us", Text),
+        Column("enrollment_status", String(50)),
+        Column("invoice_name", String(255)),
+        Column("invoice_company", String(255)),
+        Column("invoice_vat_id", String(255)),
+        Column("invoice_email", String(255)),
+        Column("invoice_phone", String(120)),
+        Column("invoice_addr_line1", Text),
+        Column("invoice_addr_line2", Text),
+        Column("invoice_city", String(120)),
+        Column("invoice_state", String(120)),
+        Column("invoice_postal_code", String(120)),
+        Column("invoice_country", String(120)),
+        Column("course_session_code", String(120)),
+        Column("notes", Text),
+        Column("consent_contact_ok", Boolean),
+        Column("consent_marketing_ok", Boolean),
+        Column("data_processing_ok", Boolean),
+        Column("created_at", DateTime(timezone=True)),
+        Column("updated_at", DateTime(timezone=True)),
+    )
+
+
+def _init_engine_and_table() -> tuple[Any, MetaData, Table]:
+    eng = _create_engine_with_fallback()
+    meta = MetaData()
+    try:
+        insp = inspect(eng)
+        dialect = eng.dialect.name
+        target_schema = os.getenv("DB_SCHEMA", "public")
+
+        if dialect == "postgresql":
+            tables_public = set(insp.get_table_names(schema=target_schema))
+            tables_default = set(insp.get_table_names())
+            if "registrations" in tables_public:
+                resolved_schema = target_schema
+            elif "registrations" in tables_default:
+                resolved_schema = None
+            else:
+                raise RuntimeError(
+                    "Table 'registrations' not found in Postgres.\n"
+                    f"  Checked schema '{target_schema}': {sorted(tables_public)}\n"
+                    f"  Default search_path tables: {sorted(tables_default)}\n"
+                    "Ensure you're pointing at the correct DB and schema (set DB_SCHEMA if needed)."
+                )
+        else:
+            names = set(insp.get_table_names())
+            if "registrations" in names:
+                resolved_schema = None
+            else:
+                raise RuntimeError(f"Table 'registrations' not found. Visible tables: {sorted(names)}")
+
+        table = Table("registrations", meta, schema=resolved_schema, autoload_with=eng)
+        return eng, meta, table
+    except Exception:
+        logger.exception("Unable to reflect registrations table; switching to SQLite fallback")
+        # Switch to SQLite fallback engine and ensure table exists
+        eng = create_engine(_SQLITE_FALLBACK_URL, future=True)
+        meta = MetaData()
+        table = _build_sqlite_registration_table(meta)
+        meta.create_all(eng, checkfirst=True)
+        return eng, meta, table
+
+
+engine, metadata, registrations = _init_engine_and_table()
 
 # ───────────────────────────────────────────────────────────────
 # Helpers

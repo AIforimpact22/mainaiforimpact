@@ -29,7 +29,7 @@ from course_settings import (
     BOOTCAMP_PUBLIC_REGISTRATION,
     BOOTCAMP_SEAT_CAP,
 )
-from bootcamp import _fetch_bootcamp_seat_prices, _format_price  # type: ignore[attr-defined]
+from bootcamp import _fetch_bootcamp_seat_prices  # type: ignore[attr-defined]
 from sqlalchemy import create_engine, MetaData, Table, inspect, select, func
 from sqlalchemy.engine import URL
 from sqlalchemy.sql import text
@@ -304,12 +304,6 @@ def _clip(x, n=500):
     return x[:n] if x and len(x) > n else x
 
 
-def _currency_symbol(code: str | None) -> str:
-    symbols = {"EUR": "€", "USD": "$", "GBP": "£", "AUD": "A$", "CAD": "C$"}
-    code_norm = (code or "").strip().upper() or "EUR"
-    return symbols.get(code_norm, symbols["EUR"])
-
-
 def _bootcamp_pricing_from_db() -> Dict[str, object] | None:
     seat_prices = _fetch_bootcamp_seat_prices()
     if not seat_prices:
@@ -355,13 +349,11 @@ def _bootcamp_pricing_from_db() -> Dict[str, object] | None:
     price_value = cohort.get("regular_price") or cohort.get("early_bird_price")
     seat_cap = BOOTCAMP_SEAT_CAP
     price_display = None
-    currency_code = (cohort.get("currency") or "").strip().upper()
 
     if chosen_offer:
         if chosen_offer.get("price") is not None:
             price_value = chosen_offer.get("price")
         price_display = chosen_offer.get("price_display") or price_display
-        currency_code = (chosen_offer.get("currency") or currency_code or "").strip().upper()
         try:
             seat_cap_candidate = int(chosen_offer.get("seats_total")) if chosen_offer.get("seats_total") else None
         except (TypeError, ValueError):
@@ -372,9 +364,8 @@ def _bootcamp_pricing_from_db() -> Dict[str, object] | None:
     if price_value is None:
         return None
 
-    currency_code = currency_code or "EUR"
     if price_display is None:
-        price_display = _format_price(price_value, currency_code)
+        price_display = f"€{int(price_value)}"
 
     note = f"4-day cohort · {seat_cap} seats · {price_display} per learner"
 
@@ -382,8 +373,6 @@ def _bootcamp_pricing_from_db() -> Dict[str, object] | None:
         "price_eur": int(price_value),
         "seat_cap": seat_cap,
         "note": note,
-        "currency": currency_code,
-        "price_display": price_display,
     }
 
 
@@ -398,16 +387,7 @@ def _courses_with_pricing() -> List[Dict[str, object]]:
         if course.get("code") == BOOTCAMP_CODE and bootcamp_pricing:
             course["price_eur"] = bootcamp_pricing.get("price_eur", course.get("price_eur"))
             course["seat_cap"] = bootcamp_pricing.get("seat_cap", course.get("seat_cap"))
-            course["currency"] = bootcamp_pricing.get("currency", course.get("currency"))
-            course["price_display"] = bootcamp_pricing.get("price_display", course.get("price_display"))
             course["note"] = bootcamp_pricing.get("note", course.get("note"))
-        currency = str(course.get("currency") or "EUR").strip().upper() or "EUR"
-        course["currency"] = currency
-        course["price_display"] = course.get("price_display") or _format_price(course.get("price_eur"), currency)
-        if course.get("code") == "AAI-RTD":
-            course["note"] = f"1-on-1 format · {course['price_display']}"
-        elif course.get("seat_cap"):
-            course["note"] = course.get("note") or f"4-day cohort · {course['seat_cap']} seats · {course['price_display']} per learner"
         courses.append(course)
 
     g._course_cache = courses  # type: ignore[attr-defined]

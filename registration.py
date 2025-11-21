@@ -153,16 +153,16 @@ COURSES = [
         "code": "AAI-RTD",
         "title": "One on one Tailored Training Session",
         "price_eur": BASE_PRICE_EUR,
+        "currency": "EUR",
         "seat_cap": None,
-        "note": "1-on-1 format · €%d" % BASE_PRICE_EUR,
         "requires_access_code": True,
     },
     {
         "code": BOOTCAMP_CODE,
         "title": f"AI Implementation Bootcamp ({BOOTCAMP_SEAT_CAP} seats)",
         "price_eur": BOOTCAMP_PRICE_EUR,
+        "currency": "EUR",
         "seat_cap": BOOTCAMP_SEAT_CAP,
-        "note": "4-day cohort · %d seats · €%d per learner" % (BOOTCAMP_SEAT_CAP, BOOTCAMP_PRICE_EUR),
         "requires_access_code": not BOOTCAMP_PUBLIC_REGISTRATION,
     },
 ]
@@ -453,6 +453,9 @@ def page():
         promo_price_free_eur=PROMO_PRICE_FREE_EUR,
         selected_course_code=selected_course_code,
         selected_course_note=selected_course.get("note") if selected_course else None,
+        selected_course_currency=selected_course.get("currency") if selected_course else None,
+        selected_course_currency_symbol=_currency_symbol(selected_course.get("currency") if selected_course else None),
+        selected_course_price_display=selected_course.get("price_display") if selected_course else None,
     )
 
 @register_bp.post("/signin")
@@ -573,6 +576,9 @@ def submit():
             promo_price_free_eur=PROMO_PRICE_FREE_EUR,
             selected_course_code=course_session_code,
             selected_course_note=selected_course.get("note") if selected_course else None,
+            selected_course_currency=selected_course.get("currency") if selected_course else None,
+            selected_course_currency_symbol=_currency_symbol(selected_course.get("currency") if selected_course else None),
+            selected_course_price_display=selected_course.get("price_display") if selected_course else None,
             form_data=request.form,
         ), 400
 

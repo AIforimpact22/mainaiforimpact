@@ -99,10 +99,12 @@
               {% for c in courses %}
                 <option value="{{ c.code }}"
                         data-price="{{ c.price_eur }}"
+                        data-currency="{{ c.currency }}"
+                        data-price-display="{{ c.price_display }}"
                         {% if c.seat_cap %}data-seat-cap="{{ c.seat_cap }}"{% endif %}
                         {% if c.note %}data-note="{{ c.note }}"{% endif %}
                         {% if selected_code == c.code %}selected{% endif %}>
-                  {{ c.title }} — €{{ c.price_eur }}
+                  {{ c.title }} — {{ c.price_display }}
                 </option>
               {% endfor %}
             </select>
@@ -337,15 +339,15 @@
       </div>
       <div class="sum-row">
         <div class="label">Base price</div>
-        <div class="value" id="sumBase">{% if base_price_eur %}€{{ base_price_eur }}{% else %}—{% endif %}</div>
+        <div class="value" id="sumBase">{% if selected_course_price_display %}{{ selected_course_price_display }}{% elif base_price_eur %}{{ selected_course_currency_symbol or '€' }}{{ base_price_eur }}{% else %}—{% endif %}</div>
       </div>
       <div class="sum-row hide" id="sumDiscountRow">
         <div class="label ok">Promo discount</div>
-        <div class="value ok" id="sumDiscount">− €0</div>
+        <div class="value ok" id="sumDiscount">− {{ selected_course_currency_symbol or '€' }}0</div>
       </div>
       <div class="sum-row total">
         <div class="label">Total</div>
-        <div class="value" id="sumTotal">{% if base_price_eur %}€{{ base_price_eur }}{% else %}—{% endif %}</div>
+        <div class="value" id="sumTotal">{% if selected_course_price_display %}{{ selected_course_price_display }}{% elif base_price_eur %}{{ selected_course_currency_symbol or '€' }}{{ base_price_eur }}{% else %}—{% endif %}</div>
       </div>
       <div class="sum-note" id="sumNote">
         {% if selected_course_note %}
@@ -375,7 +377,26 @@
   const PROMO_INSTRUCTION = {{ "Enter a promo code to check if a discount applies." | tojson }};
   const NO_COURSE_NOTE = {{ "Select a course to view pricing. Enter a promo code to check if a discount applies." | tojson }};
 
-  function euro(n){ return "€" + Number(n).toString(); }
+  function currencySymbol(){
+    const opt = selectedCourseOption();
+    const code = (opt?.dataset?.currency || '').toUpperCase();
+    switch(code){
+      case 'USD': return '$';
+      case 'GBP': return '£';
+      case 'AUD': return 'A$';
+      case 'CAD': return 'C$';
+      default: return '€';
+    }
+  }
+
+  function formatMoney(n){
+    const symbol = currencySymbol();
+    const num = Number(n);
+    if (Number.isFinite(num)){
+      return symbol + num.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2});
+    }
+    return symbol + n;
+  }
 
   function selectedCourseOption(){
     return courseSelect?.selectedOptions?.[0] || null;
@@ -408,16 +429,16 @@
       promoPill.textContent = "No course selected";
       sumBase.textContent = '—';
       sumDiscountRow.classList.add('hide');
-      sumDiscount.textContent = '− €0';
+      sumDiscount.textContent = '− ' + formatMoney(0);
       sumTotal.textContent = '—';
       sumNote.textContent = NO_COURSE_NOTE;
       return;
     }
 
-    sumBase.textContent = euro(base);
+    sumBase.textContent = formatMoney(base);
     sumDiscountRow.classList.add('hide');
-    sumDiscount.textContent = '− €0';
-    sumTotal.textContent = euro(base);
+    sumDiscount.textContent = '− ' + formatMoney(0);
+    sumTotal.textContent = formatMoney(base);
     sumNote.textContent = defaultNote;
     promoPill.textContent = 'No promo';
 
@@ -436,35 +457,35 @@
       const price = (j && typeof j.price_eur === 'number') ? j.price_eur : base;
       if (j && j.promo_applied && price < base){
         const discount = Math.max(0, base - price);
-        sumBase.innerHTML = `<span class="strike">${euro(base)}</span>`;
+        sumBase.innerHTML = `<span class="strike">${formatMoney(base)}</span>`;
         sumDiscountRow.classList.remove('hide');
-        sumDiscount.textContent = "− " + euro(discount);
-        sumTotal.textContent = euro(price);
+        sumDiscount.textContent = "− " + formatMoney(discount);
+        sumTotal.textContent = formatMoney(price);
         promoPill.textContent = j.is_free ? "Promo applied: FREE" : "Promo applied";
         sumNote.textContent = j.is_free
-          ? "Valid promo detected. Your total will be €0 upon submission."
+          ? `Valid promo detected. Your total will be ${formatMoney(0)} upon submission.`
           : "Valid promo detected. The discounted total will be applied.";
       } else if (j && j.promo_applied){
         promoPill.textContent = j.is_free ? "Promo applied: FREE" : "Promo applied";
-        sumBase.textContent = euro(base);
+        sumBase.textContent = formatMoney(base);
         sumDiscountRow.classList.add('hide');
-        sumDiscount.textContent = '− €0';
-        sumTotal.textContent = euro(base);
+        sumDiscount.textContent = '− ' + formatMoney(0);
+        sumTotal.textContent = formatMoney(base);
         sumNote.textContent = defaultNote;
       } else {
         promoPill.textContent = "Invalid promo";
-        sumBase.textContent = euro(base);
+        sumBase.textContent = formatMoney(base);
         sumDiscountRow.classList.add('hide');
-        sumDiscount.textContent = '− €0';
-        sumTotal.textContent = euro(base);
+        sumDiscount.textContent = '− ' + formatMoney(0);
+        sumTotal.textContent = formatMoney(base);
         sumNote.textContent = "Promo not recognized. Base price applies." + (courseNote ? " " + courseNote : "");
       }
     } catch(e){
       promoPill.textContent = "Promo check unavailable";
-      sumBase.textContent = euro(base);
+      sumBase.textContent = formatMoney(base);
       sumDiscountRow.classList.add('hide');
-      sumDiscount.textContent = '− €0';
-      sumTotal.textContent = euro(base);
+      sumDiscount.textContent = '− ' + formatMoney(0);
+      sumTotal.textContent = formatMoney(base);
       sumNote.textContent = "We couldn’t verify the promo right now." + (courseNote ? " " + courseNote : "");
     }
   }

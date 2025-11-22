@@ -376,7 +376,7 @@ POWERED_BY = os.getenv("POWERED_BY", "Climate Fundraising Platform B.V.")
 COURSE_ACCESS_CODE = os.getenv("COURSE_ACCESS_CODE", "letmein")
 
 BASE_PRICE_EUR = int(os.getenv("BASE_PRICE_EUR", "900"))
-PROMO_CODE = os.getenv("PROMO_CODE", "Early-Bird-2025")
+PROMO_CODE = os.getenv("PROMO_CODE", "IMPACT-439")
 PROMO_PRICE_EUR = int(os.getenv("PROMO_PRICE_EUR", "439"))
 PROMO_CODE_FREE = os.getenv("PROMO_CODE_FREE", "IMPACT-100")
 PROMO_PRICE_FREE_EUR = int(os.getenv("PROMO_PRICE_FREE_EUR", "0"))
@@ -656,17 +656,10 @@ def _course_allows_open_registration(code: str | None, courses: List[Dict[str, A
         return False
     return not course.get("requires_access_code", True)
 
-def _compute_price(promo_input, base_price=None, price_info: Dict[str, Any] | None = None):
+def _compute_price(promo_input, base_price=None):
     base = base_price if base_price is not None else BASE_PRICE_EUR
-
-    effective_promo = promo_input
-    if not effective_promo and PROMO_CODE and price_info:
-        deadline = _normalize_datetime(price_info.get("early_bird_deadline"))
-        if deadline and datetime.now(timezone.utc) < deadline:
-            effective_promo = PROMO_CODE
-
-    if effective_promo:
-        code = effective_promo.strip().lower()
+    if promo_input:
+        code = promo_input.strip().lower()
         if PROMO_CODE and code == PROMO_CODE.lower() and PROMO_PRICE_EUR < base:
             return PROMO_PRICE_EUR, PROMO_CODE, (PROMO_PRICE_EUR == 0)
         if PROMO_CODE_FREE and code == PROMO_CODE_FREE.lower() and PROMO_PRICE_FREE_EUR <= base:
@@ -747,7 +740,7 @@ def price_preview():
     courses = _get_courses(bootcamp_price_info)
     course = _course_by_code(course_code, courses)
     base_price = course["price_eur"] if course else BASE_PRICE_EUR
-    price, applied, is_free = _compute_price(code, base_price, bootcamp_price_info)
+    price, applied, is_free = _compute_price(code, base_price)
     return jsonify({
         "price_eur": int(price),
         "promo_applied": bool(applied),
@@ -812,9 +805,7 @@ def submit():
     promo_input = _s(request.form.get("promo_code"))
     base_price_for_course = selected_course["price_eur"] if selected_course else BASE_PRICE_EUR
     base_price_for_summary = selected_course["price_eur"] if selected_course else 0
-    final_price_eur, applied_promo, is_free = _compute_price(
-        promo_input, base_price_for_course, bootcamp_price_info
-    )
+    final_price_eur, applied_promo, is_free = _compute_price(promo_input, base_price_for_course)
     final_price_eur = int(final_price_eur)
 
     data_processing_ok = _bool(request.form.get("data_processing_ok"))

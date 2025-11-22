@@ -413,6 +413,15 @@
     return 0;
   }
 
+  function getBaseDisplay(){
+    const opt = selectedCourseOption();
+    if (opt && opt.dataset.priceDisplay){
+      return opt.dataset.priceDisplay;
+    }
+    const base = getBasePrice();
+    return base > 0 ? formatMoney(base) : null;
+  }
+
   function getCourseNote(){
     const opt = selectedCourseOption();
     return opt && opt.dataset.note ? opt.dataset.note : null;
@@ -435,10 +444,12 @@
       return;
     }
 
-    sumBase.textContent = formatMoney(base);
+    const baseDisplay = getBaseDisplay();
+
+    sumBase.textContent = baseDisplay || '—';
     sumDiscountRow.classList.add('hide');
     sumDiscount.textContent = '− ' + formatMoney(0);
-    sumTotal.textContent = formatMoney(base);
+    sumTotal.textContent = baseDisplay || '—';
     sumNote.textContent = defaultNote;
     promoPill.textContent = 'No promo';
 

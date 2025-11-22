@@ -220,6 +220,7 @@ def _resolve_bootcamp_price_info() -> Dict[str, Any]:
 
     price_info: Dict[str, Any] = {}
     active_offer: Dict[str, Any] | None = None
+    early_deadline: datetime | None = None
     try:
         seat_prices = _fetch_bootcamp_seat_prices()
         summary = summarize_bootcamp_price(seat_prices) if seat_prices else None
@@ -230,6 +231,7 @@ def _resolve_bootcamp_price_info() -> Dict[str, Any]:
 
     primary_group = seat_prices[0] if seat_prices else None
     if isinstance(primary_group, dict):
+        early_deadline = _normalize_datetime(primary_group.get("early_bird_deadline"))
         active_offer = _select_active_offer(primary_group)
 
     early_offer = None
@@ -263,8 +265,10 @@ def _resolve_bootcamp_price_info() -> Dict[str, Any]:
 
     if early_offer and early_offer.get("price_display"):
         price_info["display"] = early_offer.get("price_display")
+        price_info["active_offer_label"] = early_offer.get("price_display")
     elif active_offer and active_offer.get("price_display"):
         price_info["display"] = active_offer.get("price_display")
+        price_info["active_offer_label"] = active_offer.get("price_display")
     elif summary:
         for key in ("early_bird", "regular"):
             offer = summary.get(key) if isinstance(summary, dict) else None
@@ -275,6 +279,16 @@ def _resolve_bootcamp_price_info() -> Dict[str, Any]:
     if not price_info.get("display") and price_info.get("amount") is not None:
         symbol = _currency_symbol(price_info.get("currency")) or ""
         price_info["display"] = f"{symbol}{price_info['amount']}"
+
+    if early_offer:
+        deadline_display = early_offer.get("valid_to_display")
+        if not deadline_display:
+            deadline_display = (
+                early_deadline.strftime("%b %d, %Y") if early_deadline else None
+            )
+        price_info["early_bird_deadline"] = early_deadline
+        if deadline_display:
+            price_info["early_bird_deadline_display"] = deadline_display
 
     return price_info
 
@@ -329,10 +343,24 @@ def _run_offer_selection_sanity_checks() -> None:
 _run_offer_selection_sanity_checks()
 
 
-_BOOTCAMP_PRICE_INFO = _resolve_bootcamp_price_info()
-BOOTCAMP_PRICE_AMOUNT = _BOOTCAMP_PRICE_INFO.get("amount") or BOOTCAMP_PRICE_EUR
-BOOTCAMP_CURRENCY = (_BOOTCAMP_PRICE_INFO.get("currency") or "USD").upper()
-BOOTCAMP_PRICE_DISPLAY = _BOOTCAMP_PRICE_INFO.get("display") or None
+_BOOTCAMP_PRICE_CACHE: Dict[str, Any] = {"value": None, "expires_at": None}
+
+
+def _get_bootcamp_price_info(use_cache: bool = True) -> Dict[str, Any]:
+    now = datetime.now(timezone.utc)
+    if use_cache and _BOOTCAMP_PRICE_CACHE.get("value") and _BOOTCAMP_PRICE_CACHE.get("expires_at"):
+        if now < _BOOTCAMP_PRICE_CACHE["expires_at"]:
+            return _BOOTCAMP_PRICE_CACHE["value"]
+
+    price_info = _resolve_bootcamp_price_info()
+    expiry = now + timedelta(minutes=5)
+    early_deadline = _normalize_datetime(price_info.get("early_bird_deadline"))
+    if early_deadline:
+        expiry = min(expiry, early_deadline + timedelta(minutes=1))
+
+    _BOOTCAMP_PRICE_CACHE["value"] = price_info
+    _BOOTCAMP_PRICE_CACHE["expires_at"] = expiry
+    return price_info
 
 # ───────────────────────────────────────────────────────────────
 # Product / UI constants
@@ -350,8 +378,7 @@ PROMO_CODE_FREE = os.getenv("PROMO_CODE_FREE", "IMPACT-100")
 PROMO_PRICE_FREE_EUR = int(os.getenv("PROMO_PRICE_FREE_EUR", "0"))
 
 DEFAULT_ENROLLMENT_STATUS = os.getenv("DEFAULT_ENROLLMENT_STATUS", "pending").strip() or "pending"
-
-COURSES = [
+_BASE_COURSES = [
     {
         "code": "AAI-RTD",
         "title": "One on one Tailored Training Session",
@@ -359,17 +386,45 @@ COURSES = [
         "currency": "EUR",
         "seat_cap": None,
         "requires_access_code": True,
-    },
-    {
+    }
+]
+
+
+def _build_bootcamp_course(price_info: Dict[str, Any]) -> Dict[str, Any]:
+    amount = price_info.get("amount") or BOOTCAMP_PRICE_EUR
+    currency = (price_info.get("currency") or "USD").upper()
+    price_display = price_info.get("display") or None
+    early_deadline = _normalize_datetime(price_info.get("early_bird_deadline"))
+    early_deadline_display = price_info.get("early_bird_deadline_display")
+    if not early_deadline_display and early_deadline:
+        early_deadline_display = early_deadline.strftime("%b %d, %Y")
+
+    note = None
+    if price_info.get("active_offer_label") and early_deadline_display:
+        note = (
+            f"Early bird ({price_info['active_offer_label']}) available until {early_deadline_display}."
+        )
+
+    course = {
         "code": BOOTCAMP_CODE,
         "title": f"AI Implementation Bootcamp ({BOOTCAMP_SEAT_CAP} seats)",
-        "price_eur": BOOTCAMP_PRICE_AMOUNT,
-        "currency": BOOTCAMP_CURRENCY,
+        "price_eur": amount,
+        "currency": currency,
         "seat_cap": BOOTCAMP_SEAT_CAP,
         "requires_access_code": not BOOTCAMP_PUBLIC_REGISTRATION,
-        "price_display": BOOTCAMP_PRICE_DISPLAY,
-    },
-]
+        "price_display": price_display,
+    }
+
+    if note:
+        course["note"] = note
+
+    return course
+
+
+def _get_courses(price_info: Dict[str, Any] | None = None) -> List[Dict[str, Any]]:
+    price_info = price_info or _get_bootcamp_price_info()
+    bootcamp_course = _build_bootcamp_course(price_info)
+    return _BASE_COURSES + [bootcamp_course]
 
 JOB_ROLES = [
     "Student","Software Engineer / Developer","Data Analyst / Data Scientist","Product Manager",
@@ -582,16 +637,17 @@ def _clip(x, n=500):
     x = _s(x)
     return x[:n] if x and len(x) > n else x
 
-def _course_by_code(code: str | None) -> Dict[str, Any] | None:
+def _course_by_code(code: str | None, courses: List[Dict[str, Any]] | None = None) -> Dict[str, Any] | None:
     if not code:
         return None
-    for c in COURSES:
+    course_list = courses if courses is not None else _get_courses()
+    for c in course_list:
         if c.get("code") == code:
             return c
     return None
 
-def _course_allows_open_registration(code: str | None) -> bool:
-    course = _course_by_code(code)
+def _course_allows_open_registration(code: str | None, courses: List[Dict[str, Any]] | None = None) -> bool:
+    course = _course_by_code(code, courses)
     if not course:
         return False
     return not course.get("requires_access_code", True)
@@ -606,8 +662,8 @@ def _compute_price(promo_input, base_price=None):
             return PROMO_PRICE_FREE_EUR, PROMO_CODE_FREE, True
     return base, None, False
 
-def _require_signed_in(course_code: str | None = None):
-    if _course_allows_open_registration(course_code):
+def _require_signed_in(course_code: str | None = None, courses: List[Dict[str, Any]] | None = None):
+    if _course_allows_open_registration(course_code, courses):
         return True
     if not session.get("signed_in"):
         flash("Please sign in with the course access code.", "error")
@@ -621,9 +677,11 @@ def _require_signed_in(course_code: str | None = None):
 def page():
     submitted = request.args.get("submitted") == "1"
     selected_course_code = _s(request.args.get("course"))
-    selected_course = _course_by_code(selected_course_code)
+    bootcamp_price_info = _get_bootcamp_price_info()
+    courses = _get_courses(bootcamp_price_info)
+    selected_course = _course_by_code(selected_course_code, courses)
     base_price = selected_course["price_eur"] if selected_course else 0
-    signed_in = session.get("signed_in", False) or _course_allows_open_registration(selected_course_code)
+    signed_in = session.get("signed_in", False) or _course_allows_open_registration(selected_course_code, courses)
     return render_template(
         "register.html",
         brand_name=BRAND_NAME,
@@ -635,7 +693,7 @@ def page():
         errors=[],
         submitted=submitted,
         referrals=REFERRAL_CHOICES,
-        courses=COURSES,
+        courses=courses,
         job_roles=JOB_ROLES,
         base_price_eur=base_price,
         promo_price_eur=PROMO_PRICE_EUR,
@@ -645,6 +703,8 @@ def page():
         selected_course_currency=selected_course.get("currency") if selected_course else None,
         selected_course_currency_symbol=_currency_symbol(selected_course.get("currency") if selected_course else None),
         selected_course_price_display=selected_course.get("price_display") if selected_course else None,
+        bootcamp_early_bird_label=bootcamp_price_info.get("active_offer_label"),
+        bootcamp_early_bird_deadline=bootcamp_price_info.get("early_bird_deadline_display"),
     )
 
 @register_bp.post("/signin")
@@ -672,7 +732,9 @@ def logout():
 def price_preview():
     code = request.values.get("code") or (request.json.get("code") if request.is_json else None)
     course_code = _s(request.values.get("course") if not request.is_json else request.json.get("course"))
-    course = _course_by_code(course_code)
+    bootcamp_price_info = _get_bootcamp_price_info()
+    courses = _get_courses(bootcamp_price_info)
+    course = _course_by_code(course_code, courses)
     base_price = course["price_eur"] if course else BASE_PRICE_EUR
     price, applied, is_free = _compute_price(code, base_price)
     return jsonify({
@@ -685,7 +747,10 @@ def price_preview():
 @register_bp.post("/submit")
 def submit():
     course_session_code = _s(request.form.get("course_session_code"))
-    if not _require_signed_in(course_session_code):
+    bootcamp_price_info = _get_bootcamp_price_info()
+    courses = _get_courses(bootcamp_price_info)
+
+    if not _require_signed_in(course_session_code, courses):
         if course_session_code:
             return redirect(url_for("register.page", course=course_session_code))
         return redirect(url_for("register.page"))
@@ -714,7 +779,7 @@ def submit():
     gender = normalize_gender(_s(request.form.get("gender")))
     gender_other_note = _clip(request.form.get("gender_other_note")) if gender == "other" else None
 
-    selected_course = _course_by_code(course_session_code)
+    selected_course = _course_by_code(course_session_code, courses)
     if not selected_course:
         errors.append("Please select a valid course.")
     else:
@@ -753,12 +818,12 @@ def submit():
             brand_logo_url=BRAND_LOGO_URL,
             powered_by=POWERED_BY,
             course_name=COURSE_NAME,
-            signed_in=session.get("signed_in", False) or _course_allows_open_registration(course_session_code),
+            signed_in=session.get("signed_in", False) or _course_allows_open_registration(course_session_code, courses),
             user_email=session.get("user_email"),
             errors=errors,
             submitted=False,
             referrals=REFERRAL_CHOICES,
-            courses=COURSES,
+            courses=courses,
             job_roles=JOB_ROLES,
             base_price_eur=base_price_for_summary,
             promo_price_eur=PROMO_PRICE_EUR,
@@ -768,6 +833,8 @@ def submit():
             selected_course_currency=selected_course.get("currency") if selected_course else None,
             selected_course_currency_symbol=_currency_symbol(selected_course.get("currency") if selected_course else None),
             selected_course_price_display=selected_course.get("price_display") if selected_course else None,
+            bootcamp_early_bird_label=bootcamp_price_info.get("active_offer_label"),
+            bootcamp_early_bird_deadline=bootcamp_price_info.get("early_bird_deadline_display"),
             form_data=request.form,
         ), 400
 

@@ -108,6 +108,11 @@
                 </option>
               {% endfor %}
             </select>
+            {% if bootcamp_early_bird_label and bootcamp_early_bird_deadline %}
+              <div class="muted" style="margin-top:6px;">
+                Bootcamp early bird: {{ bootcamp_early_bird_label }} until {{ bootcamp_early_bird_deadline }}.
+              </div>
+            {% endif %}
           </div>
           <div>
             <label for="promo_code">Promo code (optional)</label>
@@ -352,6 +357,8 @@
       <div class="sum-note" id="sumNote">
         {% if selected_course_note %}
           {{ selected_course_note }}
+        {% elif bootcamp_early_bird_label and bootcamp_early_bird_deadline %}
+          Bootcamp early bird: {{ bootcamp_early_bird_label }} until {{ bootcamp_early_bird_deadline }}.
         {% else %}
           Select a course to view pricing. Enter a promo code to check if a discount applies.
         {% endif %}

@@ -136,6 +136,81 @@ def _send_registration_email(reg: Dict[str, Any]) -> None:
         logger.exception("Registration email failed (non-fatal)")
 
 # ───────────────────────────────────────────────────────────────
+# Price helpers (currency parsing and bootcamp price resolution)
+# ───────────────────────────────────────────────────────────────
+def _currency_symbol(code: str | None) -> str | None:
+    if not code:
+        return None
+
+    code = code.strip().upper()
+    symbols = {
+        "EUR": "€",
+        "USD": "$",
+        "GBP": "£",
+        "INR": "₹",
+    }
+    return symbols.get(code, code)
+
+
+def _parse_price_amount(value: Any) -> int | None:
+    if value is None:
+        return None
+    try:
+        return int(Decimal(str(value)))
+    except Exception:
+        try:
+            return int(float(value))
+        except Exception:
+            return None
+
+
+def _resolve_bootcamp_price_info() -> Dict[str, Any]:
+    """Resolve the bootcamp price from the seat prices table (USD expected)."""
+
+    price_info: Dict[str, Any] = {}
+    try:
+        seat_prices = _fetch_bootcamp_seat_prices()
+        summary = summarize_bootcamp_price(seat_prices) if seat_prices else None
+    except Exception:
+        logger.exception("Failed to load bootcamp seat prices; falling back to defaults")
+        seat_prices = []
+        summary = None
+
+    primary_group = seat_prices[0] if seat_prices else None
+    if isinstance(primary_group, dict):
+        price_info["currency"] = (primary_group.get("currency") or "USD").strip().upper()
+        raw_amount = (
+            primary_group.get("regular_price")
+            or primary_group.get("early_bird_price")
+        )
+        if raw_amount is None:
+            offers = primary_group.get("offers") if isinstance(primary_group.get("offers"), list) else []
+            if offers:
+                raw_amount = offers[0].get("price")
+        parsed_amount = _parse_price_amount(raw_amount)
+        if parsed_amount is not None:
+            price_info["amount"] = parsed_amount
+
+    if summary:
+        for key in ("regular", "early_bird"):
+            offer = summary.get(key) if isinstance(summary, dict) else None
+            if offer and offer.get("price_display"):
+                price_info["display"] = offer.get("price_display")
+                break
+
+    if not price_info.get("display") and price_info.get("amount") is not None:
+        symbol = _currency_symbol(price_info.get("currency")) or ""
+        price_info["display"] = f"{symbol}{price_info['amount']}"
+
+    return price_info
+
+
+_BOOTCAMP_PRICE_INFO = _resolve_bootcamp_price_info()
+BOOTCAMP_PRICE_AMOUNT = _BOOTCAMP_PRICE_INFO.get("amount") or BOOTCAMP_PRICE_EUR
+BOOTCAMP_CURRENCY = (_BOOTCAMP_PRICE_INFO.get("currency") or "USD").upper()
+BOOTCAMP_PRICE_DISPLAY = _BOOTCAMP_PRICE_INFO.get("display") or None
+
+# ───────────────────────────────────────────────────────────────
 # Product / UI constants
 # ───────────────────────────────────────────────────────────────
 COURSE_NAME = os.getenv("COURSE_NAME", "Ai For Impact")
@@ -341,78 +416,6 @@ def _slug(s: str | None) -> str | None:
     s = re.sub(r"[^a-z0-9_]+", "", s)
     return re.sub(r"_+", "_", s).strip("_") or None
 
-
-def _currency_symbol(code: str | None) -> str | None:
-    if not code:
-        return None
-
-    code = code.strip().upper()
-    symbols = {
-        "EUR": "€",
-        "USD": "$",
-        "GBP": "£",
-        "INR": "₹",
-    }
-    return symbols.get(code, code)
-
-
-def _parse_price_amount(value: Any) -> int | None:
-    if value is None:
-        return None
-    try:
-        return int(Decimal(str(value)))
-    except Exception:
-        try:
-            return int(float(value))
-        except Exception:
-            return None
-
-
-def _resolve_bootcamp_price_info() -> Dict[str, Any]:
-    """Resolve the bootcamp price from the seat prices table (USD expected)."""
-
-    price_info: Dict[str, Any] = {}
-    try:
-        seat_prices = _fetch_bootcamp_seat_prices()
-        summary = summarize_bootcamp_price(seat_prices) if seat_prices else None
-    except Exception:
-        logger.exception("Failed to load bootcamp seat prices; falling back to defaults")
-        seat_prices = []
-        summary = None
-
-    primary_group = seat_prices[0] if seat_prices else None
-    if isinstance(primary_group, dict):
-        price_info["currency"] = (primary_group.get("currency") or "USD").strip().upper()
-        raw_amount = (
-            primary_group.get("regular_price")
-            or primary_group.get("early_bird_price")
-        )
-        if raw_amount is None:
-            offers = primary_group.get("offers") if isinstance(primary_group.get("offers"), list) else []
-            if offers:
-                raw_amount = offers[0].get("price")
-        parsed_amount = _parse_price_amount(raw_amount)
-        if parsed_amount is not None:
-            price_info["amount"] = parsed_amount
-
-    if summary:
-        for key in ("regular", "early_bird"):
-            offer = summary.get(key) if isinstance(summary, dict) else None
-            if offer and offer.get("price_display"):
-                price_info["display"] = offer.get("price_display")
-                break
-
-    if not price_info.get("display") and price_info.get("amount") is not None:
-        symbol = _currency_symbol(price_info.get("currency")) or ""
-        price_info["display"] = f"{symbol}{price_info['amount']}"
-
-    return price_info
-
-
-_BOOTCAMP_PRICE_INFO = _resolve_bootcamp_price_info()
-BOOTCAMP_PRICE_AMOUNT = _BOOTCAMP_PRICE_INFO.get("amount") or BOOTCAMP_PRICE_EUR
-BOOTCAMP_CURRENCY = (_BOOTCAMP_PRICE_INFO.get("currency") or "USD").upper()
-BOOTCAMP_PRICE_DISPLAY = _BOOTCAMP_PRICE_INFO.get("display") or None
 
 def _load_enum_labels(name: str) -> List[str]:
     try:

@@ -152,11 +152,6 @@ PROMO_PRICE_FREE_EUR = int(os.getenv("PROMO_PRICE_FREE_EUR", "0"))
 
 DEFAULT_ENROLLMENT_STATUS = os.getenv("DEFAULT_ENROLLMENT_STATUS", "pending").strip() or "pending"
 
-_BOOTCAMP_PRICE_INFO = _resolve_bootcamp_price_info()
-BOOTCAMP_PRICE_AMOUNT = _BOOTCAMP_PRICE_INFO.get("amount") or BOOTCAMP_PRICE_EUR
-BOOTCAMP_CURRENCY = (_BOOTCAMP_PRICE_INFO.get("currency") or "USD").upper()
-BOOTCAMP_PRICE_DISPLAY = _BOOTCAMP_PRICE_INFO.get("display") or None
-
 COURSES = [
     {
         "code": "AAI-RTD",
@@ -412,6 +407,12 @@ def _resolve_bootcamp_price_info() -> Dict[str, Any]:
         price_info["display"] = f"{symbol}{price_info['amount']}"
 
     return price_info
+
+
+_BOOTCAMP_PRICE_INFO = _resolve_bootcamp_price_info()
+BOOTCAMP_PRICE_AMOUNT = _BOOTCAMP_PRICE_INFO.get("amount") or BOOTCAMP_PRICE_EUR
+BOOTCAMP_CURRENCY = (_BOOTCAMP_PRICE_INFO.get("currency") or "USD").upper()
+BOOTCAMP_PRICE_DISPLAY = _BOOTCAMP_PRICE_INFO.get("display") or None
 
 def _load_enum_labels(name: str) -> List[str]:
     try:

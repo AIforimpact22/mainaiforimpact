@@ -380,6 +380,7 @@ PROMO_CODE = os.getenv("PROMO_CODE", "IMPACT-439")
 PROMO_PRICE_EUR = int(os.getenv("PROMO_PRICE_EUR", "439"))
 PROMO_CODE_FREE = os.getenv("PROMO_CODE_FREE", "IMPACT-100")
 PROMO_PRICE_FREE_EUR = int(os.getenv("PROMO_PRICE_FREE_EUR", "0"))
+EARLY_BIRD_PROMO_CODE = "Early-Bird-2025"
 
 DEFAULT_ENROLLMENT_STATUS = os.getenv("DEFAULT_ENROLLMENT_STATUS", "pending").strip() or "pending"
 _BASE_COURSES = [
@@ -664,7 +665,27 @@ def _compute_price(promo_input, base_price=None):
             return PROMO_PRICE_EUR, PROMO_CODE, (PROMO_PRICE_EUR == 0)
         if PROMO_CODE_FREE and code == PROMO_CODE_FREE.lower() and PROMO_PRICE_FREE_EUR <= base:
             return PROMO_PRICE_FREE_EUR, PROMO_CODE_FREE, True
+        if code == EARLY_BIRD_PROMO_CODE.lower():
+            return base, EARLY_BIRD_PROMO_CODE, False
     return base, None, False
+
+
+def _auto_apply_early_bird_promo(
+    promo_input: str | None, course_code: str | None, price_info: Dict[str, Any]
+) -> tuple[str | None, bool]:
+    """Return a promo code that accounts for early-bird auto-application."""
+
+    if promo_input:
+        return promo_input, False
+
+    if course_code != BOOTCAMP_CODE:
+        return None, False
+
+    early_deadline = _normalize_datetime(price_info.get("early_bird_deadline"))
+    if early_deadline and datetime.now(timezone.utc) < early_deadline:
+        return EARLY_BIRD_PROMO_CODE, True
+
+    return None, False
 
 def _require_signed_in(course_code: str | None = None, courses: List[Dict[str, Any]] | None = None):
     if _course_allows_open_registration(course_code, courses):
@@ -740,10 +761,12 @@ def price_preview():
     courses = _get_courses(bootcamp_price_info)
     course = _course_by_code(course_code, courses)
     base_price = course["price_eur"] if course else BASE_PRICE_EUR
-    price, applied, is_free = _compute_price(code, base_price)
+    promo_code, auto_applied = _auto_apply_early_bird_promo(code, course_code, bootcamp_price_info)
+    price, applied, is_free = _compute_price(promo_code, base_price)
     return jsonify({
         "price_eur": int(price),
         "promo_applied": bool(applied),
+        "auto_applied": bool(auto_applied and applied),
         "is_free": bool(is_free),
         "base_price_eur": int(base_price),
     }), 200
@@ -805,7 +828,10 @@ def submit():
     promo_input = _s(request.form.get("promo_code"))
     base_price_for_course = selected_course["price_eur"] if selected_course else BASE_PRICE_EUR
     base_price_for_summary = selected_course["price_eur"] if selected_course else 0
-    final_price_eur, applied_promo, is_free = _compute_price(promo_input, base_price_for_course)
+    promo_code, auto_applied = _auto_apply_early_bird_promo(promo_input, course_session_code, bootcamp_price_info)
+    final_price_eur, applied_promo, is_free = _compute_price(promo_code, base_price_for_course)
+    if not applied_promo and auto_applied and promo_code == EARLY_BIRD_PROMO_CODE:
+        applied_promo = promo_code
     final_price_eur = int(final_price_eur)
 
     data_processing_ok = _bool(request.form.get("data_processing_ok"))

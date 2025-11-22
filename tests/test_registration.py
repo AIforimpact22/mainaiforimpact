@@ -18,6 +18,12 @@ class BootcampPromoTests(unittest.TestCase):
 
         self.assertFalse(registration._bootcamp_early_bird_is_active(price_info, now=now))
 
+    def test_bootcamp_early_bird_active_when_flagged(self):
+        now = datetime.now(timezone.utc)
+        price_info = {"early_bird_deadline": None, "early_bird_active": True}
+
+        self.assertTrue(registration._bootcamp_early_bird_is_active(price_info, now=now))
+
     def test_auto_apply_bootcamp_promo_respects_user_input(self):
         now = datetime.now(timezone.utc)
         price_info = {"early_bird_deadline": now + timedelta(days=1)}
@@ -32,9 +38,15 @@ class BootcampPromoTests(unittest.TestCase):
         now = datetime.now(timezone.utc)
         active_price_info = {"early_bird_deadline": now + timedelta(days=1)}
         expired_price_info = {"early_bird_deadline": now - timedelta(days=1)}
+        flagged_price_info = {"early_bird_deadline": None, "early_bird_active": True}
 
         self.assertEqual(
             registration._auto_apply_bootcamp_promo(None, registration.BOOTCAMP_CODE, active_price_info, now=now),
+            registration.PROMO_CODE,
+        )
+
+        self.assertEqual(
+            registration._auto_apply_bootcamp_promo(None, registration.BOOTCAMP_CODE, flagged_price_info, now=now),
             registration.PROMO_CODE,
         )
 

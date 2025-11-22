@@ -376,11 +376,12 @@ def _bootcamp_early_bird_is_active(
     """Return True when an early-bird deadline exists and is still in the future."""
 
     deadline = _normalize_datetime((price_info or {}).get("early_bird_deadline"))
-    if not deadline:
-        return False
-
     current = now or datetime.now(timezone.utc)
-    return current < deadline
+
+    if deadline:
+        return current < deadline
+
+    return bool((price_info or {}).get("early_bird_active"))
 
 # ───────────────────────────────────────────────────────────────
 # Product / UI constants

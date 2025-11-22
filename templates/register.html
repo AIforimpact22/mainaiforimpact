@@ -461,9 +461,6 @@
     promoPill.textContent = 'No promo';
 
     const code = (promoInput?.value || '').trim();
-    if (!code){
-      return;
-    }
 
     try{
       const res = await fetch(PREVIEW_URL, {
@@ -473,30 +470,39 @@
       });
       const j = await res.json();
       const price = (j && typeof j.price_eur === 'number') ? j.price_eur : base;
-      if (j && j.promo_applied && price < base){
+      const promoApplied = Boolean(j && j.promo_applied);
+      const autoApplied = Boolean(j && j.auto_applied);
+      if (promoApplied && price < base){
         const discount = Math.max(0, base - price);
         sumBase.innerHTML = `<span class="strike">${formatMoney(base)}</span>`;
         sumDiscountRow.classList.remove('hide');
         sumDiscount.textContent = "− " + formatMoney(discount);
         sumTotal.textContent = formatMoney(price);
-        promoPill.textContent = j.is_free ? "Promo applied: FREE" : "Promo applied";
+        promoPill.textContent = j.is_free ? "Promo applied: FREE" : (autoApplied ? "Early bird applied" : "Promo applied");
         sumNote.textContent = j.is_free
           ? `Valid promo detected. Your total will be ${formatMoney(0)} upon submission.`
-          : "Valid promo detected. The discounted total will be applied.";
-      } else if (j && j.promo_applied){
-        promoPill.textContent = j.is_free ? "Promo applied: FREE" : "Promo applied";
+          : (autoApplied ? "Early-bird pricing applied automatically." : "Valid promo detected. The discounted total will be applied.");
+      } else if (promoApplied){
+        promoPill.textContent = j.is_free ? "Promo applied: FREE" : (autoApplied ? "Early bird applied" : "Promo applied");
         sumBase.textContent = formatMoney(base);
         sumDiscountRow.classList.add('hide');
         sumDiscount.textContent = '− ' + formatMoney(0);
         sumTotal.textContent = formatMoney(base);
-        sumNote.textContent = defaultNote;
-      } else {
+        sumNote.textContent = autoApplied ? "Early-bird pricing applied automatically." : defaultNote;
+      } else if (code){
         promoPill.textContent = "Invalid promo";
         sumBase.textContent = formatMoney(base);
         sumDiscountRow.classList.add('hide');
         sumDiscount.textContent = '− ' + formatMoney(0);
         sumTotal.textContent = formatMoney(base);
         sumNote.textContent = "Promo not recognized. Base price applies." + (courseNote ? " " + courseNote : "");
+      } else {
+        promoPill.textContent = "No promo";
+        sumBase.textContent = baseDisplay || formatMoney(base);
+        sumDiscountRow.classList.add('hide');
+        sumDiscount.textContent = '− ' + formatMoney(0);
+        sumTotal.textContent = baseDisplay || formatMoney(base);
+        sumNote.textContent = defaultNote;
       }
     } catch(e){
       promoPill.textContent = "Promo check unavailable";

@@ -366,6 +366,19 @@ def _get_bootcamp_price_info(use_cache: bool = True) -> Dict[str, Any]:
     _BOOTCAMP_PRICE_CACHE["expires_at"] = expiry
     return price_info
 
+
+def _bootcamp_early_bird_is_active(
+    price_info: Dict[str, Any] | None, *, now: datetime | None = None
+) -> bool:
+    """Return True when an early-bird deadline exists and is still in the future."""
+
+    deadline = _normalize_datetime((price_info or {}).get("early_bird_deadline"))
+    if not deadline:
+        return False
+
+    current = now or datetime.now(timezone.utc)
+    return current < deadline
+
 # ───────────────────────────────────────────────────────────────
 # Product / UI constants
 # ───────────────────────────────────────────────────────────────
@@ -656,6 +669,25 @@ def _course_allows_open_registration(code: str | None, courses: List[Dict[str, A
         return False
     return not course.get("requires_access_code", True)
 
+
+def _auto_apply_bootcamp_promo(
+    promo_input: str | None,
+    course_code: str | None,
+    price_info: Dict[str, Any] | None,
+    *,
+    now: datetime | None = None,
+) -> str | None:
+    """Return the promo code to use, auto-filling for eligible bootcamp entries."""
+
+    if promo_input:
+        return promo_input
+    if course_code != BOOTCAMP_CODE:
+        return promo_input
+    if _bootcamp_early_bird_is_active(price_info, now=now):
+        return PROMO_CODE
+    return promo_input
+
+
 def _compute_price(promo_input, base_price=None):
     base = base_price if base_price is not None else BASE_PRICE_EUR
     if promo_input:
@@ -802,7 +834,9 @@ def submit():
                 if existing >= seat_cap:
                     errors.append("This cohort is full. Please choose a different session or contact us.")
 
-    promo_input = _s(request.form.get("promo_code"))
+    promo_input = _auto_apply_bootcamp_promo(
+        _s(request.form.get("promo_code")), course_session_code, bootcamp_price_info
+    )
     base_price_for_course = selected_course["price_eur"] if selected_course else BASE_PRICE_EUR
     base_price_for_summary = selected_course["price_eur"] if selected_course else 0
     final_price_eur, applied_promo, is_free = _compute_price(promo_input, base_price_for_course)

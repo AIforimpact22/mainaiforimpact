@@ -9,7 +9,7 @@ import smtplib
 import ssl
 from decimal import Decimal
 from email.message import EmailMessage
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, List
 
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
@@ -232,10 +232,22 @@ def _resolve_bootcamp_price_info() -> Dict[str, Any]:
     if isinstance(primary_group, dict):
         active_offer = _select_active_offer(primary_group)
 
+    early_offer = None
+    if isinstance(active_offer, dict):
+        price_type_key = str(active_offer.get("price_type_key") or active_offer.get("price_type") or "").lower()
+        if "early" in price_type_key:
+            early_offer = active_offer
+
     if isinstance(primary_group, dict):
-        currency_source = active_offer or primary_group
+        currency_source = early_offer or active_offer or primary_group
         price_info["currency"] = (currency_source.get("currency") or "USD").strip().upper()
-        raw_amount = active_offer.get("price") if active_offer else None
+
+        raw_amount = None
+        if early_offer:
+            raw_amount = early_offer.get("price")
+        elif active_offer:
+            raw_amount = active_offer.get("price")
+
         if raw_amount is None:
             raw_amount = (
                 primary_group.get("regular_price")
@@ -249,7 +261,9 @@ def _resolve_bootcamp_price_info() -> Dict[str, Any]:
         if parsed_amount is not None:
             price_info["amount"] = parsed_amount
 
-    if active_offer and active_offer.get("price_display"):
+    if early_offer and early_offer.get("price_display"):
+        price_info["display"] = early_offer.get("price_display")
+    elif active_offer and active_offer.get("price_display"):
         price_info["display"] = active_offer.get("price_display")
     elif summary:
         for key in ("early_bird", "regular"):
@@ -263,6 +277,56 @@ def _resolve_bootcamp_price_info() -> Dict[str, Any]:
         price_info["display"] = f"{symbol}{price_info['amount']}"
 
     return price_info
+
+
+def _run_offer_selection_sanity_checks() -> None:
+    """Lightweight, log-only checks to validate offer selection logic."""
+
+    try:
+        now = datetime.now(timezone.utc)
+
+        early_offer = {
+            "price_type_key": "early-bird",
+            "price": 250,
+            "price_display": "$250 early bird",
+            "valid_from": now - timedelta(hours=1),
+            "valid_to": now + timedelta(days=1),
+        }
+        regular_offer = {
+            "price_type_key": "regular",
+            "price": 400,
+            "price_display": "$400 regular",
+            "valid_from": now - timedelta(hours=1),
+            "valid_to": now + timedelta(days=10),
+        }
+
+        with_early = {
+            "currency": "USD",
+            "early_bird_deadline": now + timedelta(hours=12),
+            "offers": [early_offer, regular_offer],
+        }
+        without_early = {
+            "currency": "USD",
+            "early_bird_deadline": None,
+            "offers": [regular_offer],
+        }
+
+        selected_with_early = _select_active_offer(with_early)
+        if selected_with_early is not early_offer:
+            logger.error("Sanity check failed: early offer not selected when active")
+        else:
+            logger.debug("Sanity check passed: early offer selected when active")
+
+        selected_without_early = _select_active_offer(without_early)
+        if selected_without_early is not regular_offer:
+            logger.error("Sanity check failed: regular offer not selected when no early offer")
+        else:
+            logger.debug("Sanity check passed: regular offer selected when no early offer")
+    except Exception:
+        logger.exception("Offer selection sanity checks encountered an error")
+
+
+_run_offer_selection_sanity_checks()
 
 
 _BOOTCAMP_PRICE_INFO = _resolve_bootcamp_price_info()

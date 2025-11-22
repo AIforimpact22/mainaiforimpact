@@ -240,6 +240,12 @@ def _resolve_bootcamp_price_info() -> Dict[str, Any]:
         if "early" in price_type_key:
             early_offer = active_offer
 
+    if early_offer and early_deadline is None:
+        early_deadline = _normalize_datetime(early_offer.get("valid_to"))
+
+    if early_offer:
+        price_info["early_bird_active"] = True
+
     if isinstance(primary_group, dict):
         currency_source = early_offer or active_offer or primary_group
         price_info["currency"] = (currency_source.get("currency") or "USD").strip().upper()
@@ -373,11 +379,12 @@ def _bootcamp_early_bird_is_active(
     """Return True when an early-bird deadline exists and is still in the future."""
 
     deadline = _normalize_datetime((price_info or {}).get("early_bird_deadline"))
-    if not deadline:
-        return False
-
     current = now or datetime.now(timezone.utc)
-    return current < deadline
+
+    if deadline:
+        return current < deadline
+
+    return bool((price_info or {}).get("early_bird_active"))
 
 # ───────────────────────────────────────────────────────────────
 # Product / UI constants
@@ -717,6 +724,9 @@ def page():
     courses = _get_courses(bootcamp_price_info)
     selected_course = _course_by_code(selected_course_code, courses)
     base_price = selected_course["price_eur"] if selected_course else 0
+    promo_autofill = _auto_apply_bootcamp_promo(
+        None, selected_course_code, bootcamp_price_info
+    )
     signed_in = session.get("signed_in", False) or _course_allows_open_registration(selected_course_code, courses)
     return render_template(
         "register.html",
@@ -741,6 +751,7 @@ def page():
         selected_course_price_display=selected_course.get("price_display") if selected_course else None,
         bootcamp_early_bird_label=bootcamp_price_info.get("active_offer_label"),
         bootcamp_early_bird_deadline=bootcamp_price_info.get("early_bird_deadline_display"),
+        form_data={"promo_code": promo_autofill} if promo_autofill else None,
     )
 
 @register_bp.post("/signin")
@@ -849,6 +860,12 @@ def submit():
     job_title = request.form.get("job_title") or "Other"
     referral_source = normalize_referral(_s(request.form.get("referral_source")))
 
+    form_data = request.form
+    if promo_input and request.form.get("promo_code") != promo_input:
+        updated_form = dict(request.form)
+        updated_form["promo_code"] = promo_input
+        form_data = updated_form
+
     if errors:
         return render_template(
             "register.html",
@@ -873,7 +890,7 @@ def submit():
             selected_course_price_display=selected_course.get("price_display") if selected_course else None,
             bootcamp_early_bird_label=bootcamp_price_info.get("active_offer_label"),
             bootcamp_early_bird_deadline=bootcamp_price_info.get("early_bird_deadline_display"),
-            form_data=request.form,
+            form_data=form_data,
         ), 400
 
     data = dict(

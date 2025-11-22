@@ -280,6 +280,10 @@ def _resolve_bootcamp_price_info() -> Dict[str, Any]:
         symbol = _currency_symbol(price_info.get("currency")) or ""
         price_info["display"] = f"{symbol}{price_info['amount']}"
 
+    if early_offer and not price_info.get("active_offer_label") and price_info.get("display"):
+        # Ensure the UI can reference an early-bird label even if the offer lacked one.
+        price_info["active_offer_label"] = price_info["display"]
+
     if early_offer:
         deadline_display = early_offer.get("valid_to_display")
         if not deadline_display:

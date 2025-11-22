@@ -243,9 +243,6 @@ def _resolve_bootcamp_price_info() -> Dict[str, Any]:
     if early_offer and early_deadline is None:
         early_deadline = _normalize_datetime(early_offer.get("valid_to"))
 
-    if early_offer:
-        price_info["early_bird_active"] = True
-
     if isinstance(primary_group, dict):
         currency_source = early_offer or active_offer or primary_group
         price_info["currency"] = (currency_source.get("currency") or "USD").strip().upper()

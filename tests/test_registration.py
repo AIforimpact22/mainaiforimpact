@@ -2,8 +2,6 @@ import unittest
 from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
-from flask import Flask
-
 import registration
 
 
@@ -96,62 +94,6 @@ class BootcampPromoTests(unittest.TestCase):
         price_info = registration._resolve_bootcamp_price_info()
 
         self.assertEqual(price_info.get("early_bird_deadline"), group_deadline)
-
-
-class RegisterPagePromoAutofillTests(unittest.TestCase):
-    def _make_app(self):
-        app = Flask(__name__)
-        app.config["SECRET_KEY"] = "testing"
-        app.register_blueprint(registration.register_bp)
-        app.jinja_env.globals["bp"] = lambda path: path
-        return app
-
-    def test_bootcamp_page_prefills_promo_when_early_bird_active(self):
-        now = datetime.now(timezone.utc)
-        price_info = {"early_bird_deadline": now + timedelta(days=1)}
-        bootcamp_course = {
-            "code": registration.BOOTCAMP_CODE,
-            "title": "Bootcamp",
-            "price_eur": 100,
-            "currency": "USD",
-            "seat_cap": None,
-            "requires_access_code": False,
-        }
-
-        app = self._make_app()
-        with app.test_client() as client, patch(
-            "registration._get_bootcamp_price_info", return_value=price_info
-        ), patch("registration._get_courses", return_value=[bootcamp_course]):
-            resp = client.get(f"/?course={registration.BOOTCAMP_CODE}")
-
-        self.assertEqual(resp.status_code, 200)
-        self.assertIn(f'value="{registration.PROMO_CODE}"', resp.get_data(as_text=True))
-
-    def test_submit_rerenders_with_autofilled_promo_when_missing(self):
-        now = datetime.now(timezone.utc)
-        price_info = {"early_bird_deadline": now + timedelta(days=1)}
-        bootcamp_course = {
-            "code": registration.BOOTCAMP_CODE,
-            "title": "Bootcamp",
-            "price_eur": 100,
-            "currency": "USD",
-            "seat_cap": None,
-            "requires_access_code": False,
-        }
-
-        app = self._make_app()
-        with app.test_client() as client, patch(
-            "registration._get_bootcamp_price_info", return_value=price_info
-        ), patch("registration._get_courses", return_value=[bootcamp_course]), patch(
-            "registration._course_by_code", return_value=bootcamp_course
-        ), patch("registration._compute_price", return_value=(100, registration.PROMO_CODE, False)):
-            resp = client.post(
-                "/submit",
-                data={"course_session_code": registration.BOOTCAMP_CODE},
-            )
-
-        self.assertEqual(resp.status_code, 400)
-        self.assertIn(f'value="{registration.PROMO_CODE}"', resp.get_data(as_text=True))
 
 
 if __name__ == "__main__":

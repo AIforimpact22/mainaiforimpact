@@ -110,7 +110,7 @@
             </select>
             {% if bootcamp_early_bird_label and bootcamp_early_bird_deadline %}
               <div class="muted" style="margin-top:6px;">
-                Bootcamp early bird: {{ bootcamp_early_bird_label }} until {{ bootcamp_early_bird_deadline }}.
+                Bootcamp early bird automatically applied: {{ bootcamp_early_bird_label }} until {{ bootcamp_early_bird_deadline }}.
               </div>
             {% endif %}
           </div>
@@ -358,9 +358,9 @@
         {% if selected_course_note %}
           {{ selected_course_note }}
         {% elif bootcamp_early_bird_label and bootcamp_early_bird_deadline %}
-          Bootcamp early bird: {{ bootcamp_early_bird_label }} until {{ bootcamp_early_bird_deadline }}.
+          Bootcamp early bird automatically applied: {{ bootcamp_early_bird_label }} until {{ bootcamp_early_bird_deadline }}.
         {% else %}
-          Select a course to view pricing. Enter a promo code to check if a discount applies.
+          Select a course to view pricing. Enter a promo code to check if a discount applies. Bootcamp early-bird discounts are applied automatically when available.
         {% endif %}
       </div>
     </div>
@@ -381,8 +381,8 @@
   const sumTotal   = document.getElementById('sumTotal');
   const sumNote    = document.getElementById('sumNote');
 
-  const PROMO_INSTRUCTION = {{ "Enter a promo code to check if a discount applies." | tojson }};
-  const NO_COURSE_NOTE = {{ "Select a course to view pricing. Enter a promo code to check if a discount applies." | tojson }};
+  const PROMO_INSTRUCTION = {{ "Enter a promo code to check if a discount applies. Bootcamp early-bird discounts are applied automatically when available." | tojson }};
+  const NO_COURSE_NOTE = {{ "Select a course to view pricing. Enter a promo code to check if a discount applies. Bootcamp early-bird discounts are applied automatically when available." | tojson }};
 
   function currencySymbol(){
     const opt = selectedCourseOption();

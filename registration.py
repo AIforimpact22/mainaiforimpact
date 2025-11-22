@@ -164,10 +164,62 @@ def _parse_price_amount(value: Any) -> int | None:
             return None
 
 
+def _normalize_datetime(value: Any) -> datetime | None:
+    if isinstance(value, datetime):
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc)
+    return None
+
+
+def _offer_is_active(
+    offer: Dict[str, Any], *, now: datetime, early_deadline: datetime | None
+) -> bool:
+    valid_from = _normalize_datetime(offer.get("valid_from"))
+    valid_to = _normalize_datetime(offer.get("valid_to"))
+
+    price_type_key = str(offer.get("price_type_key") or offer.get("price_type") or "").lower()
+    if early_deadline and "early" in price_type_key:
+        if valid_to is None or early_deadline < valid_to:
+            valid_to = early_deadline
+
+    if valid_from and now < valid_from:
+        return False
+    if valid_to and now >= valid_to:
+        return False
+    return True
+
+
+def _select_active_offer(group: Dict[str, Any]) -> Dict[str, Any] | None:
+    offers = group.get("offers") if isinstance(group.get("offers"), list) else []
+    now = datetime.now(timezone.utc)
+    early_deadline = _normalize_datetime(group.get("early_bird_deadline"))
+
+    active_early = None
+    active_regular = None
+    active_other = None
+
+    for offer in offers:
+        if not isinstance(offer, dict):
+            continue
+        if not _offer_is_active(offer, now=now, early_deadline=early_deadline):
+            continue
+        price_type_key = str(offer.get("price_type_key") or offer.get("price_type") or "").lower()
+        if "early" in price_type_key and active_early is None:
+            active_early = offer
+        elif "regular" in price_type_key and active_regular is None:
+            active_regular = offer
+        elif active_other is None:
+            active_other = offer
+
+    return active_early or active_regular or active_other
+
+
 def _resolve_bootcamp_price_info() -> Dict[str, Any]:
     """Resolve the bootcamp price from the seat prices table (USD expected)."""
 
     price_info: Dict[str, Any] = {}
+    active_offer: Dict[str, Any] | None = None
     try:
         seat_prices = _fetch_bootcamp_seat_prices()
         summary = summarize_bootcamp_price(seat_prices) if seat_prices else None
@@ -178,11 +230,17 @@ def _resolve_bootcamp_price_info() -> Dict[str, Any]:
 
     primary_group = seat_prices[0] if seat_prices else None
     if isinstance(primary_group, dict):
-        price_info["currency"] = (primary_group.get("currency") or "USD").strip().upper()
-        raw_amount = (
-            primary_group.get("regular_price")
-            or primary_group.get("early_bird_price")
-        )
+        active_offer = _select_active_offer(primary_group)
+
+    if isinstance(primary_group, dict):
+        currency_source = active_offer or primary_group
+        price_info["currency"] = (currency_source.get("currency") or "USD").strip().upper()
+        raw_amount = active_offer.get("price") if active_offer else None
+        if raw_amount is None:
+            raw_amount = (
+                primary_group.get("regular_price")
+                or primary_group.get("early_bird_price")
+            )
         if raw_amount is None:
             offers = primary_group.get("offers") if isinstance(primary_group.get("offers"), list) else []
             if offers:
@@ -191,8 +249,10 @@ def _resolve_bootcamp_price_info() -> Dict[str, Any]:
         if parsed_amount is not None:
             price_info["amount"] = parsed_amount
 
-    if summary:
-        for key in ("regular", "early_bird"):
+    if active_offer and active_offer.get("price_display"):
+        price_info["display"] = active_offer.get("price_display")
+    elif summary:
+        for key in ("early_bird", "regular"):
             offer = summary.get(key) if isinstance(summary, dict) else None
             if offer and offer.get("price_display"):
                 price_info["display"] = offer.get("price_display")

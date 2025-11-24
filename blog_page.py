@@ -26,7 +26,6 @@ _POSTS_SQL = text(
     FROM blog_posts
     WHERE status = 'published'
     ORDER BY COALESCE(published_at, created_at) DESC, id DESC
-    LIMIT :limit
     """
 )
 
@@ -94,7 +93,7 @@ def blog_index():
     else:
         try:
             with engine.begin() as conn:
-                rows = conn.execute(_POSTS_SQL, {"limit": 30}).mappings().all()
+                rows = conn.execute(_POSTS_SQL).mappings().all()
                 for row in rows:
                     published_raw = row.get("published_at") or row.get("created_at")
                     posts.append(

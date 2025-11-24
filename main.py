@@ -174,6 +174,7 @@ def _load_missions() -> List[Dict[str, str]]:
                         "subtitle": (row.get("Subtitle") or "").strip(),
                         "goal": (row.get("Goal") or "").strip(),
                         "image_url": (row.get("Image URL") or "").strip(),
+                        "link": (row.get("Link") or "").strip(),
                     }
                 )
     except Exception as exc:

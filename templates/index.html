@@ -223,6 +223,77 @@
     color: var(--muted);
     font-size: 0.95rem;
   }
+  .home-blog-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: clamp(14px, 2vw, 18px);
+  }
+  .home-blog-card {
+    background: radial-gradient(120% 120% at 10% 10%, rgba(107, 199, 255, 0.08), transparent 50%),
+      var(--surface-card, #0f1420);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    padding: clamp(16px, 2vw, 22px);
+    box-shadow: 0 18px 38px rgba(5, 11, 23, 0.36);
+    position: relative;
+    overflow: hidden;
+  }
+  .home-blog-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    border: 1px solid rgba(107, 199, 255, 0.07);
+    mask: linear-gradient(black, transparent 55%);
+  }
+  .home-blog-link {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    text-decoration: none;
+    color: inherit;
+    min-height: 100%;
+    position: relative;
+    z-index: 1;
+  }
+  .home-blog-link:focus-visible {
+    outline: 2px solid var(--accent, #6bc7ff);
+    outline-offset: 3px;
+    border-radius: 12px;
+  }
+  .home-blog-link:hover h3,
+  .home-blog-link:focus-visible h3 {
+    color: var(--accent, #6bc7ff);
+  }
+  .home-blog-meta {
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+  .home-blog-meta span[aria-hidden="true"] {
+    color: rgba(255, 255, 255, 0.18);
+  }
+  .home-blog-card h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    line-height: 1.35;
+  }
+  .home-blog-excerpt {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.6;
+    font-size: 0.98rem;
+  }
+  .home-blog-actions {
+    margin-top: 14px;
+    display: flex;
+    justify-content: flex-end;
+  }
   #audience {
     margin-top: 26px;
   }
@@ -429,6 +500,51 @@
     </ul>
   </div>
 </section>
+
+{% if blog_posts %}
+<section id="home-blog" class="section-card" style="margin-top: 26px;" aria-labelledby="home-blog-title">
+  <div class="banner">
+    <small>Latest on the blog</small>
+    <h1 id="home-blog-title">Fresh from our team</h1>
+    <p class="muted">Stories, lessons, and field notes from Ai For Impact.</p>
+  </div>
+  <div class="body">
+    <div class="home-blog-grid">
+      {% for post in blog_posts %}
+        {% if post.slug %}
+          {% set post_href = bp('/blog/' ~ post.slug ~ '/') %}
+        {% else %}
+          {% set post_href = '' %}
+        {% endif %}
+        <article class="home-blog-card" aria-labelledby="home-post-{{ post.id }}-title">
+          {% if post_href %}
+            <a class="home-blog-link" href="{{ post_href }}">
+          {% else %}
+            <div class="home-blog-link" aria-disabled="true" role="presentation">
+          {% endif %}
+              <p class="home-blog-meta">
+                {% if post.author %}<span>{{ post.author }}</span>{% endif %}
+                {% if post.author and post.published %}<span aria-hidden="true">•</span>{% endif %}
+                {% if post.published %}<time datetime="{{ post.published_iso }}">{{ post.published }}</time>{% endif %}
+              </p>
+              <h3 id="home-post-{{ post.id }}-title">{{ post.title }}</h3>
+              {% if post.excerpt %}
+                <p class="home-blog-excerpt">{{ post.excerpt }}</p>
+              {% endif %}
+          {% if post_href %}
+            </a>
+          {% else %}
+            </div>
+          {% endif %}
+        </article>
+      {% endfor %}
+    </div>
+    <div class="home-blog-actions">
+      <a class="button ghost" href="{{ bp('/blog/') }}">View all posts</a>
+    </div>
+  </div>
+</section>
+{% endif %}
 
 
 

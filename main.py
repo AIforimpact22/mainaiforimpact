@@ -26,6 +26,8 @@ COURSE_COVER_URL = os.getenv("COURSE_COVER_URL", "https://i.imgur.com/iIMdWOn.jp
 BASE_PATH = os.getenv("BASE_PATH", "")
 DATA_DIR = Path(__file__).resolve().parent / "data"
 MISSIONS_CSV = DATA_DIR / "mission.csv"
+_TAG_RE = re.compile(r"<[^>]+>")
+_WS_RE = re.compile(r"\s+")
 
 # -------------- DB connection --------------
 def _is_dsn(s: str) -> bool:
@@ -182,6 +184,79 @@ def _load_missions() -> List[Dict[str, str]]:
     return missions
 
 
+def _build_excerpt(row: Dict[str, Any]) -> str:
+    explicit = (row.get("excerpt") or "").strip()
+    if explicit:
+        return explicit
+
+    html = row.get("html_content") or ""
+    text_content = _TAG_RE.sub(" ", html)
+    text_content = _WS_RE.sub(" ", text_content).strip()
+    if len(text_content) > 220:
+        return text_content[:197].rstrip() + "…"
+    return text_content
+
+
+def _format_date(value: Any) -> str:
+    if not value:
+        return ""
+    try:
+        return value.strftime("%b %d, %Y")  # type: ignore[attr-defined]
+    except Exception:
+        return str(value)
+
+
+def _format_iso(value: Any) -> str:
+    if not value:
+        return ""
+    try:
+        return value.isoformat()  # type: ignore[attr-defined]
+    except Exception:
+        return str(value)
+
+
+def _fetch_recent_posts(limit: int = 3) -> List[Dict[str, Any]]:
+    sql = text(
+        """
+        SELECT
+            id,
+            slug,
+            title,
+            html_content,
+            excerpt,
+            cover_image_url,
+            author_name,
+            published_at,
+            created_at
+        FROM blog_posts
+        WHERE status = 'published'
+        ORDER BY COALESCE(published_at, created_at) DESC, id DESC
+        LIMIT :limit
+        """
+    )
+    posts: List[Dict[str, Any]] = []
+    try:
+        with ENGINE.begin() as conn:
+            rows = conn.execute(sql, {"limit": limit}).mappings().all()
+            for row in rows:
+                published_raw = row.get("published_at") or row.get("created_at")
+                posts.append(
+                    {
+                        "id": row.get("id"),
+                        "title": row.get("title") or "Untitled post",
+                        "slug": row.get("slug") or "",
+                        "excerpt": _build_excerpt(row),
+                        "cover_image_url": row.get("cover_image_url") or "",
+                        "author": row.get("author_name") or "",
+                        "published": _format_date(published_raw),
+                        "published_iso": _format_iso(published_raw),
+                    }
+                )
+    except SQLAlchemyError as exc:  # pragma: no cover - defensive path
+        log.exception("Failed to load recent blog posts: %s", exc)
+    return posts
+
+
 def _fetch_certificates(limit: int = 50) -> List[Dict[str, Any]]:
     sql = text(
         """
@@ -257,6 +332,7 @@ def home():
         bootcamp_vm["seat_prices"] = seat_prices
         bootcamp_vm["price_summary"] = summarize_bootcamp_price(seat_prices)
 
+    blog_posts = _fetch_recent_posts(limit=3)
     services = [
         {
             "name": "AI Bootcamp",
@@ -283,6 +359,7 @@ def home():
             services=services,
             bootcamp=bootcamp_vm,
             missions=missions,
+            blog_posts=blog_posts,
         )
     structure = course.get("structure") or {}
     weeks, modules, lessons = _summarize(structure)
@@ -302,6 +379,7 @@ def home():
         services=services,
         bootcamp=bootcamp_vm,
         missions=missions,
+        blog_posts=blog_posts,
     )
 
 

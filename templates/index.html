@@ -257,6 +257,19 @@
     position: relative;
     z-index: 1;
   }
+  .home-blog-cover {
+    margin: -6px -6px 6px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.06);
+    aspect-ratio: 16 / 9;
+  }
+  .home-blog-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
   .home-blog-link:focus-visible {
     outline: 2px solid var(--accent, #6bc7ff);
     outline-offset: 3px;
@@ -522,6 +535,11 @@
           {% else %}
             <div class="home-blog-link" aria-disabled="true" role="presentation">
           {% endif %}
+              {% if post.cover_image_url %}
+                <figure class="home-blog-cover">
+                  <img src="{{ post.cover_image_url }}" alt="Cover image for {{ post.title }}" loading="lazy" decoding="async">
+                </figure>
+              {% endif %}
               <p class="home-blog-meta">
                 {% if post.author %}<span>{{ post.author }}</span>{% endif %}
                 {% if post.author and post.published %}<span aria-hidden="true">•</span>{% endif %}
